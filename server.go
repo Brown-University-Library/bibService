@@ -21,6 +21,7 @@ func StartWebServer(settingsFile string) {
 
 	http.HandleFunc("/bibutils/bib/", bibUtils)
 	http.HandleFunc("/bibutils/bib", bibUtilsAbout)
+	http.HandleFunc("/status", status)
 	http.HandleFunc("/", home)
 	log.Printf("Listening for requests at: http://%s", settings.ServerAddress)
 	err = http.ListenAndServe(settings.ServerAddress, nil)
@@ -29,8 +30,19 @@ func StartWebServer(settingsFile string) {
 	}
 }
 
+func status(resp http.ResponseWriter, req *http.Request) {
+	fmt.Fprint(resp, "OK")
+}
+
 func home(resp http.ResponseWriter, req *http.Request) {
-	fmt.Fprint(resp, "home")
+	html := `<h1>bibService</h1>
+	<p>Service for BIB record utilities</p>
+	<p>Examples:</p>
+	<ul>
+		<li> <a href="/bibutils/bib/b8060910">BIB Record</a>
+	</ul>
+	`
+	fmt.Fprint(resp, html)
 }
 
 func bibUtilsAbout(resp http.ResponseWriter, req *http.Request) {
