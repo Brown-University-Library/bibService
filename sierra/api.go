@@ -67,15 +67,25 @@ func (s *Sierra) Search(value string) (string, error) {
 	return body, err
 }
 
-func (s *Sierra) Get(id string) (string, error) {
+func (s *Sierra) Get(id string) (BibsResp, error) {
 	err := s.authenticate()
 	if err != nil {
-		return "", err
+		return BibsResp{}, err
 	}
 
-	url := s.ApiUrl + "/bibs?id=" + id
+	// https://techdocs.iii.com/sierraapi/Content/zReference/objects/bibObjectDescription.htm
+	// https://techdocs.iii.com/sierraapi/Content/zAppendix/bibObjectExample.htm
+	// fixedFields,
+	fields := "fields=default,available,orders,normTitle,normAuthor,locations,varFields"
+	url := s.ApiUrl + "/bibs?id=" + id + "&" + fields
 	body, err := s.httpGet(url, s.Authorization.AccessToken)
-	return body, err
+	if err != nil {
+		return BibsResp{}, err
+	}
+
+	var bibs BibsResp
+	err = json.Unmarshal([]byte(body), &bibs)
+	return bibs, err
 }
 
 func (s *Sierra) Items(bibRange string) (ItemsResp, error) {
@@ -92,9 +102,6 @@ func (s *Sierra) Items(bibRange string) (ItemsResp, error) {
 
 	var items ItemsResp
 	err = json.Unmarshal([]byte(body), &items)
-	if err != nil {
-		return ItemsResp{}, err
-	}
 	return items, err
 }
 

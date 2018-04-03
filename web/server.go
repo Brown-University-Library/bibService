@@ -58,21 +58,7 @@ func itemController(resp http.ResponseWriter, req *http.Request) {
 
 	model := bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile)
 	items, err := model.Items(bib)
-	if err != nil {
-		log.Printf("ERROR: %s", err)
-		errMsg := fmt.Sprintf("Error getting items for BIB %s", bib)
-		fmt.Fprint(resp, errMsg)
-		return
-	}
-
-	body, err := toJSON(items, true)
-	if err != nil {
-		log.Printf("ERROR: %s", err)
-		fmt.Fprint(resp, "Error converting response to JSON")
-		return
-	}
-
-	fmt.Fprint(resp, body)
+	renderJSON(resp, items, err, "itemController")
 }
 
 func bibController(resp http.ResponseWriter, req *http.Request) {
@@ -83,10 +69,22 @@ func bibController(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	model := bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile)
-	body, err := model.Get(bib)
-	if err != nil {
-		log.Printf("ERROR: %s", err)
-		body = fmt.Sprintf("Error getting BIB %s", bib)
+	bibs, err := model.Get(bib)
+	renderJSON(resp, bibs, err, "bibController")
+}
+
+func renderJSON(resp http.ResponseWriter, data interface{}, errFetch error, info string) {
+	if errFetch != nil {
+		log.Printf("ERROR (%s): %s", info, errFetch)
+		fmt.Fprint(resp, "Error retrieving information")
+		return
 	}
-	fmt.Fprint(resp, body)
+
+	json, err := toJSON(data, true)
+	if err != nil {
+		log.Printf("ERROR (%s): %s", info, err)
+		fmt.Fprint(resp, "Error converting response to JSON")
+		return
+	}
+	fmt.Fprint(resp, json)
 }

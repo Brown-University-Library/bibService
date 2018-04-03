@@ -46,14 +46,19 @@ func New(sierraUrl, keySecret, sessionFile string) BibModel {
 	return model
 }
 
-func (model BibModel) Get(bib string) (string, error) {
+func (model BibModel) Get(bib string) (sierra.BibsResp, error) {
 	id := idFromBib(bib)
 	if id == "" {
-		return "", errors.New("No ID was detected on BIB")
+		return sierra.BibsResp{}, errors.New("No ID was detected on BIB")
 	}
 
-	sierra := sierra.NewSierra(model.sierraUrl, model.keySecret, model.sessionFile)
-	return sierra.Get(id)
+	api := sierra.NewSierra(model.sierraUrl, model.keySecret, model.sessionFile)
+	api.Verbose = true
+	sierraBibs, err := api.Get(id)
+	if err != nil {
+		return sierra.BibsResp{}, err
+	}
+	return sierraBibs, err
 }
 
 func (model BibModel) Items(bib string) (ItemsResp, error) {

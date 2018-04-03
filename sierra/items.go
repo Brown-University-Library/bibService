@@ -4,6 +4,11 @@ import (
 	"strings"
 )
 
+type ItemsResp struct {
+	Total   int        `json:"total"`
+	Entries []ItemResp `json:"entries"`
+}
+
 type ItemResp struct {
 	Id          string            `json:"id"`
 	UpdatedDate string            `json:"updatedDate"`
@@ -39,9 +44,4 @@ func (i ItemResp) StatusDisplay() string {
 		return "DUE " + dueDate
 	}
 	return i.Status["display"]
-}
-
-type ItemsResp struct {
-	Total   int        `json:"total"`
-	Entries []ItemResp `json:"entries"`
 }
