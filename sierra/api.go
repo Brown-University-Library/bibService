@@ -88,6 +88,24 @@ func (s *Sierra) Get(id string) (BibsResp, error) {
 	return bibs, err
 }
 
+func (s *Sierra) BibsUpdatedSince(date string) (BibsResp, error) {
+	err := s.authenticate()
+	if err != nil {
+		return BibsResp{}, err
+	}
+
+	url := s.ApiUrl + "/bibs?updatedDate=" + date
+	body, err := s.httpGet(url, s.Authorization.AccessToken)
+	if err != nil {
+		return BibsResp{}, err
+	}
+
+	var bibs BibsResp
+	err = json.Unmarshal([]byte(body), &bibs)
+	// Should this return an array of IDs instead?
+	return bibs, err
+}
+
 func (s *Sierra) Items(bibRange string) (ItemsResp, error) {
 	err := s.authenticate()
 	if err != nil {
@@ -105,6 +123,9 @@ func (s *Sierra) Items(bibRange string) (ItemsResp, error) {
 	return items, err
 }
 
+// idRange can be a single ID or a comma delimited list of IDs.
+// Becareful because it seems that Sierra's backend chokes when
+// the list is to long (e.g. it fails with 50 IDs)
 func (s *Sierra) Marc(idRange string) (string, error) {
 	err := s.authenticate()
 	if err != nil {

@@ -3,6 +3,7 @@ package bibModel
 import (
 	"bibService/sierra"
 	"errors"
+	"strings"
 )
 
 type ShelfResp struct {
@@ -59,6 +60,38 @@ func (model BibModel) Get(bib string) (sierra.BibsResp, error) {
 		return sierra.BibsResp{}, err
 	}
 	return sierraBibs, err
+}
+
+func (model BibModel) Marc(bib, sinceDate string) (string, error) {
+	var id string
+	if bib != "" {
+		id = idFromBib(bib)
+		if id == "" {
+			return "", errors.New("No ID was detected on BIB")
+		}
+	} else {
+		// validate date
+	}
+
+	api := sierra.NewSierra(model.sierraUrl, model.keySecret, model.sessionFile)
+	api.Verbose = true
+	if id != "" {
+		return api.Marc(id)
+	} else {
+		// TODO: use a date range
+		bibsData, err := api.BibsUpdatedSince("[2018-03-28,2018-04-03]")
+		if err != nil {
+			return "", err
+		}
+		ids := []string{}
+		for i, bibRecord := range bibsData.Entries {
+			ids = append(ids, bibRecord.Id)
+			if i == 219 {
+				break
+			}
+		}
+		return api.Marc(strings.Join(ids, ","))
+	}
 }
 
 func (model BibModel) Items(bib string) (ItemsResp, error) {

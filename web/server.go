@@ -18,9 +18,9 @@ func StartWebServer(settingsFile string) {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/bibutils/item/", itemController)
 	http.HandleFunc("/bibutils/bib/", bibController)
-	http.HandleFunc("/bibutils/bib", bibAbout)
+	http.HandleFunc("/bibutils/marc/", marcController)
+	http.HandleFunc("/bibutils/item/", itemController)
 	http.HandleFunc("/status", status)
 	http.HandleFunc("/", home)
 	log.Printf("Listening for requests at: http://%s", settings.ServerAddress)
@@ -40,25 +40,12 @@ func home(resp http.ResponseWriter, req *http.Request) {
 	<p>Examples:</p>
 	<ul>
 		<li> <a href="/bibutils/bib/b8060910">BIB Record</a>
+		<li> <a href="/bibutils/item/b8060910">Item level data (availability)</a>
+		<li> <a href="/bibutils/marc/b8060910">MARC data for a BIB Record</a>
 	</ul>
+	<p>Troubleshooting: /bibutils/status</p>
 	`
 	fmt.Fprint(resp, html)
-}
-
-func bibAbout(resp http.ResponseWriter, req *http.Request) {
-	fmt.Fprint(resp, "Try with /bibutils/bib/your-bib-id")
-}
-
-func itemController(resp http.ResponseWriter, req *http.Request) {
-	bib := bibFromPath(req.URL.Path)
-	if bib == "" {
-		fmt.Fprint(resp, "{\"error\": \"No BIB ID indicated\"}")
-		return
-	}
-
-	model := bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile)
-	items, err := model.Items(bib)
-	renderJSON(resp, items, err, "itemController")
 }
 
 func bibController(resp http.ResponseWriter, req *http.Request) {
@@ -71,6 +58,49 @@ func bibController(resp http.ResponseWriter, req *http.Request) {
 	model := bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile)
 	bibs, err := model.Get(bib)
 	renderJSON(resp, bibs, err, "bibController")
+}
+
+func marcController(resp http.ResponseWriter, req *http.Request) {
+	bib := bibFromPath(req.URL.Path)
+	dates := req.URL.Query()["since"]
+	sinceDate := ""
+	if len(dates) > 0 {
+		sinceDate = dates[0]
+	}
+	if bib == "" && sinceDate == "" {
+		fmt.Fprint(resp, "{\"error\": \"No BIB ID indicated\"}")
+		return
+	}
+
+	var marcData string
+	var err error
+	model := bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile)
+	if bib != "" {
+		log.Printf("Fetching BIB: %s", bib)
+		marcData, err = model.Marc(bib, "")
+	} else if sinceDate != "" {
+		log.Printf("Fetching since: %s", sinceDate)
+		marcData, err = model.Marc(bib, sinceDate)
+	}
+
+	if err != nil {
+		log.Printf("ERROR (marcController): %s", err)
+		fmt.Fprint(resp, "Error fetching MARC data")
+		return
+	}
+	fmt.Fprint(resp, marcData)
+}
+
+func itemController(resp http.ResponseWriter, req *http.Request) {
+	bib := bibFromPath(req.URL.Path)
+	if bib == "" {
+		fmt.Fprint(resp, "{\"error\": \"No BIB ID indicated\"}")
+		return
+	}
+
+	model := bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile)
+	items, err := model.Items(bib)
+	renderJSON(resp, items, err, "itemController")
 }
 
 func renderJSON(resp http.ResponseWriter, data interface{}, errFetch error, info string) {
