@@ -5,9 +5,9 @@ A small web service to provide information about BIB records.
 The main source code files are:
 
 * `main.go`: The launcher
-* `server.go`: The web server router (i.e. the controllers)
+* `web/server.go`: The web server router (i.e. the controllers)
 * `sierra/`: Code to interface with the Sierra API
-* `bibModel/`: Code to handle bib records level operations.
+* `bibModel/`: Code to handle bib and item level operations.
 
 ## Running the service
 To run the service you'll need a `settings.json` file with the configuration information to connect to Sierra. Take a look at the `settings.sample.json` for an example. Once you have a `settings.json` file created you just need to run:

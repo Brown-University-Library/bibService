@@ -1,7 +1,6 @@
 package sierra
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -64,7 +63,7 @@ func (s *Sierra) Search(value string) (string, error) {
 
 	url := s.ApiUrl + "/bibs"
 	url += "?deleted=false&suppressed=false&fields=title,author,publishYear,updatedDate"
-	body, err := httpGet(url, s.Authorization.AccessToken)
+	body, err := s.httpGet(url, s.Authorization.AccessToken)
 	return body, err
 }
 
@@ -75,19 +74,28 @@ func (s *Sierra) Get(id string) (string, error) {
 	}
 
 	url := s.ApiUrl + "/bibs?id=" + id
-	body, err := httpGet(url, s.Authorization.AccessToken)
+	body, err := s.httpGet(url, s.Authorization.AccessToken)
 	return body, err
 }
 
-func (s *Sierra) Item(bibRange string) (string, error) {
+func (s *Sierra) Items(bibRange string) (ItemsResp, error) {
 	err := s.authenticate()
 	if err != nil {
-		return "", err
+		return ItemsResp{}, err
 	}
 
 	url := s.ApiUrl + "/items?bibIds=" + bibRange
-	body, err := httpGet(url, s.Authorization.AccessToken)
-	return body, err
+	body, err := s.httpGet(url, s.Authorization.AccessToken)
+	if err != nil {
+		return ItemsResp{}, err
+	}
+
+	var items ItemsResp
+	err = json.Unmarshal([]byte(body), &items)
+	if err != nil {
+		return ItemsResp{}, err
+	}
+	return items, err
 }
 
 func (s *Sierra) Marc(idRange string) (string, error) {
@@ -102,7 +110,7 @@ func (s *Sierra) Marc(idRange string) (string, error) {
 		url += "&mapping=" + mapping
 	}
 
-	body, err := httpGet(url, s.Authorization.AccessToken)
+	body, err := s.httpGet(url, s.Authorization.AccessToken)
 	if err != nil {
 		return "", err
 	}
@@ -113,7 +121,7 @@ func (s *Sierra) Marc(idRange string) (string, error) {
 		return "", err
 	}
 
-	data, err := httpGet(marcFile.File, s.Authorization.AccessToken)
+	data, err := s.httpGet(marcFile.File, s.Authorization.AccessToken)
 	return data, err
 }
 
@@ -130,7 +138,7 @@ func (s *Sierra) Deleted(dateRange string) (string, error) {
 		// TODO: validate dateRange is in the form a,b
 		url += fmt.Sprintf("/bibs?deletedDate=[%s]", dateRange)
 	}
-	body, err := httpGet(url, s.Authorization.AccessToken)
+	body, err := s.httpGet(url, s.Authorization.AccessToken)
 	return body, err
 }
 
@@ -174,7 +182,7 @@ func (s *Sierra) authenticate() error {
 		"Authorization": "Basic " + s.KeySecret64,
 		"Content-Type":  "text/plain",
 	}
-	body, err := httpPost(url, headers)
+	body, err := s.httpPost(url, headers)
 	if err != nil {
 		return err
 	}
@@ -202,8 +210,8 @@ func (s *Sierra) authenticate() error {
 	return err
 }
 
-func httpGet(url, accessToken string) (string, error) {
-	log.Printf("HTTP GET %s", url)
+func (s Sierra) httpGet(url, accessToken string) (string, error) {
+	s.log("HTTP GET", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if accessToken != "" {
 		req.Header.Set("Authorization", "Bearer "+accessToken)
@@ -217,11 +225,12 @@ func httpGet(url, accessToken string) (string, error) {
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	return prettyJSON(body), err
+	s.log("body", string(body))
+	return string(body), err
 }
 
-func httpPost(url string, headers map[string]string) (string, error) {
-	log.Printf("HTTP POST %s", url)
+func (s Sierra) httpPost(url string, headers map[string]string) (string, error) {
+	s.log("HTTP POST", url)
 	req, err := http.NewRequest("POST", url, nil)
 	for key, value := range headers {
 		req.Header.Set(key, value)
@@ -235,14 +244,11 @@ func httpPost(url string, headers map[string]string) (string, error) {
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	return prettyJSON(body), err
+	return string(body), err
 }
 
-func prettyJSON(jsonBytes []byte) string {
-	var buffer bytes.Buffer
-	err := json.Indent(&buffer, jsonBytes, "", "\t")
-	if err != nil {
-		return string(jsonBytes)
+func (s Sierra) log(msg1, msg2 string) {
+	if s.Verbose {
+		log.Printf("%s: %s", msg1, msg2)
 	}
-	return string(buffer.Bytes())
 }

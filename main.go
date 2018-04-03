@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bibService/web"
 	"fmt"
 	"os"
 )
@@ -11,7 +12,7 @@ func main() {
 		return
 	}
 	settingsFile := os.Args[1]
-	StartWebServer(settingsFile)
+	web.StartWebServer(settingsFile)
 }
 
 func displayHelp(msg string) {

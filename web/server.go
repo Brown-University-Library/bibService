@@ -1,11 +1,10 @@
-package main
+package web
 
 import (
 	"bibService/bibModel"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 )
 
 var settings Settings
@@ -19,8 +18,9 @@ func StartWebServer(settingsFile string) {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/bibutils/bib/", bibUtils)
-	http.HandleFunc("/bibutils/bib", bibUtilsAbout)
+	http.HandleFunc("/bibutils/item/", itemController)
+	http.HandleFunc("/bibutils/bib/", bibController)
+	http.HandleFunc("/bibutils/bib", bibAbout)
 	http.HandleFunc("/status", status)
 	http.HandleFunc("/", home)
 	log.Printf("Listening for requests at: http://%s", settings.ServerAddress)
@@ -45,11 +45,37 @@ func home(resp http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(resp, html)
 }
 
-func bibUtilsAbout(resp http.ResponseWriter, req *http.Request) {
+func bibAbout(resp http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(resp, "Try with /bibutils/bib/your-bib-id")
 }
 
-func bibUtils(resp http.ResponseWriter, req *http.Request) {
+func itemController(resp http.ResponseWriter, req *http.Request) {
+	bib := bibFromPath(req.URL.Path)
+	if bib == "" {
+		fmt.Fprint(resp, "{\"error\": \"No BIB ID indicated\"}")
+		return
+	}
+
+	model := bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile)
+	items, err := model.Items(bib)
+	if err != nil {
+		log.Printf("ERROR: %s", err)
+		errMsg := fmt.Sprintf("Error getting items for BIB %s", bib)
+		fmt.Fprint(resp, errMsg)
+		return
+	}
+
+	body, err := toJSON(items, true)
+	if err != nil {
+		log.Printf("ERROR: %s", err)
+		fmt.Fprint(resp, "Error converting response to JSON")
+		return
+	}
+
+	fmt.Fprint(resp, body)
+}
+
+func bibController(resp http.ResponseWriter, req *http.Request) {
 	bib := bibFromPath(req.URL.Path)
 	if bib == "" {
 		fmt.Fprint(resp, "{\"error\": \"No BIB ID indicated\"}")
@@ -63,14 +89,4 @@ func bibUtils(resp http.ResponseWriter, req *http.Request) {
 		body = fmt.Sprintf("Error getting BIB %s", bib)
 	}
 	fmt.Fprint(resp, body)
-}
-
-// Extracts the BIB from a URL Path. Assumes the BIB is the last segment
-// of the path. For example: /whatever/whatever/bib
-func bibFromPath(path string) string {
-	tokens := strings.Split(path, "/")
-	if len(tokens) == 0 {
-		return ""
-	}
-	return tokens[len(tokens)-1]
 }
