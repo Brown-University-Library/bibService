@@ -39,9 +39,11 @@ func home(resp http.ResponseWriter, req *http.Request) {
 	<p>Service for BIB record utilities</p>
 	<p>Examples:</p>
 	<ul>
-		<li> <a href="/bibutils/bib/b8060910">BIB Record</a>
-		<li> <a href="/bibutils/item/b8060910">Item level data (availability)</a>
-		<li> <a href="/bibutils/marc/b8060910">MARC data for a BIB Record</a>
+		<li> <a href="/bibutils/bib/?bib=b8060910">BIB Record</a>
+		<li> <a href="/bibutils/bib/?bib=b8060910&raw=true">BIB Record (raw)</a>
+		<li> <a href="/bibutils/item/?bib=b8060910">Item level data (availability)</a>
+		<li> <a href="/bibutils/item/?bib=b8060910&raw=true">Item level data (availability) (raw)</a>
+		<li> <a href="/bibutils/marc/?bib=b8060910">MARC data for a BIB Record</a>
 	</ul>
 	<p>Troubleshooting: /bibutils/status</p>
 	`
@@ -49,40 +51,35 @@ func home(resp http.ResponseWriter, req *http.Request) {
 }
 
 func bibController(resp http.ResponseWriter, req *http.Request) {
-	bib := bibFromPath(req.URL.Path)
-	if bib == "" {
-		fmt.Fprint(resp, "{\"error\": \"No BIB ID indicated\"}")
-		return
+	bib := qsParam("bib", req)
+	if bib != "" {
+		if qsParam("raw", req) == "true" {
+			log.Printf("Fetching BIB data for bib: %s %v(raw)", bib, req.URL.Query())
+			model := NewBibModel()
+			body, err := model.GetBibRaw(bib)
+			renderJSON(resp, body, err, "bibController")
+		} else {
+			log.Printf("Fetching BIB data for bib: %s %v", bib, req.URL.Query())
+			model := NewBibModel()
+			bibs, err := model.GetBib(bib)
+			renderJSON(resp, bibs, err, "bibController")
+		}
 	}
-
-	model := bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile)
-	bibs, err := model.Get(bib)
-	renderJSON(resp, bibs, err, "bibController")
+	from := qsParam("from", req)
+	to := qsParam("to", req)
+	if from != "" && to != "" {
+		log.Printf("Fetching BIB data for bib since: %s-%s %v(raw)", from, to, req.URL.Query())
+		model := NewBibModel()
+		body, err := model.GetBibsUpdated(from, to)
+		renderJSON(resp, body, err, "bibController")
+	}
 }
 
 func marcController(resp http.ResponseWriter, req *http.Request) {
-	bib := bibFromPath(req.URL.Path)
-	dates := req.URL.Query()["since"]
-	sinceDate := ""
-	if len(dates) > 0 {
-		sinceDate = dates[0]
-	}
-	if bib == "" && sinceDate == "" {
-		fmt.Fprint(resp, "{\"error\": \"No BIB ID indicated\"}")
-		return
-	}
-
-	var marcData string
-	var err error
-	model := bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile)
-	if bib != "" {
-		log.Printf("Fetching BIB: %s", bib)
-		marcData, err = model.Marc(bib, "")
-	} else if sinceDate != "" {
-		log.Printf("Fetching since: %s", sinceDate)
-		marcData, err = model.Marc(bib, sinceDate)
-	}
-
+	bib := qsParam("bib", req)
+	log.Printf("Fetching MARC for bib: %s", bib)
+	model := NewBibModel()
+	marcData, err := model.Marc(bib)
 	if err != nil {
 		log.Printf("ERROR (marcController): %s", err)
 		fmt.Fprint(resp, "Error fetching MARC data")
@@ -92,15 +89,22 @@ func marcController(resp http.ResponseWriter, req *http.Request) {
 }
 
 func itemController(resp http.ResponseWriter, req *http.Request) {
-	bib := bibFromPath(req.URL.Path)
-	if bib == "" {
-		fmt.Fprint(resp, "{\"error\": \"No BIB ID indicated\"}")
-		return
+	bib := qsParam("bib", req)
+	if qsParam("raw", req) == "true" {
+		log.Printf("Fetching item data for bib: %s (raw)", bib)
+		model := NewBibModel()
+		body, err := model.ItemsRaw(bib)
+		renderJSON(resp, body, err, "itemController")
+	} else {
+		log.Printf("Fetching item data for bib: %s", bib)
+		model := NewBibModel()
+		items, err := model.Items(bib)
+		renderJSON(resp, items, err, "itemController")
 	}
+}
 
-	model := bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile)
-	items, err := model.Items(bib)
-	renderJSON(resp, items, err, "itemController")
+func NewBibModel() bibModel.BibModel {
+	return bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile, settings.Verbose)
 }
 
 func renderJSON(resp http.ResponseWriter, data interface{}, errFetch error, info string) {
@@ -110,11 +114,19 @@ func renderJSON(resp http.ResponseWriter, data interface{}, errFetch error, info
 		return
 	}
 
+	if _, isString := data.(string); isString {
+		resp.Header().Add("Content-Type", "application/json")
+		fmt.Fprint(resp, data)
+		return
+	}
+
+	// Convert the object to a string with the JSON representation
 	json, err := toJSON(data, true)
 	if err != nil {
 		log.Printf("ERROR (%s): %s", info, err)
 		fmt.Fprint(resp, "Error converting response to JSON")
 		return
 	}
+	resp.Header().Add("Content-Type", "application/json")
 	fmt.Fprint(resp, json)
 }

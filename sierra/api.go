@@ -67,18 +67,8 @@ func (s *Sierra) Search(value string) (string, error) {
 	return body, err
 }
 
-func (s *Sierra) Get(id string) (BibsResp, error) {
-	err := s.authenticate()
-	if err != nil {
-		return BibsResp{}, err
-	}
-
-	// https://techdocs.iii.com/sierraapi/Content/zReference/objects/bibObjectDescription.htm
-	// https://techdocs.iii.com/sierraapi/Content/zAppendix/bibObjectExample.htm
-	// fixedFields,
-	fields := "fields=default,available,orders,normTitle,normAuthor,locations,varFields"
-	url := s.ApiUrl + "/bibs?id=" + id + "&" + fields
-	body, err := s.httpGet(url, s.Authorization.AccessToken)
+func (s *Sierra) Get(params map[string]string) (BibsResp, error) {
+	body, err := s.GetRaw(params)
 	if err != nil {
 		return BibsResp{}, err
 	}
@@ -86,6 +76,24 @@ func (s *Sierra) Get(id string) (BibsResp, error) {
 	var bibs BibsResp
 	err = json.Unmarshal([]byte(body), &bibs)
 	return bibs, err
+}
+
+func (s *Sierra) GetRaw(params map[string]string) (string, error) {
+	err := s.authenticate()
+	if err != nil {
+		return "", err
+	}
+
+	// https://techdocs.iii.com/sierraapi/Content/zReference/objects/bibObjectDescription.htm
+	// https://techdocs.iii.com/sierraapi/Content/zAppendix/bibObjectExample.htm
+	// fixedFields,
+	fields := "fields=default,available,orders,normTitle,normAuthor,locations,varFields"
+	url := s.ApiUrl + "/bibs?"
+	for key, value := range params {
+		url += key + "=" + value + "&"
+	}
+	url += fields
+	return s.httpGet(url, s.Authorization.AccessToken)
 }
 
 func (s *Sierra) BibsUpdatedSince(date string) (BibsResp, error) {
@@ -112,8 +120,7 @@ func (s *Sierra) Items(bibRange string) (ItemsResp, error) {
 		return ItemsResp{}, err
 	}
 
-	url := s.ApiUrl + "/items?bibIds=" + bibRange
-	body, err := s.httpGet(url, s.Authorization.AccessToken)
+	body, err := s.ItemsRaw(bibRange)
 	if err != nil {
 		return ItemsResp{}, err
 	}
@@ -121,6 +128,16 @@ func (s *Sierra) Items(bibRange string) (ItemsResp, error) {
 	var items ItemsResp
 	err = json.Unmarshal([]byte(body), &items)
 	return items, err
+}
+
+func (s *Sierra) ItemsRaw(bibRange string) (string, error) {
+	err := s.authenticate()
+	if err != nil {
+		return "", err
+	}
+
+	url := s.ApiUrl + "/items?bibIds=" + bibRange
+	return s.httpGet(url, s.Authorization.AccessToken)
 }
 
 // idRange can be a single ID or a comma delimited list of IDs.
