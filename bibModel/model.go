@@ -3,6 +3,8 @@ package bibModel
 import (
 	"bibService/sierra"
 	"errors"
+	"fmt"
+	"strings"
 )
 
 type ShelfResp struct {
@@ -61,7 +63,7 @@ func (model BibModel) GetBib(bib string) (sierra.BibsResp, error) {
 
 func (model BibModel) GetBibsUpdated(fromDate, toDate string) (sierra.BibsResp, error) {
 	params := map[string]string{
-		"updatedDate": "[" + fromDate + "," + toDate + "]",
+		"updatedDate": dateRange(fromDate, toDate),
 	}
 	sierraBibs, err := model.api.Get(params)
 	if err != nil {
@@ -74,7 +76,7 @@ func (model BibModel) GetBibsDeleted(fromDate, toDate string) (sierra.BibsResp, 
 	// TODO: add support for "deleted": true
 	// will the response serialize correctly?
 	params := map[string]string{
-		"deletedDate": "[" + fromDate + "," + toDate + "]",
+		"deletedDate": dateRange(fromDate, toDate),
 		"limit":       "100",
 	}
 	sierraBibs, err := model.api.Get(params)
@@ -82,6 +84,28 @@ func (model BibModel) GetBibsDeleted(fromDate, toDate string) (sierra.BibsResp, 
 		return sierra.BibsResp{}, err
 	}
 	return sierraBibs, err
+}
+
+func (model BibModel) GetSolrBibsToDelete(fromDate, toDate string) ([]string, error) {
+	sierraBibs, err := model.GetBibsDeleted(fromDate, toDate)
+	if err != nil {
+		return []string{}, err
+	}
+
+	bibs := []string{}
+	for _, bib := range sierraBibs.Entries {
+		bibs = append(bibs, "b"+bib.Id)
+	}
+	return bibs, nil
+}
+
+func (model BibModel) GetSolrDeleteQuery(fromDate, toDate string) (string, error) {
+	bibs, err := model.GetSolrBibsToDelete(fromDate, toDate)
+	if err != nil {
+		return "", err
+	}
+	query := fmt.Sprintf("<delete><query>id:(%s)</query></delete>", strings.Join(bibs, " OR "))
+	return query, nil
 }
 
 func (model BibModel) GetBibRaw(bib string) (string, error) {
@@ -146,4 +170,10 @@ func idFromBib(bib string) string {
 		return ""
 	}
 	return bib[1:len(bib)]
+}
+
+func dateRange(fromDate, toDate string) string {
+	// %3A means ":"
+	// TODO: handle URL encoding more gracefully
+	return fmt.Sprintf("[%sT00%3A00%3A00Z,%sT23%3A59%3A59Z]", fromDate, toDate)
 }
