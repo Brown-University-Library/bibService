@@ -32,19 +32,14 @@ type ItemsResp struct {
 }
 
 type BibModel struct {
-	sierraUrl   string
-	keySecret   string
-	sessionFile string
-	verbose     bool
+	settings Settings
+	api      sierra.Sierra
 }
 
-func New(sierraUrl, keySecret, sessionFile string, verbose bool) BibModel {
-	model := BibModel{
-		sierraUrl:   sierraUrl,
-		keySecret:   keySecret,
-		sessionFile: sessionFile,
-		verbose:     verbose,
-	}
+func New(settings Settings) BibModel {
+	model := BibModel{settings: settings}
+	model.api = sierra.NewSierra(model.settings.SierraUrl, model.settings.KeySecret, model.settings.SessionFile)
+	model.api.Verbose = settings.Verbose
 	return model
 }
 
@@ -54,12 +49,10 @@ func (model BibModel) GetBib(bib string) (sierra.BibsResp, error) {
 		return sierra.BibsResp{}, errors.New("No ID was detected on BIB")
 	}
 
-	api := sierra.NewSierra(model.sierraUrl, model.keySecret, model.sessionFile)
-	api.Verbose = model.verbose
 	params := map[string]string{
 		"id": id,
 	}
-	sierraBibs, err := api.Get(params)
+	sierraBibs, err := model.api.Get(params)
 	if err != nil {
 		return sierra.BibsResp{}, err
 	}
@@ -67,12 +60,10 @@ func (model BibModel) GetBib(bib string) (sierra.BibsResp, error) {
 }
 
 func (model BibModel) GetBibsUpdated(fromDate, toDate string) (sierra.BibsResp, error) {
-	api := sierra.NewSierra(model.sierraUrl, model.keySecret, model.sessionFile)
-	api.Verbose = model.verbose
 	params := map[string]string{
 		"updatedDate": "[" + fromDate + "," + toDate + "]",
 	}
-	sierraBibs, err := api.Get(params)
+	sierraBibs, err := model.api.Get(params)
 	if err != nil {
 		return sierra.BibsResp{}, err
 	}
@@ -80,15 +71,13 @@ func (model BibModel) GetBibsUpdated(fromDate, toDate string) (sierra.BibsResp, 
 }
 
 func (model BibModel) GetBibsDeleted(fromDate, toDate string) (sierra.BibsResp, error) {
-	api := sierra.NewSierra(model.sierraUrl, model.keySecret, model.sessionFile)
-	api.Verbose = model.verbose
 	// TODO: add support for "deleted": true
 	// will the response serialize correctly?
 	params := map[string]string{
 		"deletedDate": "[" + fromDate + "," + toDate + "]",
 		"limit":       "100",
 	}
-	sierraBibs, err := api.Get(params)
+	sierraBibs, err := model.api.Get(params)
 	if err != nil {
 		return sierra.BibsResp{}, err
 	}
@@ -101,12 +90,10 @@ func (model BibModel) GetBibRaw(bib string) (string, error) {
 		return "", errors.New("No ID was detected on BIB")
 	}
 
-	api := sierra.NewSierra(model.sierraUrl, model.keySecret, model.sessionFile)
-	api.Verbose = model.verbose
 	params := map[string]string{
 		"id": id,
 	}
-	return api.GetRaw(params)
+	return model.api.GetRaw(params)
 }
 
 func (model BibModel) Marc(bib string) (string, error) {
@@ -115,9 +102,7 @@ func (model BibModel) Marc(bib string) (string, error) {
 		return "", errors.New("No ID was detected on BIB")
 	}
 
-	api := sierra.NewSierra(model.sierraUrl, model.keySecret, model.sessionFile)
-	api.Verbose = model.verbose
-	return api.Marc(id)
+	return model.api.Marc(id)
 }
 
 func (model BibModel) ItemsRaw(bib string) (string, error) {
@@ -126,9 +111,7 @@ func (model BibModel) ItemsRaw(bib string) (string, error) {
 		return "", errors.New("No ID was detected on BIB")
 	}
 
-	api := sierra.NewSierra(model.sierraUrl, model.keySecret, model.sessionFile)
-	api.Verbose = model.verbose
-	return api.ItemsRaw(id)
+	return model.api.ItemsRaw(id)
 }
 
 func (model BibModel) Items(bib string) (ItemsResp, error) {
@@ -137,9 +120,7 @@ func (model BibModel) Items(bib string) (ItemsResp, error) {
 		return ItemsResp{}, errors.New("No ID was detected on BIB")
 	}
 
-	api := sierra.NewSierra(model.sierraUrl, model.keySecret, model.sessionFile)
-	api.Verbose = model.verbose
-	sierraItems, err := api.Items(id)
+	sierraItems, err := model.api.Items(id)
 	if err != nil {
 		return ItemsResp{}, err
 	}

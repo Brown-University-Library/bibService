@@ -1,4 +1,4 @@
-package web
+package bibModel
 
 import (
 	"encoding/json"

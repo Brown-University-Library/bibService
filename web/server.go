@@ -8,13 +8,13 @@ import (
 	"net/http"
 )
 
-var settings Settings
+var settings bibModel.Settings
 
 func StartWebServer(settingsFile string) {
 	var err error
 
 	log.Printf("Loading settings from: %s", settingsFile)
-	settings, err = LoadSettings(settingsFile)
+	settings, err = bibModel.LoadSettings(settingsFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,20 +59,19 @@ func home(resp http.ResponseWriter, req *http.Request) {
 
 func bibController(resp http.ResponseWriter, req *http.Request) {
 	bib := qsParam("bib", req)
-	if bib != "" {
+	if bib == "" {
 		err := errors.New("No bib parameter was received")
 		renderJSON(resp, nil, err, "bibController")
 		return
 	}
 
+	model := bibModel.New(settings)
 	if qsParam("raw", req) == "true" {
 		log.Printf("Fetching BIB data for bib: %s %v(raw)", bib, req.URL.Query())
-		model := NewBibModel()
 		body, err := model.GetBibRaw(bib)
 		renderJSON(resp, body, err, "bibController")
 	} else {
 		log.Printf("Fetching BIB data for bib: %s %v", bib, req.URL.Query())
-		model := NewBibModel()
 		bibs, err := model.GetBib(bib)
 		renderJSON(resp, bibs, err, "bibController")
 	}
@@ -87,7 +86,7 @@ func bibUpdated(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Printf("Fetching BIB updated (%s - %s)", from, to)
-	model := NewBibModel()
+	model := bibModel.New(settings)
 	body, err := model.GetBibsUpdated(from, to)
 	renderJSON(resp, body, err, "bibUpdated")
 }
@@ -97,7 +96,7 @@ func bibDeleted(resp http.ResponseWriter, req *http.Request) {
 	to := qsParam("to", req)
 	if from != "" && to != "" {
 		log.Printf("Fetching BIB deleted (%s - %s)", from, to)
-		model := NewBibModel()
+		model := bibModel.New(settings)
 		body, err := model.GetBibsDeleted(from, to)
 		renderJSON(resp, body, err, "bibDeleted")
 		return
@@ -108,14 +107,13 @@ func bibDeleted(resp http.ResponseWriter, req *http.Request) {
 
 func itemController(resp http.ResponseWriter, req *http.Request) {
 	bib := qsParam("bib", req)
+	model := bibModel.New(settings)
 	if qsParam("raw", req) == "true" {
 		log.Printf("Fetching item data for bib: %s (raw)", bib)
-		model := NewBibModel()
 		body, err := model.ItemsRaw(bib)
 		renderJSON(resp, body, err, "itemController")
 	} else {
 		log.Printf("Fetching item data for bib: %s", bib)
-		model := NewBibModel()
 		items, err := model.Items(bib)
 		renderJSON(resp, items, err, "itemController")
 	}
@@ -124,7 +122,7 @@ func itemController(resp http.ResponseWriter, req *http.Request) {
 func marcController(resp http.ResponseWriter, req *http.Request) {
 	bib := qsParam("bib", req)
 	log.Printf("Fetching MARC for bib: %s", bib)
-	model := NewBibModel()
+	model := bibModel.New(settings)
 	marcData, err := model.Marc(bib)
 	if err != nil {
 		log.Printf("ERROR (marcController): %s", err)
@@ -132,10 +130,6 @@ func marcController(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	fmt.Fprint(resp, marcData)
-}
-
-func NewBibModel() bibModel.BibModel {
-	return bibModel.New(settings.SierraUrl, settings.KeySecret, settings.SessionFile, settings.Verbose)
 }
 
 func renderJSON(resp http.ResponseWriter, data interface{}, errFetch error, info string) {
