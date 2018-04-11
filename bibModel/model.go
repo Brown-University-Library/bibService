@@ -173,7 +173,7 @@ func idFromBib(bib string) string {
 }
 
 func dateRange(fromDate, toDate string) string {
+	// TODO: handle times and their URL encoding more gracefully
 	// %3A means ":"
-	// TODO: handle URL encoding more gracefully
-	return fmt.Sprintf("[%sT00%3A00%3A00Z,%sT23%3A59%3A59Z]", fromDate, toDate)
+	return "[" + fromDate + "," + toDate + "]"
 }
