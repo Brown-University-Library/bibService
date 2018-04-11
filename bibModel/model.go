@@ -79,6 +79,22 @@ func (model BibModel) GetBibsUpdated(fromDate, toDate string) (sierra.BibsResp, 
 	return sierraBibs, err
 }
 
+func (model BibModel) GetBibsDeleted(fromDate, toDate string) (sierra.BibsResp, error) {
+	api := sierra.NewSierra(model.sierraUrl, model.keySecret, model.sessionFile)
+	api.Verbose = model.verbose
+	// TODO: add support for "deleted": true
+	// will the response serialize correctly?
+	params := map[string]string{
+		"deletedDate": "[" + fromDate + "," + toDate + "]",
+		"limit":       "100",
+	}
+	sierraBibs, err := api.Get(params)
+	if err != nil {
+		return sierra.BibsResp{}, err
+	}
+	return sierraBibs, err
+}
+
 func (model BibModel) GetBibRaw(bib string) (string, error) {
 	id := idFromBib(bib)
 	if id == "" {

@@ -7,23 +7,24 @@ type BibsResp struct {
 
 type BibResp struct {
 	Id           string            `json:"id"`
-	UpdatedDate  string            `json:"updatedDate"`
-	CreatedDate  string            `json:"createdDate"`
-	Deleted      bool              `json:"deleted"`
-	Suppressed   bool              `json:"suppressed"`
-	Available    bool              `json:"available"`
-	Lang         map[string]string `json:"lang"`
-	Title        string            `json:"title"`
-	Author       string            `json:"author"`
-	MaterialType map[string]string `json:"materialType"`
-	BibLevel     map[string]string `json:"bibLevel"`
-	PublishYear  int               `json:"publishYear"`
-	CatalogDate  string            `json:"catalogDate"`
-	Country      map[string]string `json:"country"`
-	NormTitle    string            `json:"normTitle"`
-	NormAuthor   string            `json:"normAuthor"`
+	UpdatedDate  string            `json:"updatedDate,omitempty"`
+	CreatedDate  string            `json:"createdDate,omitempty"`
+	DeletedDate  string            `json:"deletedDate,omitempty"`
+	Deleted      bool              `json:"deleted,omitempty"`
+	Suppressed   bool              `json:"suppressed,omitempty"`
+	Available    bool              `json:"available,omitempty"`
+	Lang         map[string]string `json:"lang,omitempty"`
+	Title        string            `json:"title,omitempty"`
+	Author       string            `json:"author,omitempty"`
+	MaterialType map[string]string `json:"materialType,omitempty"`
+	BibLevel     map[string]string `json:"bibLevel,omitempty"`
+	PublishYear  int               `json:"publishYear,omitempty"`
+	CatalogDate  string            `json:"catalogDate,omitempty"`
+	Country      map[string]string `json:"country,omitempty"`
+	NormTitle    string            `json:"normTitle,omitempty"`
+	NormAuthor   string            `json:"normAuthor,omitempty"`
 	// Locations    []map[string]string `json:"locations"`
-	VarFields []VarFieldResp `json:"varFields"`
+	VarFields []VarFieldResp `json:"varFields,omitempty"`
 }
 
 type VarFieldResp struct {

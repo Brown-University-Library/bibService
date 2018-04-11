@@ -2,6 +2,7 @@ package web
 
 import (
 	"bibService/bibModel"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -18,6 +19,8 @@ func StartWebServer(settingsFile string) {
 		log.Fatal(err)
 	}
 
+	http.HandleFunc("/bibutils/bib/updated/", bibUpdated)
+	http.HandleFunc("/bibutils/bib/deleted/", bibDeleted)
 	http.HandleFunc("/bibutils/bib/", bibController)
 	http.HandleFunc("/bibutils/marc/", marcController)
 	http.HandleFunc("/bibutils/item/", itemController)
@@ -35,12 +38,16 @@ func status(resp http.ResponseWriter, req *http.Request) {
 }
 
 func home(resp http.ResponseWriter, req *http.Request) {
+	log.Printf("Home: %v", req.URL)
+
 	html := `<h1>bibService</h1>
 	<p>Service for BIB record utilities</p>
 	<p>Examples:</p>
 	<ul>
 		<li> <a href="/bibutils/bib/?bib=b8060910">BIB Record</a>
 		<li> <a href="/bibutils/bib/?bib=b8060910&raw=true">BIB Record (raw)</a>
+		<li> <a href="/bibutils/bib/updated/?from=2018-04-01&to=2018-04-09">BIB records updated</a>
+		<li> <a href="/bibutils/bib/deleted/?from=2018-04-01&to=2018-04-09">BIB records deleted</a>
 		<li> <a href="/bibutils/item/?bib=b8060910">Item level data (availability)</a>
 		<li> <a href="/bibutils/item/?bib=b8060910&raw=true">Item level data (availability) (raw)</a>
 		<li> <a href="/bibutils/marc/?bib=b8060910">MARC data for a BIB Record</a>
@@ -53,39 +60,50 @@ func home(resp http.ResponseWriter, req *http.Request) {
 func bibController(resp http.ResponseWriter, req *http.Request) {
 	bib := qsParam("bib", req)
 	if bib != "" {
-		if qsParam("raw", req) == "true" {
-			log.Printf("Fetching BIB data for bib: %s %v(raw)", bib, req.URL.Query())
-			model := NewBibModel()
-			body, err := model.GetBibRaw(bib)
-			renderJSON(resp, body, err, "bibController")
-		} else {
-			log.Printf("Fetching BIB data for bib: %s %v", bib, req.URL.Query())
-			model := NewBibModel()
-			bibs, err := model.GetBib(bib)
-			renderJSON(resp, bibs, err, "bibController")
-		}
+		err := errors.New("No bib parameter was received")
+		renderJSON(resp, nil, err, "bibController")
+		return
 	}
-	from := qsParam("from", req)
-	to := qsParam("to", req)
-	if from != "" && to != "" {
-		log.Printf("Fetching BIB data for bib since: %s-%s %v(raw)", from, to, req.URL.Query())
+
+	if qsParam("raw", req) == "true" {
+		log.Printf("Fetching BIB data for bib: %s %v(raw)", bib, req.URL.Query())
 		model := NewBibModel()
-		body, err := model.GetBibsUpdated(from, to)
+		body, err := model.GetBibRaw(bib)
 		renderJSON(resp, body, err, "bibController")
+	} else {
+		log.Printf("Fetching BIB data for bib: %s %v", bib, req.URL.Query())
+		model := NewBibModel()
+		bibs, err := model.GetBib(bib)
+		renderJSON(resp, bibs, err, "bibController")
 	}
 }
 
-func marcController(resp http.ResponseWriter, req *http.Request) {
-	bib := qsParam("bib", req)
-	log.Printf("Fetching MARC for bib: %s", bib)
-	model := NewBibModel()
-	marcData, err := model.Marc(bib)
-	if err != nil {
-		log.Printf("ERROR (marcController): %s", err)
-		fmt.Fprint(resp, "Error fetching MARC data")
+func bibUpdated(resp http.ResponseWriter, req *http.Request) {
+	from := qsParam("from", req)
+	to := qsParam("to", req)
+	if from == "" || to == "" {
+		err := errors.New("No from/to parameters were received")
+		renderJSON(resp, nil, err, "bibController")
 		return
 	}
-	fmt.Fprint(resp, marcData)
+	log.Printf("Fetching BIB updated (%s - %s)", from, to)
+	model := NewBibModel()
+	body, err := model.GetBibsUpdated(from, to)
+	renderJSON(resp, body, err, "bibUpdated")
+}
+
+func bibDeleted(resp http.ResponseWriter, req *http.Request) {
+	from := qsParam("from", req)
+	to := qsParam("to", req)
+	if from != "" && to != "" {
+		log.Printf("Fetching BIB deleted (%s - %s)", from, to)
+		model := NewBibModel()
+		body, err := model.GetBibsDeleted(from, to)
+		renderJSON(resp, body, err, "bibDeleted")
+		return
+	}
+	err := errors.New("No valid paramerts (bib, from/to) were received")
+	renderJSON(resp, nil, err, "bibController")
 }
 
 func itemController(resp http.ResponseWriter, req *http.Request) {
@@ -101,6 +119,19 @@ func itemController(resp http.ResponseWriter, req *http.Request) {
 		items, err := model.Items(bib)
 		renderJSON(resp, items, err, "itemController")
 	}
+}
+
+func marcController(resp http.ResponseWriter, req *http.Request) {
+	bib := qsParam("bib", req)
+	log.Printf("Fetching MARC for bib: %s", bib)
+	model := NewBibModel()
+	marcData, err := model.Marc(bib)
+	if err != nil {
+		log.Printf("ERROR (marcController): %s", err)
+		fmt.Fprint(resp, "Error fetching MARC data")
+		return
+	}
+	fmt.Fprint(resp, marcData)
 }
 
 func NewBibModel() bibModel.BibModel {

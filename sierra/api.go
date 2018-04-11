@@ -1,5 +1,10 @@
 package sierra
 
+// Sierra API documentation:
+//	https://sandbox.iii.com/iii/sierra-api/swagger/index.html
+// 	https://techdocs.iii.com/sierraapi/Content/zReference/objects/bibObjectDescription.htm
+// 	https://techdocs.iii.com/sierraapi/Content/zAppendix/bibObjectExample.htm
+
 import (
 	"encoding/base64"
 	"encoding/json"
@@ -84,8 +89,6 @@ func (s *Sierra) GetRaw(params map[string]string) (string, error) {
 		return "", err
 	}
 
-	// https://techdocs.iii.com/sierraapi/Content/zReference/objects/bibObjectDescription.htm
-	// https://techdocs.iii.com/sierraapi/Content/zAppendix/bibObjectExample.htm
 	// fixedFields,
 	fields := "fields=default,available,orders,normTitle,normAuthor,locations,varFields"
 	url := s.ApiUrl + "/bibs?"
