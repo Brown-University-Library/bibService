@@ -273,7 +273,7 @@ func (s Sierra) httpGet(url, accessToken string) (string, error) {
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	s.log("body", string(body))
+	// s.log("body", string(body))
 	return string(body), err
 }
 

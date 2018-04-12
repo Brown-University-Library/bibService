@@ -4,8 +4,12 @@ import (
 	"bibService/sierra"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 )
+
+// 2000 seems to be the limit that Sierra imposes
+const pageSize = 1000
 
 type ShelfResp struct {
 	Aisle        string `json:"aisle"`
@@ -62,28 +66,43 @@ func (model BibModel) GetBib(bib string) (sierra.BibsResp, error) {
 }
 
 func (model BibModel) GetBibsUpdated(fromDate, toDate string) (sierra.BibsResp, error) {
-	params := map[string]string{
-		"updatedDate": dateRange(fromDate, toDate),
+	bibs := sierra.BibsResp{}
+	pageNum := 0
+	for {
+		pageNum += 1
+		page, err := model.bibsUpdatedPaginated(fromDate, toDate, pageNum)
+		if err != nil {
+			return sierra.BibsResp{}, err
+		}
+		bibs.Total += page.Total
+		for _, entry := range page.Entries {
+			bibs.Entries = append(bibs.Entries, entry)
+		}
+		if page.Total <= pageSize {
+			break
+		}
 	}
-	sierraBibs, err := model.api.Get(params)
-	if err != nil {
-		return sierra.BibsResp{}, err
-	}
-	return sierraBibs, err
+	return bibs, nil
 }
 
 func (model BibModel) GetBibsDeleted(fromDate, toDate string) (sierra.BibsResp, error) {
-	// TODO: add support for "deleted": true
-	// will the response serialize correctly?
-	params := map[string]string{
-		"deletedDate": dateRange(fromDate, toDate),
-		"limit":       "100",
+	bibs := sierra.BibsResp{}
+	pageNum := 0
+	for {
+		pageNum += 1
+		page, err := model.bibsDeletedPaginated(fromDate, toDate, pageNum)
+		if err != nil {
+			return sierra.BibsResp{}, err
+		}
+		bibs.Total += page.Total
+		for _, entry := range page.Entries {
+			bibs.Entries = append(bibs.Entries, entry)
+		}
+		if page.Total < pageSize {
+			break
+		}
 	}
-	sierraBibs, err := model.api.Get(params)
-	if err != nil {
-		return sierra.BibsResp{}, err
-	}
-	return sierraBibs, err
+	return bibs, nil
 }
 
 func (model BibModel) GetSolrBibsToDelete(fromDate, toDate string) ([]string, error) {
@@ -101,11 +120,38 @@ func (model BibModel) GetSolrBibsToDelete(fromDate, toDate string) ([]string, er
 
 func (model BibModel) GetSolrDeleteQuery(fromDate, toDate string) (string, error) {
 	bibs, err := model.GetSolrBibsToDelete(fromDate, toDate)
-	if err != nil {
+	if len(bibs) == 0 || err != nil {
 		return "", err
 	}
 	query := fmt.Sprintf("<delete><query>id:(%s)</query></delete>", strings.Join(bibs, " OR "))
 	return query, nil
+}
+
+func (model BibModel) bibsDeletedPaginated(fromDate, toDate string, page int) (sierra.BibsResp, error) {
+	offset := (page - 1) * pageSize
+	params := map[string]string{
+		"offset": strconv.Itoa(offset),
+		"limit":  strconv.Itoa(pageSize),
+	}
+
+	if fromDate == "" && toDate == "" {
+		params["deleted"] = "true"
+	} else {
+		params["deletedDate"] = dateRange(fromDate, toDate)
+	}
+
+	return model.api.Get(params)
+}
+
+func (model BibModel) bibsUpdatedPaginated(fromDate, toDate string, page int) (sierra.BibsResp, error) {
+	offset := (page - 1) * pageSize
+	params := map[string]string{
+		"offset":      strconv.Itoa(offset),
+		"limit":       strconv.Itoa(pageSize),
+		"updatedDate": dateRange(fromDate, toDate),
+	}
+
+	return model.api.Get(params)
 }
 
 func (model BibModel) GetBibRaw(bib string) (string, error) {
@@ -173,7 +219,8 @@ func idFromBib(bib string) string {
 }
 
 func dateRange(fromDate, toDate string) string {
-	// TODO: handle times and their URL encoding more gracefully
-	// %3A means ":"
+	// It seems that we cannot pass a time with the date. From what I gather
+	// Sierra automatically appends "00:00:00" to the fromDate and "23:59:59"
+	// to the `toDate`.
 	return "[" + fromDate + "," + toDate + "]"
 }
