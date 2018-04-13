@@ -53,6 +53,8 @@ func home(resp http.ResponseWriter, req *http.Request) {
 		<li> <a href="/bibutils/item/?bib=b8060910">Item level data (availability)</a>
 		<li> <a href="/bibutils/item/?bib=b8060910&raw=true">Item level data (availability) (raw)</a>
 		<li> <a href="/bibutils/marc/?bib=b8060910">MARC data for a BIB Record</a>
+		<li> <a href="/bibutils/solr/delete/?from=2018-04-01&to=2018-04-09">ID of records deleted</a>
+		<li> <a href="/bibutils/solr/deleteQuery/?from=2018-04-01&to=2018-04-09">Query to delete records from Solr</a>
 	</ul>
 	<p>Troubleshooting: /bibutils/status</p>
 	`
@@ -95,11 +97,6 @@ func bibUpdated(resp http.ResponseWriter, req *http.Request) {
 func bibDeleted(resp http.ResponseWriter, req *http.Request) {
 	from := qsParam("from", req)
 	to := qsParam("to", req)
-	// if from == "" || to == "" {
-	// 	err := errors.New("No from/to parameters were received")
-	// 	renderJSON(resp, nil, err, "bibDeleted")
-	// 	return
-	// }
 	log.Printf("Fetching BIB deleted (%s - %s)", from, to)
 	model := bibModel.New(settings)
 	body, err := model.GetBibsDeleted(from, to)
@@ -109,11 +106,6 @@ func bibDeleted(resp http.ResponseWriter, req *http.Request) {
 func solrDelete(resp http.ResponseWriter, req *http.Request) {
 	from := qsParam("from", req)
 	to := qsParam("to", req)
-	// if from == "" || to == "" {
-	// 	err := errors.New("No from/to parameters were received")
-	// 	renderJSON(resp, nil, err, "solrDelete")
-	// 	return
-	// }
 	log.Printf("Fetching Solr to delete (%s - %s)", from, to)
 	model := bibModel.New(settings)
 	body, err := model.GetSolrBibsToDelete(from, to)
@@ -123,11 +115,6 @@ func solrDelete(resp http.ResponseWriter, req *http.Request) {
 func solrDeleteQuery(resp http.ResponseWriter, req *http.Request) {
 	from := qsParam("from", req)
 	to := qsParam("to", req)
-	// if from == "" || to == "" {
-	// 	err := errors.New("No from/to parameters were received")
-	// 	renderJSON(resp, nil, err, "solrDelete")
-	// 	return
-	// }
 	log.Printf("Fetching Solr to delete (%s - %s)", from, to)
 	model := bibModel.New(settings)
 	body, err := model.GetSolrDeleteQuery(from, to)

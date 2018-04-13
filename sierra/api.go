@@ -152,11 +152,7 @@ func (s *Sierra) Marc(idRange string) (string, error) {
 		return "", err
 	}
 
-	mapping := "" // TODO
 	url := s.ApiUrl + "/bibs/marc?id=" + idRange
-	if mapping != "" {
-		url += "&mapping=" + mapping
-	}
 
 	body, err := s.httpGet(url, s.Authorization.AccessToken)
 	if err != nil {
@@ -193,6 +189,7 @@ func (s *Sierra) Deleted(dateRange string) (string, error) {
 func (s *Sierra) loadSession() {
 	bytes, err := ioutil.ReadFile(s.SessionFile)
 	if err != nil {
+		s.log("ERROR in loadSession", err.Error())
 		return
 	}
 
