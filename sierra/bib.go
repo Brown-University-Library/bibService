@@ -1,8 +1,20 @@
 package sierra
 
+import (
+	"strings"
+)
+
 type BibsResp struct {
 	Total   int       `json:"total"`
 	Entries []BibResp `json:"entries"`
+}
+
+func (b BibsResp) BibsIdStr() string {
+	ids := []string{}
+	for _, bib := range b.Entries {
+		ids = append(ids, bib.Id)
+	}
+	return strings.Join(ids, ",")
 }
 
 type BibResp struct {
@@ -23,8 +35,9 @@ type BibResp struct {
 	Country      map[string]string `json:"country,omitempty"`
 	NormTitle    string            `json:"normTitle,omitempty"`
 	NormAuthor   string            `json:"normAuthor,omitempty"`
+	VarFields    []VarFieldResp    `json:"varFields,omitempty"`
+	Items        []ItemResp
 	// Locations    []map[string]string `json:"locations"`
-	VarFields []VarFieldResp `json:"varFields,omitempty"`
 }
 
 type VarFieldResp struct {

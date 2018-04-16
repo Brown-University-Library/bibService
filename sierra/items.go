@@ -20,6 +20,14 @@ type ItemResp struct {
 	Barcode     string            `json:"barcode"`
 }
 
+func (i ItemResp) Bib() (string, bool) {
+	if len(i.BibIds) == 1 {
+		// Most items belong to 1 bib
+		return i.BibIds[0], true
+	}
+	return "", false
+}
+
 func (i ItemResp) IsForBib(bib string) bool {
 	for _, b := range i.BibIds {
 		if b == bib {
@@ -44,4 +52,14 @@ func (i ItemResp) StatusDisplay() string {
 		return "DUE " + dueDate
 	}
 	return i.Status["display"]
+}
+
+func (ii ItemsResp) ForBib(bib string) []ItemResp {
+	items := []ItemResp{}
+	for _, item := range ii.Entries {
+		if item.IsForBib(bib) {
+			items = append(items, item)
+		}
+	}
+	return items
 }

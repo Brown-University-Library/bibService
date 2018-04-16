@@ -72,6 +72,14 @@ func (s *Sierra) Search(value string) (string, error) {
 	return body, err
 }
 
+// Get retrieves the information about of a BIB record and its ITEM information.
+//
+// params is meant to include a key like
+//		"id" : "the-id"
+// in order to tell Sierra what record to fetch or
+//		"updatedDate": "date-range"
+//
+// TODO: make these explicit parameters instead.
 func (s *Sierra) Get(params map[string]string) (BibsResp, error) {
 	body, err := s.GetRaw(params)
 	if err != nil {
@@ -80,6 +88,24 @@ func (s *Sierra) Get(params map[string]string) (BibsResp, error) {
 
 	var bibs BibsResp
 	err = json.Unmarshal([]byte(body), &bibs)
+	if err != nil {
+		return BibsResp{}, err
+	}
+
+	// fetch the items (for all the bibs at once)
+	bibIdsStr := bibs.BibsIdStr()
+	if bibIdsStr != "" {
+		items, err := s.Items(bibIdsStr)
+		if err != nil {
+			return BibsResp{}, err
+		}
+
+		for i, bib := range bibs.Entries {
+			bibItems := items.ForBib(bib.Id)
+			log.Printf("Set %d items to bib %s", len(bibItems), bib.Id)
+			bibs.Entries[i].Items = bibItems
+		}
+	}
 	return bibs, err
 }
 
@@ -117,13 +143,13 @@ func (s *Sierra) BibsUpdatedSince(date string) (BibsResp, error) {
 	return bibs, err
 }
 
-func (s *Sierra) Items(bibRange string) (ItemsResp, error) {
+func (s *Sierra) Items(bibsList string) (ItemsResp, error) {
 	err := s.authenticate()
 	if err != nil {
 		return ItemsResp{}, err
 	}
 
-	body, err := s.ItemsRaw(bibRange)
+	body, err := s.ItemsRaw(bibsList)
 	if err != nil {
 		return ItemsResp{}, err
 	}
@@ -133,13 +159,13 @@ func (s *Sierra) Items(bibRange string) (ItemsResp, error) {
 	return items, err
 }
 
-func (s *Sierra) ItemsRaw(bibRange string) (string, error) {
+func (s *Sierra) ItemsRaw(bibsList string) (string, error) {
 	err := s.authenticate()
 	if err != nil {
 		return "", err
 	}
 
-	url := s.ApiUrl + "/items?bibIds=" + bibRange
+	url := s.ApiUrl + "/items?bibIds=" + bibsList
 	return s.httpGet(url, s.Authorization.AccessToken)
 }
 

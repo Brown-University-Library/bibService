@@ -50,14 +50,14 @@ func New(settings Settings) BibModel {
 	return model
 }
 
-func (model BibModel) GetBib(bib string) (sierra.BibsResp, error) {
-	id := idFromBib(bib)
-	if id == "" {
-		return sierra.BibsResp{}, errors.New("No ID was detected on BIB")
+func (model BibModel) GetBib(bibs string) (sierra.BibsResp, error) {
+	ids := idsFromBib(bibs)
+	if ids == "" {
+		return sierra.BibsResp{}, errors.New("No ID was received")
 	}
 
 	params := map[string]string{
-		"id": id,
+		"id": ids,
 	}
 	sierraBibs, err := model.api.Get(params)
 	if err != nil {
@@ -138,6 +138,7 @@ func (model BibModel) GetSolrDeleteQuery(fromDate, toDate string) (string, error
 		if end > bibsCount {
 			end = bibsCount
 		}
+		// TODO: change this to <id>xxx</id> rather than ORs
 		query += fmt.Sprintf("<query>id:(%s)</query>", strings.Join(bibs[start:end], " OR "))
 	}
 	query += "</delete>"
@@ -226,6 +227,17 @@ func (model BibModel) Items(bib string) (ItemsResp, error) {
 		}
 	}
 	return items, err
+}
+
+func idsFromBib(bibs string) string {
+	ids := []string{}
+	for _, bib := range strings.Split(bibs, ",") {
+		id := idFromBib(bib)
+		if id != "" {
+			ids = append(ids, id)
+		}
+	}
+	return strings.Join(ids, ",")
 }
 
 func idFromBib(bib string) string {
