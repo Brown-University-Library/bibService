@@ -4,7 +4,6 @@ import (
 	"bibService/sierra"
 	"errors"
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 )
@@ -125,21 +124,9 @@ func (model BibModel) GetSolrDeleteQuery(fromDate, toDate string) (string, error
 		return "", err
 	}
 
-	query := "<delete>"
-	bibsCount := len(bibs)
-	blockSize := 50
-	blockCount := bibsCount / blockSize
-	if math.Mod(float64(bibsCount), float64(blockSize)) != 0 {
-		blockCount += 1
-	}
-	for i := 0; i < blockCount; i++ {
-		start := i * blockSize
-		end := start + blockSize
-		if end > bibsCount {
-			end = bibsCount
-		}
-		// TODO: change this to <id>xxx</id> rather than ORs
-		query += fmt.Sprintf("<query>id:(%s)</query>", strings.Join(bibs[start:end], " OR "))
+	query := "<delete>\r\n"
+	for _, bib := range bibs {
+		query += fmt.Sprintf("<id>%s</id>\r\n", bib)
 	}
 	query += "</delete>"
 	return query, nil
