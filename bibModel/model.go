@@ -20,7 +20,7 @@ type ShelfResp struct {
 	Side         string `json:"side"`
 }
 
-type ItemResp struct {
+type JosiahItem struct {
 	Barcode    string    `json:"barcode"`
 	Callnumber string    `json:"callnumber"`
 	Location   string    `json:"location"`
@@ -29,12 +29,12 @@ type ItemResp struct {
 	Status     string    `json:"status"`
 }
 
-type ItemsResp struct {
-	HasMore     bool       `json:"has_more"`
-	Items       []ItemResp `json:"items"`
-	MoreLink    string     `json:"more_link"`
-	Requestable bool       `json:"requestable"`
-	Summary     []string   `json:"summary"`
+type JosiahItems struct {
+	HasMore     bool         `json:"has_more"`
+	Items       []JosiahItem `json:"items"`
+	MoreLink    string       `json:"more_link"`
+	Requestable bool         `json:"requestable"`
+	Summary     []string     `json:"summary"`
 }
 
 type BibModel struct {
@@ -189,21 +189,21 @@ func (model BibModel) ItemsRaw(bib string) (string, error) {
 	return model.api.ItemsRaw(id)
 }
 
-func (model BibModel) Items(bib string) (ItemsResp, error) {
+func (model BibModel) Items(bib string) (JosiahItems, error) {
 	id := idFromBib(bib)
 	if id == "" {
-		return ItemsResp{}, errors.New("No ID was detected on BIB")
+		return JosiahItems{}, errors.New("No ID was detected on BIB")
 	}
 
 	sierraItems, err := model.api.Items(id)
 	if err != nil {
-		return ItemsResp{}, err
+		return JosiahItems{}, err
 	}
 
-	var items ItemsResp
+	var items JosiahItems
 	for _, sierraItem := range sierraItems.Entries {
 		if sierraItem.IsForBib(id) {
-			item := ItemResp{
+			item := JosiahItem{
 				Barcode:    sierraItem.BarcodeClean(),
 				Callnumber: "",
 				Location:   sierraItem.LocationName(),
