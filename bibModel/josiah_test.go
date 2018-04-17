@@ -9,7 +9,7 @@ import (
 
 func TestX(t *testing.T) {
 
-	bytes, err := ioutil.ReadFile("b8060910.json")
+	bytes, err := ioutil.ReadFile("b1318777.json")
 	if err != nil {
 		t.Errorf("Error reading test file: %s", err)
 	}
@@ -20,9 +20,9 @@ func TestX(t *testing.T) {
 		t.Errorf("Error parsing JSON: %s", err)
 	}
 
-	doc, err := NewJosiahSolr(bibs.Entries[0])
+	_, err = NewJosiahSolr(bibs.Entries[0])
 	if err != nil {
 		t.Errorf("Error getting MARC data: %s", err)
 	}
-	t.Errorf("%v", doc)
+	// t.Errorf("%v", doc)
 }

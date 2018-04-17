@@ -19,6 +19,7 @@ func StartWebServer(settingsFile string) {
 		log.Fatal(err)
 	}
 
+	http.HandleFunc("/bibutils/solr/doc/", solrDoc)
 	http.HandleFunc("/bibutils/solr/deleteQuery/", solrDeleteQuery)
 	http.HandleFunc("/bibutils/solr/delete/", solrDelete)
 	http.HandleFunc("/bibutils/bib/updated/", bibUpdated)
@@ -101,6 +102,25 @@ func bibDeleted(resp http.ResponseWriter, req *http.Request) {
 	model := bibModel.New(settings)
 	body, err := model.GetBibsDeleted(from, to)
 	renderJSON(resp, body, err, "bibDeleted")
+}
+
+func solrDoc(resp http.ResponseWriter, req *http.Request) {
+	bib := qsParam("bib", req)
+	if bib == "" {
+		err := errors.New("No bib parameter was received")
+		renderJSON(resp, nil, err, "bibController")
+		return
+	}
+	log.Printf("Fetching SolrDoc for %s", bib)
+	model := bibModel.New(settings)
+	bibs, err := model.GetBib(bib)
+	var doc bibModel.SolrDoc
+	if len(bibs.Entries) > 0 {
+		doc, err = bibModel.NewSolrDoc(bibs.Entries[0])
+		renderJSON(resp, doc, err, "solrDoc")
+	} else {
+		renderJSON(resp, "", errors.New("no bibs returned"), "solrDoc")
+	}
 }
 
 func solrDelete(resp http.ResponseWriter, req *http.Request) {

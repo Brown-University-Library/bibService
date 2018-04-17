@@ -1,7 +1,7 @@
 package sierra
 
 import (
-	"log"
+	"regexp"
 	"strings"
 )
 
@@ -82,6 +82,26 @@ func (bib BibResp) MarcValues(fieldSpec string) []string {
 	return values
 }
 
+func (bib BibResp) MarcValuesTrim(fieldSpec string) []string {
+	values := []string{}
+	for _, value := range bib.MarcValues(fieldSpec) {
+		values = append(values, trimPunct(value))
+	}
+	return values
+}
+
+func (bib BibResp) MarcValue(fieldSpec string) string {
+	values := bib.MarcValues(fieldSpec)
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
+}
+
+func (bib BibResp) MarcValueTrim(fieldSpec string) string {
+	return trimPunct(bib.MarcValue(fieldSpec))
+}
+
 func (bib BibResp) getField(marcTag string) (VarFieldResp, bool) {
 	for _, field := range bib.VarFields {
 		if field.MarcTag == marcTag {
@@ -106,13 +126,51 @@ func (field VarFieldResp) getSubfieldsValues(subfields []string) []string {
 func NewFieldSpecs(spec string) []FieldSpec {
 	fieldSpecs := []FieldSpec{}
 	for _, token := range strings.Split(spec, ":") {
-		// TODO: validate tokens with no subfields and invalid tokens (less than 3 chars)
-		fieldSpec := FieldSpec{MarcTag: token[0:3]}
-		log.Printf("token: %s, subfields: %s", token, token[3:len(token)])
-		for _, c := range token[3:len(token)] {
-			fieldSpec.Subfields = append(fieldSpec.Subfields, string(c))
+		length := len(token)
+		if length < 3 {
+			// not a valid spec
+			continue
+		}
+
+		fieldSpec := FieldSpec{
+			MarcTag:   token[0:3],
+			Subfields: []string{},
+		}
+
+		if length > 3 {
+			// process the subfields in the spec
+			for _, c := range token[3:length] {
+				fieldSpec.Subfields = append(fieldSpec.Subfields, string(c))
+			}
 		}
 		fieldSpecs = append(fieldSpecs, fieldSpec)
 	}
 	return fieldSpecs
+}
+
+func trimPunct(str string) string {
+	if str == "" {
+		return str
+	}
+
+	// RegEx stolen from Traject's marc21.rb
+	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21.rb
+	//
+	// # trailing: comma, slash, semicolon, colon (possibly preceded and followed by whitespace)
+	// str = str.sub(/ *[ ,\/;:] *\Z/, '')
+	re1 := regexp.MustCompile(" *[ ,\\/;:] *$")
+	cleanStr := re1.ReplaceAllString(str, "")
+
+	// # trailing period if it is preceded by at least three letters (possibly preceded and followed by whitespace)
+	// str = str.sub(/( *\w\w\w)\. *\Z/, '\1')
+	re2 := regexp.MustCompile("( *\\w\\w\\w)\\. *$")
+	cleanStr = re2.ReplaceAllString(cleanStr, "$1")
+
+	// # single square bracket characters if they are the start
+	// # and/or end chars and there are no internal square brackets.
+	// str = str.sub(/\A\[?([^\[\]]+)\]?\Z/, '\1')
+	re3 := regexp.MustCompile("^\\[?([^\\[\\]]+)\\]?$")
+	cleanStr = re3.ReplaceAllString(cleanStr, "$1")
+
+	return cleanStr
 }
