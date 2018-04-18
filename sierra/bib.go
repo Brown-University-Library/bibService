@@ -62,21 +62,25 @@ type VarFieldResp struct {
 func (bib BibResp) MarcValues(fieldSpec string) []string {
 	values := []string{}
 	for _, spec := range NewFieldSpecs(fieldSpec) {
-		field, found := bib.getField(spec.MarcTag)
+		fields, found := bib.getFields(spec.MarcTag)
 		if !found {
 			continue
 		}
 
 		if len(spec.Subfields) == 0 {
-			if field.Content != "" {
-				values = append(values, field.Content)
+			for _, field := range fields {
+				if field.Content != "" {
+					values = append(values, field.Content)
+				}
 			}
 			continue
 		}
 
-		newValues := field.getSubfieldsValues(spec.Subfields)
-		for _, value := range newValues {
-			values = append(values, value)
+		for _, field := range fields {
+			subValues := field.getSubfieldsValues(spec.Subfields)
+			if len(subValues) > 0 {
+				values = append(values, strings.Join(subValues, " "))
+			}
 		}
 	}
 	return values
@@ -95,20 +99,25 @@ func (bib BibResp) MarcValue(fieldSpec string) string {
 	if len(values) == 0 {
 		return ""
 	}
-	return values[0]
+	return strings.Join(values, " ")
 }
 
 func (bib BibResp) MarcValueTrim(fieldSpec string) string {
-	return trimPunct(bib.MarcValue(fieldSpec))
+	values := bib.MarcValues(fieldSpec)
+	if len(values) == 0 {
+		return ""
+	}
+	return trimPunct(strings.Join(values, " "))
 }
 
-func (bib BibResp) getField(marcTag string) (VarFieldResp, bool) {
+func (bib BibResp) getFields(marcTag string) ([]VarFieldResp, bool) {
+	fields := []VarFieldResp{}
 	for _, field := range bib.VarFields {
 		if field.MarcTag == marcTag {
-			return field, true
+			fields = append(fields, field)
 		}
 	}
-	return VarFieldResp{}, false
+	return fields, len(fields) > 0
 }
 
 func (field VarFieldResp) getSubfieldsValues(subfields []string) []string {
@@ -117,6 +126,22 @@ func (field VarFieldResp) getSubfieldsValues(subfields []string) []string {
 		for _, fieldSub := range field.Subfields {
 			if fieldSub["tag"] == subfield {
 				values = append(values, fieldSub["content"])
+			}
+		}
+	}
+	return values
+}
+
+func (bib BibResp) OclcNum() []string {
+	// RegEx based on Traject's marc21.rb
+	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
+	re := regexp.MustCompile("\\s*(ocm|ocn|on|\\(OCoLC\\))(\\d+)")
+	values := []string{}
+	for _, value := range bib.MarcValues("001:035a:035z") {
+		num := strings.TrimSpace(re.ReplaceAllString(value, "$2"))
+		if num != "" {
+			if !in(values, num) {
+				values = append(values, num)
 			}
 		}
 	}
@@ -173,4 +198,13 @@ func trimPunct(str string) string {
 	cleanStr = re3.ReplaceAllString(cleanStr, "$1")
 
 	return cleanStr
+}
+
+func in(values []string, searchedFor string) bool {
+	for _, value := range values {
+		if value == searchedFor {
+			return true
+		}
+	}
+	return false
 }

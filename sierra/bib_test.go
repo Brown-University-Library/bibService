@@ -1,6 +1,7 @@
 package sierra
 
 import (
+	"regexp"
 	"testing"
 )
 
@@ -33,6 +34,9 @@ func TestFieldSpec(t *testing.T) {
 	}
 }
 
+//"Designing effective strategies for environmental education : ",
+//"an evaluation of the center for environmental studies' partnership with Providence public schools /",
+
 func TestTrimPunct(t *testing.T) {
 	if trimPunct("one hundred/ ") != "one hundred" {
 		t.Errorf("Failed to remove trailing slash")
@@ -57,4 +61,35 @@ func TestTrimPunct(t *testing.T) {
 	if trimPunct("[hello [world]]") != "[hello [world]]" {
 		t.Errorf("Removed square brackets")
 	}
+}
+
+func TestOclcNum(t *testing.T) {
+	re := regexp.MustCompile("\\s*(ocn|\\(OCoLC\\))(\\d+)")
+
+	test1 := "ocn987070476"
+	value1 := re.ReplaceAllString(test1, "$2")
+	if value1 != "987070476" {
+		t.Errorf("Failed to detect ocn prefix: %s", value1)
+	}
+
+	test2 := " (OCoLC)987070476"
+	value2 := re.ReplaceAllString(test2, "$2")
+	if value2 != "987070476" {
+		t.Errorf("Failed to detect (OCoLC) prefix: %s", value2)
+	}
+
+	test3 := ""
+	value3 := re.ReplaceAllString(test3, "$1")
+	t.Errorf("$1 (%v)", value3)
+
+	value3 = re.ReplaceAllString(test3, "$2")
+	t.Errorf("$2 (%v)", value3)
+
+	value3 = re.ReplaceAllString(test3, "$0")
+	t.Errorf("$0 (%v)", value3)
+
+	// if value3 != "xxx" {
+	// 	t.Errorf("Failed to proces empty string: (%v)", value3)
+	// }
+
 }

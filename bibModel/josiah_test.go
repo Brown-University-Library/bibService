@@ -20,7 +20,7 @@ func TestX(t *testing.T) {
 		t.Errorf("Error parsing JSON: %s", err)
 	}
 
-	_, err = NewJosiahSolr(bibs.Entries[0])
+	_, err = NewSolrDoc(bibs.Entries[0])
 	if err != nil {
 		t.Errorf("Error getting MARC data: %s", err)
 	}
