@@ -77,19 +77,4 @@ func TestOclcNum(t *testing.T) {
 	if value2 != "987070476" {
 		t.Errorf("Failed to detect (OCoLC) prefix: %s", value2)
 	}
-
-	test3 := ""
-	value3 := re.ReplaceAllString(test3, "$1")
-	t.Errorf("$1 (%v)", value3)
-
-	value3 = re.ReplaceAllString(test3, "$2")
-	t.Errorf("$2 (%v)", value3)
-
-	value3 = re.ReplaceAllString(test3, "$0")
-	t.Errorf("$0 (%v)", value3)
-
-	// if value3 != "xxx" {
-	// 	t.Errorf("Failed to proces empty string: (%v)", value3)
-	// }
-
 }

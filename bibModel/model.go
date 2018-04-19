@@ -4,6 +4,7 @@ import (
 	"bibService/sierra"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -78,7 +79,7 @@ func (model BibModel) GetBibsUpdated(fromDate, toDate string) (sierra.BibsResp, 
 		for _, entry := range page.Entries {
 			bibs.Entries = append(bibs.Entries, entry)
 		}
-		if page.Total <= pageSize {
+		if page.Total < pageSize {
 			break
 		}
 	}

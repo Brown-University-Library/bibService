@@ -10,14 +10,6 @@ type BibsResp struct {
 	Entries []BibResp `json:"entries"`
 }
 
-func (b BibsResp) BibsIdStr() string {
-	ids := []string{}
-	for _, bib := range b.Entries {
-		ids = append(ids, bib.Id)
-	}
-	return strings.Join(ids, ",")
-}
-
 type BibResp struct {
 	Id              string            `json:"id"`
 	UpdatedDateTime string            `json:"updatedDate,omitempty"`
@@ -41,11 +33,6 @@ type BibResp struct {
 	// Locations    []map[string]string `json:"locations"`
 }
 
-type FieldSpec struct {
-	MarcTag   string
-	Subfields []string
-}
-
 type VarFieldResp struct {
 	FieldTag  string              `json:"fieldTag"`
 	MarcTag   string              `json:"marcTag"`
@@ -53,6 +40,22 @@ type VarFieldResp struct {
 	Ind2      string              `json:"ind2"`
 	Subfields []map[string]string `json:"subfields"`
 	Content   string              `json:"content"`
+}
+
+func (b BibsResp) BibsIdStr() string {
+	ids := []string{}
+	for _, bib := range b.Entries {
+		ids = append(ids, bib.Id)
+	}
+	return strings.Join(ids, ",")
+}
+
+func (b BibsResp) BibsIdPages() [][]string {
+	ids := []string{}
+	for _, bib := range b.Entries {
+		ids = append(ids, bib.Id)
+	}
+	return arrayToPages(ids, 10)
 }
 
 // fieldSpec is something in the form "nnna" where "nnn" is the tag of the
@@ -240,65 +243,4 @@ func (bib BibResp) Subjects() []string {
 	spec += ":654abevyz:655abvxyz:656akvxyz:657avxyz"
 	spec += ":658ab:662abcdefgh:690abcdevxyz"
 	return bib.MarcValuesTrim(spec)
-}
-
-func NewFieldSpecs(spec string) []FieldSpec {
-	fieldSpecs := []FieldSpec{}
-	for _, token := range strings.Split(spec, ":") {
-		length := len(token)
-		if length < 3 {
-			// not a valid spec
-			continue
-		}
-
-		fieldSpec := FieldSpec{
-			MarcTag:   token[0:3],
-			Subfields: []string{},
-		}
-
-		if length > 3 {
-			// process the subfields in the spec
-			for _, c := range token[3:length] {
-				fieldSpec.Subfields = append(fieldSpec.Subfields, string(c))
-			}
-		}
-		fieldSpecs = append(fieldSpecs, fieldSpec)
-	}
-	return fieldSpecs
-}
-
-func trimPunct(str string) string {
-	if str == "" {
-		return str
-	}
-
-	// RegEx stolen from Traject's marc21.rb
-	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21.rb
-	//
-	// # trailing: comma, slash, semicolon, colon (possibly preceded and followed by whitespace)
-	// str = str.sub(/ *[ ,\/;:] *\Z/, '')
-	re1 := regexp.MustCompile(" *[ ,\\/;:] *$")
-	cleanStr := re1.ReplaceAllString(str, "")
-
-	// # trailing period if it is preceded by at least three letters (possibly preceded and followed by whitespace)
-	// str = str.sub(/( *\w\w\w)\. *\Z/, '\1')
-	re2 := regexp.MustCompile("( *\\w\\w\\w)\\. *$")
-	cleanStr = re2.ReplaceAllString(cleanStr, "$1")
-
-	// # single square bracket characters if they are the start
-	// # and/or end chars and there are no internal square brackets.
-	// str = str.sub(/\A\[?([^\[\]]+)\]?\Z/, '\1')
-	re3 := regexp.MustCompile("^\\[?([^\\[\\]]+)\\]?$")
-	cleanStr = re3.ReplaceAllString(cleanStr, "$1")
-
-	return cleanStr
-}
-
-func in(values []string, searchedFor string) bool {
-	for _, value := range values {
-		if value == searchedFor {
-			return true
-		}
-	}
-	return false
 }

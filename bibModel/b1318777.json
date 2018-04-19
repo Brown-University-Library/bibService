@@ -1,0 +1,318 @@
+{
+	"total": 1,
+	"entries": [
+		{
+			"id": "1318777",
+			"updatedDate": "2017-02-10T21:56:09Z",
+			"createdDate": "1994-05-20T13:59:15Z",
+			"lang": {
+				"code": "eng",
+				"name": "English"
+			},
+			"title": "One hundred years of solitude",
+			"author": "García Márquez, Gabriel, 1927-2014",
+			"materialType": {
+				"code": "a",
+				"value": "BOOK"
+			},
+			"bibLevel": {
+				"code": "m",
+				"value": "MONOGRAPH"
+			},
+			"publishYear": 1970,
+			"catalogDate": "1994-05-20",
+			"country": {
+				"code": "nyu",
+				"name": "New York"
+			},
+			"normTitle": "one hundred years of solitude",
+			"normAuthor": "garcía márquez gabriel 1927 2014",
+			"varFields": [
+				{
+					"fieldTag": "a",
+					"marcTag": "100",
+					"ind1": "1",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "García Márquez, Gabriel,",
+							"tag": "a"
+						},
+						{
+							"content": "1927-2014",
+							"tag": "d"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "b",
+					"marcTag": "700",
+					"ind1": "1",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "Rabassa, Gregory",
+							"tag": "a"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "g",
+					"marcTag": "035",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "RIBG85-B44893",
+							"tag": "a"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "i",
+					"marcTag": "020",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "038001503X (pbk.)",
+							"tag": "a"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "j",
+					"marcTag": "240",
+					"ind1": "1",
+					"ind2": "0",
+					"subfields": [
+						{
+							"content": "Cien años de soledad.",
+							"tag": "a"
+						},
+						{
+							"content": "English",
+							"tag": "l"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "m",
+					"marcTag": "005",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": null,
+					"content": "19851226000000.0"
+				},
+				{
+					"fieldTag": "m",
+					"marcTag": "040",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "CSt",
+							"tag": "a"
+						},
+						{
+							"content": "CSt",
+							"tag": "c"
+						},
+						{
+							"content": "RPB",
+							"tag": "d"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "m",
+					"marcTag": "041",
+					"ind1": "1",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "eng",
+							"tag": "a"
+						},
+						{
+							"content": "spa",
+							"tag": "h"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "m",
+					"marcTag": "910",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "Hathi Trust report SPM",
+							"tag": "a"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "n",
+					"marcTag": "500",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "\"A Bard book.\"",
+							"tag": "a"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "n",
+					"marcTag": "500",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "Translation of: Cien años de soledad",
+							"tag": "a"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "o",
+					"marcTag": "001",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": null,
+					"content": "ocm09448201"
+				},
+				{
+					"fieldTag": "p",
+					"marcTag": "260",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "New York :",
+							"tag": "a"
+						},
+						{
+							"content": "Avon,",
+							"tag": "b"
+						},
+						{
+							"content": "1971, c1970",
+							"tag": "c"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "r",
+					"marcTag": "300",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "383 p. ;",
+							"tag": "a"
+						},
+						{
+							"content": "18 cm",
+							"tag": "c"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "t",
+					"marcTag": "245",
+					"ind1": "1",
+					"ind2": "0",
+					"subfields": [
+						{
+							"content": "One hundred years of solitude /",
+							"tag": "a"
+						},
+						{
+							"content": "Gabriel Garcia Marquez ; translated from the Spanish by Gregory Rabassa",
+							"tag": "c"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "y",
+					"marcTag": "008",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": null,
+					"content": "851223c19711970nyu           000 1 eng dnamIa "
+				},
+				{
+					"fieldTag": "y",
+					"marcTag": "940",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "r0001",
+							"tag": "l"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "y",
+					"marcTag": "995",
+					"ind1": " ",
+					"ind2": " ",
+					"subfields": [
+						{
+							"content": "/lad",
+							"tag": "a"
+						}
+					],
+					"content": ""
+				},
+				{
+					"fieldTag": "_",
+					"marcTag": "",
+					"ind1": "",
+					"ind2": "",
+					"subfields": null,
+					"content": "00000nam  2200061Ia 4500"
+				}
+			],
+			"Items": [
+				{
+					"id": "10347803",
+					"updatedDate": "2018-03-29T04:00:19Z",
+					"createdDate": "1994-05-20T13:59:00Z",
+					"deleted": false,
+					"bibIds": [
+						"1318777"
+					],
+					"location": {
+						"code": "rock",
+						"name": "ROCK"
+					},
+					"status": {
+						"code": "-",
+						"display": "AVAILABLE",
+						"duedate": "2018-05-24T08:00:00Z"
+					},
+					"barcode": "3 1236 00695 5580"
+				}
+			]
+		}
+	]
+}

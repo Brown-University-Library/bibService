@@ -92,20 +92,41 @@ func (s *Sierra) Get(params map[string]string) (BibsResp, error) {
 		return BibsResp{}, err
 	}
 
-	// fetch the items (for all the bibs at once)
-	bibIdsStr := bibs.BibsIdStr()
-	if bibIdsStr != "" {
-		items, err := s.Items(bibIdsStr)
+	for i, bib := range bibs.Entries {
+		items, err := s.Items(bib.Id)
 		if err != nil {
-			return BibsResp{}, err
+			// TODO: make sure we only ignore errors for deleted records
+			errorMsg := fmt.Sprintf("Error fetching items for %s", bib.Id)
+			s.log(errorMsg, err.Error())
 		}
-
-		for i, bib := range bibs.Entries {
-			bibItems := items.ForBib(bib.Id)
-			log.Printf("Set %d items to bib %s", len(bibItems), bib.Id)
-			bibs.Entries[i].Items = bibItems
-		}
+		bibItems := items.ForBib(bib.Id)
+		bibs.Entries[i].Items = bibItems
 	}
+
+	// This approach unfortunately does not work when there are BIBs
+	// in the result for records that have been deleted. It is possible
+	// that a record was indeed updated in the indicatd time frame but
+	// was deleted later on. In that case fetching a batch of BIBs that
+	// include the deleted one will fail with no indication of which BIB
+	// was the culprit.
+	//
+	// 		A possible workaround would be to get the list of deleted BIBs
+	// 		in the same time frame and exclude those from the list.
+	//
+	// // fetch the items (fetch items for many bibs at once)
+	// for _, page := range bibs.BibsIdPages() {
+	// 	bibIdsStr := strings.Join(page, ",")
+	// 	items, err := s.Items(bibIdsStr)
+	// 	if err != nil {
+	// 		return BibsResp{}, err
+	// 	}
+	// 	for i, bib := range page {
+	// 		bibItems := items.ForBib(bib)
+	// 		log.Printf("Set %d items to bib %s", len(bibItems), bib)
+	// 		bibs.Entries[i].Items = bibItems
+	// 	}
+	// }
+
 	return bibs, err
 }
 
@@ -297,6 +318,7 @@ func (s Sierra) httpGet(url, accessToken string) (string, error) {
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		body, _ := ioutil.ReadAll(resp.Body)
+		// s.log("HTTP ERROR", string(body))
 		err := errors.New(fmt.Sprintf("Status code %d", resp.StatusCode))
 		return string(body), err
 	}
