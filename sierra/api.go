@@ -293,10 +293,15 @@ func (s Sierra) httpGet(url, accessToken string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err := errors.New(fmt.Sprintf("Status code %d", resp.StatusCode))
+		return string(body), err
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
-	// s.log("body", string(body))
 	return string(body), err
 }
 

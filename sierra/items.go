@@ -45,6 +45,11 @@ func (i ItemResp) LocationName() string {
 	return i.Location["name"]
 }
 
+func (i ItemResp) BuildingName() string {
+	// TODO: Translate this to a full building name (e.g. SCI to Sciences)
+	return i.LocationName()
+}
+
 func (i ItemResp) StatusDisplay() string {
 	dueDate := i.Status["duedate"]
 	if dueDate != "" {
