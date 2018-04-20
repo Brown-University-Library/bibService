@@ -18,8 +18,8 @@ type SolrDoc struct {
 	UniformTitlesDisplay         []string `json:"uniform_titles_display"`
 	NewUniformTitleAuthorDisplay []string `json:"new_uniform_title_author_display"`
 	UniformRelatedWorksDisplay   []string `json:"uniform_related_works_display"`
-	AuthorDisplay                string   `json:"author_display"`
-	AuthorVernDisplay            string   `json:"author_vern_display"`
+	AuthorDisplay                []string `json:"author_display"`
+	AuthorVernDisplay            []string `json:"author_vern_display"`
 	AuthorAddlDisplay            []string `json:"author_addl_display"`
 	AuthorT                      []string `json:"author_t"`
 	AuthorAddlT                  []string `json:"author_addl_t"`
@@ -29,20 +29,20 @@ type SolrDoc struct {
 	// y                            []string `json:"abstract_display"`
 	// y                            []string `json:"toc_display"`
 	// y                            []string `json:"toc_970_display"`
-	PublicationYear []int `json:"pub_date"`
-	// y                            []string `json:"url_fulltext_display"`
-	// y                            []string `json:"url_suppl_display"`
-	Online        []bool   `json:"online_b"`
-	AccessFacet   []string `json:"access_facet"`
-	Format        []string `json:"format"`
-	AuthorFacet   []string `json:"author_facet"`
-	LanguageFacet []string `json:"language_facet"`
-	BuildingFacet []string `json:"building_facet"`
-	LocationCodeT []string `json:"location_code_t"`
-	// y                            []string `json:"region_facet"`
-	TopicFacet  []string `json:"topic_facet"`
-	SubjectsT   []string `json:"subject_t"`
-	CallNumbers []string `json:"callnumber_t"`
+	PublicationYear    []int    `json:"pub_date"`
+	UrlFullTextDisplay []string `json:"url_fulltext_display"`
+	UrlSupplDisplay    []string `json:"url_suppl_display"`
+	Online             []bool   `json:"online_b"`
+	AccessFacet        []string `json:"access_facet"`
+	Format             []string `json:"format"`
+	AuthorFacet        []string `json:"author_facet"`
+	LanguageFacet      []string `json:"language_facet"`
+	BuildingFacet      []string `json:"building_facet"`
+	LocationCodeT      []string `json:"location_code_t"`
+	RegionFacet        []string `json:"region_facet"`
+	TopicFacet         []string `json:"topic_facet"`
+	SubjectsT          []string `json:"subject_t"`
+	CallNumbers        []string `json:"callnumber_t"`
 	// y                            []string `json:"text"`
 	// y                            []string `json:"marc_display"`
 	// y                            []string `json:"bookplate_code_facet"`
@@ -76,19 +76,19 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 
 	titleSpec := "100tflnp:110tflnp:111tfklpsv:130adfklmnoprst:210ab:222ab:"
 	titleSpec += "240adfklmnoprs:242abnp:246abnp:247abnp:505t:"
-	titleSpec += "700fklmnoprstv:710fklmorstv:711fklpt:730adfklmnoprstv:740ap"
+	titleSpec += "700fklmtnoprsv:710fklmorstv:711fklpt:730adfklmnoprstv:740ap"
 	doc.TitleT = bib.MarcValues(titleSpec)
 	doc.TitleDisplay = []string{bib.MarcValueTrim("245apbfgkn")}
 	doc.TitleVernDisplay = bib.MarcValue("245abfgknp")
 	doc.TitleSeriesT = []string{}
 
 	seriesSpec := "400flnptv:410flnptv:411fklnptv:440ap:490a:800abcdflnpqt:810tflnp:811tfklpsv:830adfklmnoprstv"
-	doc.TitleSeriesT = bib.MarcValues(seriesSpec)
+	doc.TitleSeriesT = bib.MarcValuesTrim(seriesSpec)
 	doc.TitleSort = []string{bib.SortableTitle()}
 	// doc.UniformTitlesDisplay = ""
 	// doc.NewUniformTitleAuthorDisplay = ""
 	// doc.UniformRelatedWorksDisplay = ""
-	doc.AuthorDisplay = bib.MarcValueTrim("100abcdq:110abcd:111abcd")
+	doc.AuthorDisplay = []string{bib.MarcValueTrim("100abcdq:110abcd:111abcd")}
 	doc.AuthorVernDisplay = doc.AuthorDisplay // TODO: account for alternate_script
 	doc.AuthorFacet = bib.AuthorFacet()
 	doc.AuthorAddlDisplay = bib.MarcValuesTrim("700abcd:710ab:711ab")
@@ -105,5 +105,9 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 	doc.TopicFacet = bib.MarcValuesTrim("650a:690a")
 	doc.SubjectsT = bib.Subjects()
 	doc.CallNumbers = bib.CallNumbers()
+	doc.RegionFacet = bib.RegionFacet()
+
+	doc.UrlFullTextDisplay = bib.MarcValues("856u")
+	doc.UrlSupplDisplay = bib.MarcValues("856z")
 	return doc, nil
 }

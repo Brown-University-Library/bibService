@@ -80,8 +80,6 @@ func (bib BibResp) MarcValues(fieldSpec string) []string {
 			continue
 		}
 
-		// isTitle := strings.HasPrefix(fieldSpec, "100tf")
-
 		for _, field := range fields {
 			subValues := field.getSubfieldsValues(spec.Subfields)
 			if len(spec.Subfields) == 1 {
@@ -211,7 +209,7 @@ func (bib BibResp) OclcNum() []string {
 			// eg. b4643178, b4643180
 		} else {
 			num := strings.TrimSpace(re.ReplaceAllString(value, "$2"))
-			if num != "" {
+			if num != "" && !in(values, num) {
 				values = append(values, num)
 			}
 		}
@@ -267,7 +265,7 @@ func (bib BibResp) Languages() []string {
 
 	values := []string{}
 	for _, code := range codes {
-		name := languages[code]
+		name := languageName(code)
 		if name != "" {
 			values = append(values, name)
 		}
@@ -275,10 +273,58 @@ func (bib BibResp) Languages() []string {
 	return values
 }
 
+func (bib BibResp) RegionFacet() []string {
+	// a_fields_spec = options[:geo_a_fields] || "651a:691a"
+	// z_fields_spec = options[:geo_z_fields] || "600:610:611:630:648:650:654:655:656:690:651:691"
+	//
+	// extractor_043a      = MarcExtractor.new("043a", :separator => nil)
+	// extractor_a_fields  = MarcExtractor.new(a_fields_spec, :separator => nil)
+	// extractor_z_fields  = MarcExtractor.new(z_fields_spec)
+
+	values := []string{}
+	for _, value := range bib.MarcValues("043a") {
+		code := trimPunct(value)
+		code = strings.TrimRight(code, "-")
+		name := regionName(code)
+		// if name == "" {
+		// 	name = code
+		// }
+		if name != "" && !in(values, name) {
+			values = append(values, name)
+		}
+	}
+
+	aFieldSpec := "651a:691a"
+	for _, value := range bib.MarcValues(aFieldSpec) {
+		trimVal := trimPunct(value)
+		if !in(values, trimVal) {
+			values = append(values, trimVal)
+		}
+	}
+
+	zFieldSpec := "600z:610z:611z:630z:648z:650z:654z:655z:656z:690z:651z:691z"
+	for _, value := range bib.MarcValues(zFieldSpec) {
+		trimVal := trimPunct(value)
+		if !in(values, trimVal) {
+			values = append(values, trimVal)
+		}
+	}
+
+	return values
+}
+
 func (bib BibResp) AuthorFacet() []string {
-	// TODO: add logic for field "710" indicator 2 "9"
-	// Make sure we remove "." authors
-	values := bib.MarcValuesTrim("100abcd:110ab:111ab:700abcd:710ab:711ab")
+	fieldSpec := "100abcd:110ab:111ab:700abcd:711ab"
+
+	if f710, found := bib.getFields("710"); found {
+		// If there is more than one 710 field this will only check the first one.
+		// TODO: handle multi 710 fields
+		if f710[0].Ind2 != "9" {
+			fieldSpec += "710ab"
+		}
+	}
+
+	values := bib.MarcValuesTrim(fieldSpec)
 	return values
 }
 

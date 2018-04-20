@@ -492,3 +492,7 @@ func init() {
 		"zun": "Zuni",
 	}
 }
+
+func languageName(code string) string {
+	return languages[code]
+}
