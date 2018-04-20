@@ -49,6 +49,12 @@ func in(values []string, searchedFor string) bool {
 	return false
 }
 
+func safeAppend(values *[]string, value string) {
+	if !in(*values, value) {
+		*values = append(*values, value)
+	}
+}
+
 func trimPunct(str string) string {
 	if str == "" {
 		return str

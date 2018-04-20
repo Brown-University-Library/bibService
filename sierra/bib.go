@@ -1,7 +1,6 @@
 package sierra
 
 import (
-	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -278,14 +277,6 @@ func (bib BibResp) Languages() []string {
 func (bib BibResp) RegionFacet() []string {
 	// Stolen from Traject's marc_geo_facet
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
-	//
-	// a_fields_spec = options[:geo_a_fields] || "651a:691a"
-	// z_fields_spec = options[:geo_z_fields] || "600:610:611:630:648:650:654:655:656:690:651:691"
-	//
-	// extractor_043a      = MarcExtractor.new("043a", :separator => nil)
-	// extractor_a_fields  = MarcExtractor.new(a_fields_spec, :separator => nil)
-	// extractor_z_fields  = MarcExtractor.new(z_fields_spec)
-
 	values := []string{}
 	for _, value := range bib.MarcValues("043a") {
 		code := trimPunct(value)
@@ -304,33 +295,53 @@ func (bib BibResp) RegionFacet() []string {
 		}
 	}
 
-	// TODO: I need to get the values of each 650 separately
-	// so that I can see if there are two of them per instance
-	// and be able to concatenate them
+	for _, zvalue := range bib.RegionFacetZFields() {
+		if !in(values, zvalue) {
+			values = append(values, zvalue)
+		}
+	}
+	return values
+}
+
+func (bib BibResp) RegionFacetZFields() []string {
+	values := []string{}
+
 	zFieldSpecs := []string{
 		"600z", "610z", "611z", "630z", "648z", "650z",
 		"654z", "655z", "656z", "690z", "651z", "691z",
 	}
+
+	// Notice that we don't use bib.MarcValues() here because
+	// bib.MarcValues() returns the data without a relationship
+	// to the field where each value was found. In this case
+	// we care about what values are found on each instance of
+	// the field so that we can concatenate "region (parent region)"
+	// values if they are found in a specific field.
 	for _, zFieldSpec := range zFieldSpecs {
-		zValues := bib.MarcValues(zFieldSpec)
-		log.Printf("%s => %#v", zFieldSpec, zValues)
-		if len(zValues) == 2 {
-			v0 := trimPunct(zValues[0])
-			v1 := trimPunct(zValues[1]) + " (" + v0 + ")"
-			if !in(values, v0) {
-				values = append(values, v0)
-			}
-			if !in(values, v1) {
-				values = append(values, v1)
-			}
-		} else {
-			for _, value := range zValues {
-				trimVal := trimPunct(value)
-				if !in(values, trimVal) {
-					values = append(values, trimVal)
+		spec, _ := NewFieldSpec(zFieldSpec)
+		fields, _ := bib.getFields(spec.MarcTag)
+		for _, field := range fields {
+			subValues := field.getSubfieldsValues(spec.Subfields)
+			if len(subValues) == 2 {
+				// Asumme the first one is the parent region of the second one
+				// e.g. v0 := "USA", v1 := "Rhode Island (USA)"
+				parentRegion := trimPunct(subValues[0])
+				region := trimPunct(subValues[1]) + " (" + parentRegion + ")"
+				if !in(values, parentRegion) {
+					values = append(values, parentRegion)
+				}
+				if !in(values, region) {
+					values = append(values, region)
+				}
+			} else {
+				for _, subValue := range subValues {
+					if !in(values, subValue) {
+						values = append(values, subValue)
+					}
 				}
 			}
 		}
+
 	}
 	return values
 }

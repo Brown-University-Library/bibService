@@ -73,7 +73,9 @@ func TestLanguage(t *testing.T) {
 	fieldData := []VarFieldResp{field}
 	bib := BibResp{VarFields: fieldData}
 	values := bib.Languages()
-	t.Errorf("the BIB: %#v", values)
+	if !in(values, "English") || !in(values, "Spanish") || !in(values, "French") {
+		t.Errorf("Expected languages not found: %#v", values)
+	}
 }
 
 func TestGetSubfieldValues(t *testing.T) {
@@ -108,5 +110,33 @@ func TestOclcNum(t *testing.T) {
 	value2 := re.ReplaceAllString(test2, "$2")
 	if value2 != "987070476" {
 		t.Errorf("Failed to detect (OCoLC) prefix: %s", value2)
+	}
+}
+
+func TestRegionFacetWithParent(t *testing.T) {
+	z1 := map[string]string{"content": "usa", "tag": "z"}
+	z2 := map[string]string{"content": "ri", "tag": "z"}
+
+	field := VarFieldResp{MarcTag: "650"}
+	field.Subfields = []map[string]string{z1, z2}
+	fieldData := []VarFieldResp{field}
+	bib := BibResp{VarFields: fieldData}
+	facets := bib.RegionFacet()
+	if !in(facets, "usa") || !in(facets, "ri (usa)") {
+		t.Errorf("Failed to detect parent region: %#v", facets)
+	}
+}
+
+func TestRegionFacet(t *testing.T) {
+	z1 := map[string]string{"content": "usa", "tag": "z"}
+	z2 := map[string]string{"content": "ri", "tag": "z"}
+	z3 := map[string]string{"content": "zz", "tag": "z"}
+	field := VarFieldResp{MarcTag: "650"}
+	field.Subfields = []map[string]string{z1, z2, z3}
+	fieldData := []VarFieldResp{field}
+	bib := BibResp{VarFields: fieldData}
+	facets := bib.RegionFacet()
+	if !in(facets, "usa") || !in(facets, "ri") || !in(facets, "zz") {
+		t.Errorf("Incorrectly handled regions: %#v", facets)
 	}
 }
