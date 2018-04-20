@@ -63,6 +63,38 @@ func TestTrimPunct(t *testing.T) {
 	}
 }
 
+func TestLanguage(t *testing.T) {
+	lang1 := map[string]string{"content": "eng", "tag": "a"}
+	lang2 := map[string]string{"content": "fre", "tag": "a"}
+	lang3 := map[string]string{"content": "spa", "tag": "a"}
+
+	field := VarFieldResp{MarcTag: "041"}
+	field.Subfields = []map[string]string{lang1, lang2, lang3}
+	fieldData := []VarFieldResp{field}
+	bib := BibResp{VarFields: fieldData}
+	values := bib.Languages()
+	t.Errorf("the BIB: %#v", values)
+}
+
+func TestGetSubfieldValues(t *testing.T) {
+	lang1 := map[string]string{"content": "eng", "tag": "a"}
+	lang2 := map[string]string{"content": "fre", "tag": "a"}
+	lang3 := map[string]string{"content": "spa", "tag": "a"}
+
+	field := VarFieldResp{MarcTag: "041"}
+	field.Subfields = []map[string]string{lang1, lang2, lang3}
+
+	subfields := []string{"a"}
+	values := field.getSubfieldsValues(subfields)
+	if len(values) != 3 {
+		t.Errorf("Incorrect number of values found: %#v", values)
+	}
+
+	if !in(values, "eng") || !in(values, "fre") || !in(values, "spa") {
+		t.Errorf("Expected value not found: %#v", values)
+	}
+}
+
 func TestOclcNum(t *testing.T) {
 	re := regexp.MustCompile("\\s*(ocn|\\(OCoLC\\))(\\d+)")
 

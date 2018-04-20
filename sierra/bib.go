@@ -80,16 +80,23 @@ func (bib BibResp) MarcValues(fieldSpec string) []string {
 			continue
 		}
 
+		// isTitle := strings.HasPrefix(fieldSpec, "100tf")
+
 		for _, field := range fields {
 			subValues := field.getSubfieldsValues(spec.Subfields)
-			if len(subValues) > 0 {
-				// for _, subValue := range subValues {
-				// 	if !in(values, subValue) {
-				// 		values = append(values, subValue)
-				// 	}
-				// }
+			if len(spec.Subfields) == 1 {
+				// single subfields specified (060a)
+				// append each individual value
+				for _, subValue := range subValues {
+					if !in(values, subValue) {
+						values = append(values, subValue)
+					}
+				}
+			} else {
+				// multi-subfields specified (e.g. 060abc)
+				// concatenate the values and then append them
 				strVal := strings.Join(subValues, " ")
-				if !in(values, strVal) {
+				if strVal != "" && !in(values, strVal) {
 					values = append(values, strVal)
 				}
 			}
@@ -139,7 +146,7 @@ func (field VarFieldResp) getSubfieldsValues(subfields []string) []string {
 	values := []string{}
 	for _, subfield := range subfields {
 		for _, fieldSub := range field.Subfields {
-			if fieldSub["tag"] == subfield {
+			if fieldSub["tag"] == subfield && fieldSub["content"] != "" {
 				values = append(values, fieldSub["content"])
 			}
 		}
@@ -239,9 +246,33 @@ func (bib BibResp) Format() string {
 	return bib.MaterialType["value"]
 }
 
-func (bib BibResp) LanguageName() string {
-	// TODO: Do we need the Traject logic for this or is this value enough?
-	return bib.Lang["name"]
+func (bib BibResp) Languages() []string {
+	codes := []string{}
+
+	// 008[35-37]:041a:041d:041e:041j
+	f008 := bib.MarcValue("008")
+	f008_lang := ""
+	if len(f008) > 38 {
+		f008_lang = f008[35:38]
+		if f008_lang != "" {
+			codes = append(codes, f008_lang)
+		}
+	}
+
+	for _, value := range bib.MarcValues("041a:041d:041e:041j") {
+		if value != f008_lang {
+			codes = append(codes, value)
+		}
+	}
+
+	values := []string{}
+	for _, code := range codes {
+		name := languages[code]
+		if name != "" {
+			values = append(values, name)
+		}
+	}
+	return values
 }
 
 func (bib BibResp) AuthorFacet() []string {
@@ -274,14 +305,24 @@ func (bib BibResp) BuildingFacets() []string {
 }
 
 func (bib BibResp) SortableTitle() string {
-	// TODO do we need the field k and indicator 2 logic?
-	// as in get_sortable_title() in
+	// Logic stolen from
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
-	values := bib.MarcValuesTrim("245ab")
-	if len(values) == 0 {
+	// TODO do we need the field k logic here?
+	titles := bib.MarcValues("245ab")
+	if len(titles) == 0 {
 		return ""
 	}
-	return values[0]
+
+	sortTitle := titles[0]
+	fields, found := bib.getFields("245")
+	if found {
+		ind2 := toInt(fields[0].Ind2)
+		if ind2 > 0 && len(sortTitle) > ind2 {
+			// drop the prefix as notes in the second indicator
+			sortTitle = sortTitle[ind2:len(sortTitle)]
+		}
+	}
+	return trimPunct(sortTitle)
 }
 
 func (bib BibResp) CallNumbers() []string {

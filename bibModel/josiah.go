@@ -66,7 +66,7 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 	}
 
 	doc.Format = []string{bib.Format()}
-	doc.LanguageFacet = []string{bib.LanguageName()}
+	doc.LanguageFacet = bib.Languages()
 
 	if year, ok := bib.PublicationYear(); ok {
 		doc.PublicationYear = []int{year}
