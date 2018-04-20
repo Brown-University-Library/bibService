@@ -50,7 +50,7 @@ func in(values []string, searchedFor string) bool {
 }
 
 func safeAppend(values *[]string, value string) {
-	if !in(*values, value) {
+	if value != "" && !in(*values, value) {
 		*values = append(*values, value)
 	}
 }

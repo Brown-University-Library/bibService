@@ -86,17 +86,13 @@ func (bib BibResp) MarcValues(fieldSpec string) []string {
 				// single subfields specified (060a)
 				// append each individual value
 				for _, subValue := range subValues {
-					if !in(values, subValue) {
-						values = append(values, subValue)
-					}
+					safeAppend(&values, subValue)
 				}
 			} else {
 				// multi-subfields specified (e.g. 060abc)
 				// concatenate the values and then append them
 				strVal := strings.Join(subValues, " ")
-				if strVal != "" && !in(values, strVal) {
-					values = append(values, strVal)
-				}
+				safeAppend(&values, strVal)
 			}
 		}
 	}
@@ -107,9 +103,7 @@ func (bib BibResp) MarcValuesTrim(fieldSpec string) []string {
 	values := []string{}
 	for _, value := range bib.MarcValues(fieldSpec) {
 		trimValue := trimPunct(value)
-		if !in(values, trimValue) {
-			values = append(values, trimValue)
-		}
+		safeAppend(&values, trimValue)
 	}
 	return values
 }
@@ -210,9 +204,7 @@ func (bib BibResp) OclcNum() []string {
 			// eg. b4643178, b4643180
 		} else {
 			num := strings.TrimSpace(re.ReplaceAllString(value, "$2"))
-			if num != "" && !in(values, num) {
-				values = append(values, num)
-			}
+			safeAppend(&values, num)
 		}
 	}
 	return values
@@ -282,23 +274,17 @@ func (bib BibResp) RegionFacet() []string {
 		code := trimPunct(value)
 		code = strings.TrimRight(code, "-")
 		name := regionName(code)
-		if name != "" && !in(values, name) {
-			values = append(values, name)
-		}
+		safeAppend(&values, name)
 	}
 
 	aFieldSpec := "651a:691a"
 	for _, value := range bib.MarcValues(aFieldSpec) {
 		trimVal := trimPunct(value)
-		if !in(values, trimVal) {
-			values = append(values, trimVal)
-		}
+		safeAppend(&values, trimVal)
 	}
 
 	for _, zvalue := range bib.RegionFacetZFields() {
-		if !in(values, zvalue) {
-			values = append(values, zvalue)
-		}
+		safeAppend(&values, zvalue)
 	}
 	return values
 }
@@ -327,17 +313,11 @@ func (bib BibResp) RegionFacetZFields() []string {
 				// e.g. v0 := "USA", v1 := "Rhode Island (USA)"
 				parentRegion := trimPunct(subValues[0])
 				region := trimPunct(subValues[1]) + " (" + parentRegion + ")"
-				if !in(values, parentRegion) {
-					values = append(values, parentRegion)
-				}
-				if !in(values, region) {
-					values = append(values, region)
-				}
+				safeAppend(&values, parentRegion)
+				safeAppend(&values, region)
 			} else {
 				for _, subValue := range subValues {
-					if !in(values, subValue) {
-						values = append(values, subValue)
-					}
+					safeAppend(&values, subValue)
 				}
 			}
 		}
@@ -365,9 +345,7 @@ func (bib BibResp) LocationCodes() []string {
 	values := []string{}
 	for _, item := range bib.Items {
 		code := item.Location["code"]
-		if !in(values, code) {
-			values = append(values, code)
-		}
+		safeAppend(&values, code)
 	}
 	return values
 }
@@ -376,9 +354,7 @@ func (bib BibResp) BuildingFacets() []string {
 	values := []string{}
 	for _, item := range bib.Items {
 		name := item.BuildingName()
-		if !in(values, name) {
-			values = append(values, name)
-		}
+		safeAppend(&values, name)
 	}
 	return values
 }
