@@ -1,6 +1,7 @@
 package sierra
 
 import (
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -142,9 +143,12 @@ func (bib BibResp) getFields(marcTag string) ([]VarFieldResp, bool) {
 
 func (field VarFieldResp) getSubfieldsValues(subfields []string) []string {
 	values := []string{}
-	for _, subfield := range subfields {
-		for _, fieldSub := range field.Subfields {
-			if fieldSub["tag"] == subfield && fieldSub["content"] != "" {
+	// We walk through the subfields in the Field because it is important
+	// to preserve the order of the values returned according to the order
+	// in which they are listed on the data, not on the spec.
+	for _, fieldSub := range field.Subfields {
+		for _, specSub := range subfields {
+			if fieldSub["tag"] == specSub && fieldSub["content"] != "" {
 				values = append(values, fieldSub["content"])
 			}
 		}
@@ -152,8 +156,6 @@ func (field VarFieldResp) getSubfieldsValues(subfields []string) []string {
 	return values
 }
 
-// TODO: change MarcValues to omit empty and duplicate values
-// since we do that all over the place
 func (bib BibResp) Isbn() []string {
 	values := []string{}
 	for _, value := range bib.MarcValues("020a:020z") {
@@ -274,6 +276,9 @@ func (bib BibResp) Languages() []string {
 }
 
 func (bib BibResp) RegionFacet() []string {
+	// Stolen from Traject's marc_geo_facet
+	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
+	//
 	// a_fields_spec = options[:geo_a_fields] || "651a:691a"
 	// z_fields_spec = options[:geo_z_fields] || "600:610:611:630:648:650:654:655:656:690:651:691"
 	//
@@ -286,9 +291,6 @@ func (bib BibResp) RegionFacet() []string {
 		code := trimPunct(value)
 		code = strings.TrimRight(code, "-")
 		name := regionName(code)
-		// if name == "" {
-		// 	name = code
-		// }
 		if name != "" && !in(values, name) {
 			values = append(values, name)
 		}
@@ -302,14 +304,34 @@ func (bib BibResp) RegionFacet() []string {
 		}
 	}
 
-	zFieldSpec := "600z:610z:611z:630z:648z:650z:654z:655z:656z:690z:651z:691z"
-	for _, value := range bib.MarcValues(zFieldSpec) {
-		trimVal := trimPunct(value)
-		if !in(values, trimVal) {
-			values = append(values, trimVal)
+	// TODO: I need to get the values of each 650 separately
+	// so that I can see if there are two of them per instance
+	// and be able to concatenate them
+	zFieldSpecs := []string{
+		"600z", "610z", "611z", "630z", "648z", "650z",
+		"654z", "655z", "656z", "690z", "651z", "691z",
+	}
+	for _, zFieldSpec := range zFieldSpecs {
+		zValues := bib.MarcValues(zFieldSpec)
+		log.Printf("%s => %#v", zFieldSpec, zValues)
+		if len(zValues) == 2 {
+			v0 := trimPunct(zValues[0])
+			v1 := trimPunct(zValues[1]) + " (" + v0 + ")"
+			if !in(values, v0) {
+				values = append(values, v0)
+			}
+			if !in(values, v1) {
+				values = append(values, v1)
+			}
+		} else {
+			for _, value := range zValues {
+				trimVal := trimPunct(value)
+				if !in(values, trimVal) {
+					values = append(values, trimVal)
+				}
+			}
 		}
 	}
-
 	return values
 }
 
@@ -320,7 +342,7 @@ func (bib BibResp) AuthorFacet() []string {
 		// If there is more than one 710 field this will only check the first one.
 		// TODO: handle multi 710 fields
 		if f710[0].Ind2 != "9" {
-			fieldSpec += "710ab"
+			fieldSpec += ":710ab"
 		}
 	}
 
