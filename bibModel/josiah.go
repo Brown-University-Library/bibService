@@ -53,8 +53,8 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 	doc := SolrDoc{}
 	doc.Id = []string{"b" + bib.Id}
 	doc.UpdatedDt = []string{bib.UpdatedDate() + "T00:00:00Z"}
-	doc.IsbnT = bib.MarcValues("020a:020z")
-	doc.IssnT = bib.MarcValues("022a:022l:022y:773x:774x:776x")
+	doc.IsbnT = bib.Isbn()
+	doc.IssnT = bib.Issn()
 	doc.OclcT = bib.OclcNum()
 
 	online := bib.IsOnline()
@@ -67,12 +67,18 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 
 	doc.Format = []string{bib.Format()}
 	doc.LanguageFacet = []string{bib.LanguageName()}
-	doc.PublicationYear = []int{bib.PublishYear}
+
+	if year, ok := bib.PublicationYear(); ok {
+		doc.PublicationYear = []int{year}
+	} else {
+		doc.PublicationYear = []int{}
+	}
+
 	titleSpec := "100tflnp:110tflnp:111tfklpsv:130adfklmnoprst:210ab:222ab:"
 	titleSpec += "240adfklmnoprs:242abnp:246abnp:247abnp:505t:"
 	titleSpec += "700fklmnoprstv:710fklmorstv:711fklpt:730adfklmnoprstv:740ap"
 	doc.TitleT = bib.MarcValues(titleSpec)
-	doc.TitleDisplay = []string{bib.MarcValueTrim("245abfgknp")}
+	doc.TitleDisplay = []string{bib.MarcValueTrim("245apbfgkn")}
 	doc.TitleVernDisplay = bib.MarcValue("245abfgknp")
 	doc.TitleSeriesT = []string{}
 
@@ -89,6 +95,8 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 	doc.AuthorT = bib.MarcValuesTrim("100abcdq:110abcd:111abcdeq")
 	doc.AuthorAddlT = bib.MarcValues("700aqbcd:710abcd:711aqbcde:810abc:811aqdce")
 
+	// TODO: check this record b4642997
+	// It has two subfield "a" values.
 	doc.PublishedDisplay = bib.MarcValuesTrim("260a")
 	doc.PublishedVernDisplay = bib.MarcValuesTrim("260a") // TODO: account for alternate script
 	doc.PhysicalDisplay = []string{bib.MarcValue("300abcefg:530abcd")}

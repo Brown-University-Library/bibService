@@ -4,6 +4,7 @@ import (
 	"log"
 	"math"
 	"regexp"
+	"strconv"
 )
 
 func arrayToPages(values []string, pageSize int) [][]string {
@@ -24,6 +25,19 @@ func arrayToPages(values []string, pageSize int) [][]string {
 		pages = append(pages, page)
 	}
 	return pages
+}
+
+func toIntTry(str string) (int, bool) {
+	num, err := strconv.ParseInt(str, 10, 64)
+	return int(num), err == nil
+}
+
+func toInt(str string) int {
+	num, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return int(num)
 }
 
 func in(values []string, searchedFor string) bool {

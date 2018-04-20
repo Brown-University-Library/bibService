@@ -4,7 +4,6 @@ import (
 	"bibService/sierra"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 )

@@ -3,6 +3,7 @@ package sierra
 import (
 	"regexp"
 	"strings"
+	"time"
 )
 
 type BibsResp struct {
@@ -82,7 +83,15 @@ func (bib BibResp) MarcValues(fieldSpec string) []string {
 		for _, field := range fields {
 			subValues := field.getSubfieldsValues(spec.Subfields)
 			if len(subValues) > 0 {
-				values = append(values, strings.Join(subValues, " "))
+				// for _, subValue := range subValues {
+				// 	if !in(values, subValue) {
+				// 		values = append(values, subValue)
+				// 	}
+				// }
+				strVal := strings.Join(subValues, " ")
+				if !in(values, strVal) {
+					values = append(values, strVal)
+				}
 			}
 		}
 	}
@@ -92,7 +101,10 @@ func (bib BibResp) MarcValues(fieldSpec string) []string {
 func (bib BibResp) MarcValuesTrim(fieldSpec string) []string {
 	values := []string{}
 	for _, value := range bib.MarcValues(fieldSpec) {
-		values = append(values, trimPunct(value))
+		trimValue := trimPunct(value)
+		if !in(values, trimValue) {
+			values = append(values, trimValue)
+		}
 	}
 	return values
 }
@@ -135,15 +147,64 @@ func (field VarFieldResp) getSubfieldsValues(subfields []string) []string {
 	return values
 }
 
+// TODO: change MarcValues to omit empty and duplicate values
+// since we do that all over the place
+func (bib BibResp) Isbn() []string {
+	values := []string{}
+	for _, value := range bib.MarcValues("020a:020z") {
+		if value != "" {
+			values = append(values, value)
+		}
+	}
+	return values
+}
+
+func (bib BibResp) Issn() []string {
+	values := []string{}
+	for _, value := range bib.MarcValues("022a:022l:022y:773x:774x:776x") {
+		if value != "" {
+			values = append(values, value)
+		}
+	}
+	return values
+}
+
+func (bib BibResp) PublicationYear() (int, bool) {
+	rangeStart := 500
+	rangeEnd := time.Now().Year()
+	tolerance := 15
+
+	f008 := bib.MarcValue("008")
+	year, ok := pubYear008(f008, tolerance)
+	if !ok {
+		year, ok = bib.pubYear260()
+	}
+
+	if ok && year >= rangeStart && year <= rangeEnd {
+		return year, true
+	}
+	return 0, false
+}
+
+func (bib BibResp) pubYear260() (int, bool) {
+	f260c := bib.MarcValue("260c")
+	re := regexp.MustCompile("(\\d{4})")
+	year := re.FindString(f260c)
+	return toIntTry(year)
+}
+
 func (bib BibResp) OclcNum() []string {
 	// RegEx based on Traject's marc21.rb
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	re := regexp.MustCompile("\\s*(ocm|ocn|on|\\(OCoLC\\))(\\d+)")
 	values := []string{}
 	for _, value := range bib.MarcValues("001:035a:035z") {
-		num := strings.TrimSpace(re.ReplaceAllString(value, "$2"))
-		if num != "" {
-			if !in(values, num) {
+		if strings.HasPrefix(value, "ssj") {
+			// TODO: Ask Jeanette about these values
+			// eg. b4643178, b4643180
+		} else {
+			num := strings.TrimSpace(re.ReplaceAllString(value, "$2"))
+			if num != "" {
 				values = append(values, num)
 			}
 		}
@@ -160,11 +221,11 @@ func (bib BibResp) UpdatedDate() string {
 }
 
 func (bib BibResp) IsOnline() bool {
-	v945l := bib.MarcValue("945l")
-	if strings.HasPrefix(v945l, "es") {
-		return true
+	for _, item := range bib.Items {
+		if strings.HasPrefix(item.Location["code"], "es") {
+			return true
+		}
 	}
-
 	for _, value := range bib.MarcValues("998a") {
 		if value == "es001" {
 			return true
@@ -227,20 +288,25 @@ func (bib BibResp) CallNumbers() []string {
 	values := []string{}
 	callNumbers := bib.MarcValuesTrim("050ab:090ab:091ab:092ab:096ab:099ab")
 	for _, number := range callNumbers {
-		if !in(values, number) {
-			values = append(values, number)
-		}
+		values = append(values, number)
 	}
 	return values
 }
 
 func (bib BibResp) Subjects() []string {
-	spec := "600abcdefghjklmnopqrstuvxyz"
-	spec += ":610abcdefghklmnoprstuvxyz"
-	spec += ":611acdefghjklnpqstuvxyz"
-	spec += ":630adefghklmnoprstvxyz"
-	spec += ":648avxyz:650abcdevxyz:651aevxyz:653a"
-	spec += ":654abevyz:655abvxyz:656akvxyz:657avxyz"
-	spec += ":658ab:662abcdefgh:690abcdevxyz"
+	spec := "600a:600abcdefghjklmnopqrstuvxyz:"
+	spec += "610a:610abcdefghklmnoprstuvxyz:"
+	spec += "611a:611acdefghjklnpqstuvxyz:"
+	spec += "630a:630adefghklmnoprstvxyz:"
+	spec += "648a:648avxyz:"
+	spec += "650a:650abcdezxvy:"
+	spec += "651a:651aexzvy:"
+	spec += "653a:654abevyz:"
+	spec += "654a:655abvxyz:"
+	spec += "655a:656akvxyz:"
+	spec += "656a:657avxyz:"
+	spec += "657a:658ab:"
+	spec += "658a:662abcdefgh:"
+	spec += "690a:690abcdevxyz"
 	return bib.MarcValuesTrim(spec)
 }
