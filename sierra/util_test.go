@@ -5,14 +5,19 @@ import (
 )
 
 func TestSafeAppend(t *testing.T) {
-	ar1 := []string{"a", "b"}
-	safeAppend(&ar1, "c")
-	if len(ar1) != 3 {
+	array := []string{"a", "b"}
+	safeAppend(&array, "c")
+	if len(array) != 3 {
 		t.Errorf("Didn't append value")
 	}
 
-	safeAppend(&ar1, "b")
-	if len(ar1) != 3 {
+	safeAppend(&array, "b")
+	if len(array) != 3 {
 		t.Errorf("Appended duplicated value")
+	}
+
+	safeAppend(&array, "")
+	if len(array) != 3 {
+		t.Errorf("Appended empty value")
 	}
 }
