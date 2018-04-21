@@ -290,7 +290,7 @@ func (bib BibResp) IsOnline() bool {
 
 func (bib BibResp) Format() string {
 	// TODO: Do we need the Traject logic for this or is this value enough?
-	return bib.MaterialType["value"]
+	return formatName(bib.MaterialType["value"])
 }
 
 func (bib BibResp) Languages() []string {
@@ -453,5 +453,5 @@ func (bib BibResp) Subjects() []string {
 	spec += "657a:658ab:"
 	spec += "658a:662abcdefgh:"
 	spec += "690a:690abcdevxyz"
-	return bib.MarcValues(spec)
+	return bib.MarcValuesTrim(spec)
 }
