@@ -12,7 +12,7 @@ type SolrDoc struct {
 	OclcT                        []string `json:"oclc_t"`
 	TitleT                       []string `json:"title_t"`
 	TitleDisplay                 []string `json:"title_display"`
-	TitleVernDisplay             string   `json:"title_vern_display"`
+	TitleVernDisplay             []string `json:"title_vern_display"`
 	TitleSeriesT                 []string `json:"title_series_t"`
 	TitleSort                    []string `json:"title_sort"`
 	UniformTitlesDisplay         []string `json:"uniform_titles_display"`
@@ -78,9 +78,9 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 	titleSpec += "240adfklmnoprs:242abnp:246abnp:247abnp:505t:"
 	titleSpec += "700fklmtnoprsv:710fklmorstv:711fklpt:730adfklmnoprstv:740ap"
 	doc.TitleT = bib.MarcValues(titleSpec)
-	doc.TitleDisplay = []string{bib.MarcValueTrim("245apbfgkn")}
-	doc.TitleVernDisplay = bib.MarcValue("245abfgknp")
-	doc.TitleSeriesT = []string{}
+	doc.TitleDisplay = []string{bib.TitleDisplay()}
+	doc.TitleVernDisplay = []string{bib.TitleVernacularDisplay()}
+	doc.TitleSeriesT = bib.TitleSeries()
 
 	seriesSpec := "400flnptv:410flnptv:411fklnptv:440ap:490a:800abcdflnpqt:810tflnp:811tfklpsv:830adfklmnoprstv"
 	doc.TitleSeriesT = bib.MarcValuesTrim(seriesSpec)
@@ -99,7 +99,7 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 	// It has two subfield "a" values.
 	doc.PublishedDisplay = bib.MarcValuesTrim("260a")
 	doc.PublishedVernDisplay = bib.MarcValuesTrim("260a") // TODO: account for alternate script
-	doc.PhysicalDisplay = []string{bib.MarcValue("300abcefg:530abcd")}
+	doc.PhysicalDisplay = bib.MarcValues("300abcefg:530abcd")
 	doc.BuildingFacet = bib.BuildingFacets()
 	doc.LocationCodeT = bib.LocationCodes()
 	doc.TopicFacet = bib.MarcValuesTrim("650a:690a")

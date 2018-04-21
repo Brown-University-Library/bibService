@@ -55,6 +55,12 @@ func safeAppend(values *[]string, value string) {
 	}
 }
 
+func arrayAppend(values *[]string, newValues []string) {
+	for _, newValue := range newValues {
+		safeAppend(values, newValue)
+	}
+}
+
 func trimPunct(str string) string {
 	if str == "" {
 		return str

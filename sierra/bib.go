@@ -34,15 +34,6 @@ type BibResp struct {
 	// Locations    []map[string]string `json:"locations"`
 }
 
-type VarFieldResp struct {
-	FieldTag  string              `json:"fieldTag"`
-	MarcTag   string              `json:"marcTag"`
-	Ind1      string              `json:"ind1"`
-	Ind2      string              `json:"ind2"`
-	Subfields []map[string]string `json:"subfields"`
-	Content   string              `json:"content"`
-}
-
 func (b BibsResp) BibsIdStr() string {
 	ids := []string{}
 	for _, bib := range b.Entries {
@@ -59,27 +50,60 @@ func (b BibsResp) BibsIdPages() [][]string {
 	return arrayToPages(ids, 10)
 }
 
+func (bib BibResp) VernacularValues(specsStr string) []string {
+	values := []string{}
+	f880s, _ := bib.getFields("880")
+	for _, spec := range NewFieldSpecs(specsStr) {
+		vern := bib.vernacularValues(f880s, spec)
+		arrayAppend(&values, vern)
+	}
+	return values
+}
+
+func (bib BibResp) VernacularValuesTrim(specsStr string) []string {
+	values := []string{}
+	for _, value := range bib.VernacularValues(specsStr) {
+		trimValue := trimPunct(value)
+		safeAppend(&values, trimValue)
+	}
+	return values
+}
+
+func (bib BibResp) vernacularValues(f880s []VarFieldResp, spec FieldSpec) []string {
+	values := []string{}
+	for _, f880 := range f880s {
+		for _, vern := range f880.VernacularValues(spec) {
+			safeAppend(&values, vern)
+		}
+	}
+	return values
+}
+
 // fieldSpec is something in the form "nnna" where "nnn" is the tag of the
 // field and "a" represents the subfields. For example: "100ac" means
 // field "100" subfields "a" and "c". Multiple fields can be indicated
 // separated by colons, for example: "100ac:210f"
 func (bib BibResp) MarcValues(fieldSpec string) []string {
 	values := []string{}
+	f880s, _ := bib.getFields("880")
+
 	for _, spec := range NewFieldSpecs(fieldSpec) {
 		fields, found := bib.getFields(spec.MarcTag)
 		if !found {
+			vernacular := bib.vernacularValues(f880s, spec)
+			arrayAppend(&values, vernacular)
 			continue
 		}
 
 		if len(spec.Subfields) == 0 {
+			// Get the value directly
 			for _, field := range fields {
-				if field.Content != "" {
-					values = append(values, field.Content)
-				}
+				safeAppend(&values, field.Content)
 			}
 			continue
 		}
 
+		// Process the subfields
 		for _, field := range fields {
 			subValues := field.getSubfieldsValues(spec.Subfields)
 			if len(spec.Subfields) == 1 {
@@ -95,6 +119,9 @@ func (bib BibResp) MarcValues(fieldSpec string) []string {
 				safeAppend(&values, strVal)
 			}
 		}
+
+		vernacular := bib.vernacularValues(f880s, spec)
+		arrayAppend(&values, vernacular)
 	}
 	return values
 }
@@ -157,6 +184,29 @@ func (bib BibResp) Isbn() []string {
 		}
 	}
 	return values
+}
+
+func (bib BibResp) TitleDisplay() string {
+	bib.MarcValue("245abfgknp")
+	titles := bib.MarcValuesTrim("245apbfgkn")
+	if len(titles) > 0 {
+		return titles[0]
+	}
+	return ""
+}
+
+func (bib BibResp) TitleSeries() []string {
+	specsStr := "400flnptv:410flnptv:411fklnptv:440ap:490a:800abcdflnpqt:"
+	specsStr += "810tflnp:811tfklpsv:830adfklmnoprstv"
+	return bib.MarcValuesTrim(specsStr)
+}
+
+func (bib BibResp) TitleVernacularDisplay() string {
+	titles := bib.VernacularValuesTrim("245apbfgkn")
+	if len(titles) > 0 {
+		return titles[0]
+	}
+	return ""
 }
 
 func (bib BibResp) Issn() []string {
@@ -327,17 +377,19 @@ func (bib BibResp) RegionFacetZFields() []string {
 }
 
 func (bib BibResp) AuthorFacet() []string {
-	fieldSpec := "100abcd:110ab:111ab:700abcd:711ab"
+	specStr := "100abcd:110ab:111ab:700abcd:711ab"
 
 	if f710, found := bib.getFields("710"); found {
 		// If there is more than one 710 field this will only check the first one.
 		// TODO: handle multi 710 fields
 		if f710[0].Ind2 != "9" {
-			fieldSpec += ":710ab"
+			specStr += ":710ab"
 		}
 	}
 
-	values := bib.MarcValuesTrim(fieldSpec)
+	values := bib.MarcValuesTrim(specStr)
+	vernValues := bib.VernacularValues(specStr)
+	arrayAppend(&values, vernValues)
 	return values
 }
 

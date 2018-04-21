@@ -34,9 +34,6 @@ func TestFieldSpec(t *testing.T) {
 	}
 }
 
-//"Designing effective strategies for environmental education : ",
-//"an evaluation of the center for environmental studies' partnership with Providence public schools /",
-
 func TestTrimPunct(t *testing.T) {
 	if trimPunct("one hundred/ ") != "one hundred" {
 		t.Errorf("Failed to remove trailing slash")
