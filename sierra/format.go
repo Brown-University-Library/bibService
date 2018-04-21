@@ -53,3 +53,12 @@ func init() {
 func formatName(code string) string {
 	return formats[code]
 }
+
+// func FormatForBib(bib BibResp) string {
+// 	fixed := ""
+// 	f008 := bib.MarcValue("008")
+// 	if len(f008) >= 22 {
+// 		fixed = f008[21:22]
+// 	}
+// 	return ""
+// }

@@ -47,3 +47,18 @@ func (f VarFieldResp) VernacularValue(spec FieldSpec) string {
 	values := f.VernacularValues(spec)
 	return strings.Join(values, " ")
 }
+
+func (f VarFieldResp) getSubfieldsValues(subfields []string) []string {
+	values := []string{}
+	// We walk through the subfields in the Field because it is important
+	// to preserve the order of the values returned according to the order
+	// in which they are listed on the data, not on the spec.
+	for _, fieldSub := range f.Subfields {
+		for _, specSub := range subfields {
+			if fieldSub["tag"] == specSub {
+				safeAppend(&values, fieldSub["content"])
+			}
+		}
+	}
+	return values
+}

@@ -51,7 +51,7 @@ func (b BibsResp) BibsIdPages() [][]string {
 
 func (bib BibResp) VernacularValues(specsStr string) []string {
 	values := []string{}
-	f880s, _ := bib.getFields("880")
+	f880s := bib.getFields("880")
 	for _, spec := range NewFieldSpecs(specsStr) {
 		vern := bib.vernacularValues(f880s, spec)
 		arrayAppend(&values, vern)
@@ -99,11 +99,11 @@ func (bib BibResp) vernacularValues(f880s []VarFieldResp, spec FieldSpec) []stri
 // separated by colons, for example: "100ac:210f"
 func (bib BibResp) MarcValues(fieldSpec string) []string {
 	values := []string{}
-	f880s, _ := bib.getFields("880")
+	f880s := bib.getFields("880")
 
 	for _, spec := range NewFieldSpecs(fieldSpec) {
-		fields, found := bib.getFields(spec.MarcTag)
-		if !found {
+		fields := bib.getFields(spec.MarcTag)
+		if len(fields) == 0 {
 			vernacular := bib.vernacularValues(f880s, spec)
 			arrayAppend(&values, vernacular)
 			continue
@@ -165,29 +165,14 @@ func (bib BibResp) MarcValueTrim(fieldSpec string) string {
 	return trimPunct(strings.Join(values, " "))
 }
 
-func (bib BibResp) getFields(marcTag string) ([]VarFieldResp, bool) {
+func (bib BibResp) getFields(marcTag string) []VarFieldResp {
 	fields := []VarFieldResp{}
 	for _, field := range bib.VarFields {
 		if field.MarcTag == marcTag {
 			fields = append(fields, field)
 		}
 	}
-	return fields, len(fields) > 0
-}
-
-func (field VarFieldResp) getSubfieldsValues(subfields []string) []string {
-	values := []string{}
-	// We walk through the subfields in the Field because it is important
-	// to preserve the order of the values returned according to the order
-	// in which they are listed on the data, not on the spec.
-	for _, fieldSub := range field.Subfields {
-		for _, specSub := range subfields {
-			if fieldSub["tag"] == specSub {
-				safeAppend(&values, fieldSub["content"])
-			}
-		}
-	}
-	return values
+	return fields
 }
 
 func (bib BibResp) Isbn() []string {
@@ -222,6 +207,18 @@ func (bib BibResp) PublishedVernacularDisplay() string {
 		return titles[0]
 	}
 	return ""
+}
+
+func (bib BibResp) IsDissertaion() bool {
+	subs := []string{"a", "c"}
+	for _, field := range bib.getFields("502") {
+		for _, value := range field.getSubfieldsValues(subs) {
+			if strings.Contains(strings.ToLower(value), "brown univ") {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (bib BibResp) Issn() []string {
@@ -298,8 +295,6 @@ func (bib BibResp) Format() string {
 
 func (bib BibResp) Languages() []string {
 	values := []string{}
-
-	// 008[35-37]:041a:041d:041e:041j
 	f008 := bib.MarcValue("008")
 	f008_lang := ""
 	if len(f008) > 38 {
@@ -311,7 +306,6 @@ func (bib BibResp) Languages() []string {
 		language := languageName(value)
 		safeAppend(&values, language)
 	}
-
 	return values
 }
 
@@ -354,8 +348,7 @@ func (bib BibResp) RegionFacetZFields() []string {
 	// values if they are found in a specific field.
 	for _, zFieldSpec := range zFieldSpecs {
 		spec, _ := NewFieldSpec(zFieldSpec)
-		fields, _ := bib.getFields(spec.MarcTag)
-		for _, field := range fields {
+		for _, field := range bib.getFields(spec.MarcTag) {
 			subValues := field.getSubfieldsValues(spec.Subfields)
 			if len(subValues) == 2 {
 				// Asumme the first one is the parent region of the second one
@@ -376,7 +369,8 @@ func (bib BibResp) RegionFacetZFields() []string {
 func (bib BibResp) AuthorFacet() []string {
 	specStr := "100abcd:110ab:111ab:700abcd:711ab"
 
-	if f710, found := bib.getFields("710"); found {
+	f710 := bib.getFields("710")
+	if len(f710) > 0 {
 		// If there is more than one 710 field this will only check the first one.
 		// TODO: handle multi 710 fields
 		if f710[0].Ind2 != "9" {
@@ -429,8 +423,8 @@ func (bib BibResp) SortableTitle() string {
 	}
 
 	sortTitle := titles[0]
-	fields, found := bib.getFields("245")
-	if found {
+	fields := bib.getFields("245")
+	if len(fields) > 0 {
 		ind2 := toInt(fields[0].Ind2)
 		if ind2 > 0 && len(sortTitle) > ind2 {
 			// drop the prefix as notes in the second indicator
