@@ -77,7 +77,7 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 	titleSpec := "100tflnp:110tflnp:111tfklpsv:130adfklmnoprst:210ab:222ab:"
 	titleSpec += "240adfklmnoprs:242abnp:246abnp:247abnp:505t:"
 	titleSpec += "700fklmtnoprsv:710fklmorstv:711fklpt:730adfklmnoprstv:740ap"
-	doc.TitleT = bib.MarcValues(titleSpec)
+	doc.TitleT = bib.MarcValuesTrim(titleSpec)
 	doc.TitleDisplay = []string{bib.TitleDisplay()}
 	doc.TitleVernDisplay = []string{bib.TitleVernacularDisplay()}
 	doc.TitleSeriesT = bib.TitleSeries()
@@ -88,8 +88,8 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 	// doc.UniformTitlesDisplay = ""
 	// doc.NewUniformTitleAuthorDisplay = ""
 	// doc.UniformRelatedWorksDisplay = ""
-	doc.AuthorDisplay = []string{bib.MarcValueTrim("100abcdq:110abcd:111abcd")}
-	doc.AuthorVernDisplay = doc.AuthorDisplay // TODO: account for alternate_script
+	doc.AuthorDisplay = []string{bib.AuthorDisplay()}
+	doc.AuthorVernDisplay = []string{bib.AuthorVernacularDisplay()}
 	doc.AuthorFacet = bib.AuthorFacet()
 	doc.AuthorAddlDisplay = bib.MarcValuesTrim("700abcd:710ab:711ab")
 	doc.AuthorT = bib.MarcValuesTrim("100abcdq:110abcd:111abcdeq")
@@ -98,7 +98,7 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 	// TODO: check this record b4642997
 	// It has two subfield "a" values.
 	doc.PublishedDisplay = bib.MarcValuesTrim("260a")
-	doc.PublishedVernDisplay = bib.MarcValuesTrim("260a") // TODO: account for alternate script
+	doc.PublishedVernDisplay = []string{bib.PublishedVernacularDisplay()}
 	doc.PhysicalDisplay = bib.MarcValues("300abcefg:530abcd")
 	doc.BuildingFacet = bib.BuildingFacets()
 	doc.LocationCodeT = bib.LocationCodes()

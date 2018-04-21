@@ -42,3 +42,8 @@ func (f VarFieldResp) VernacularValues(spec FieldSpec) []string {
 	}
 	return values
 }
+
+func (f VarFieldResp) VernacularValue(spec FieldSpec) string {
+	values := f.VernacularValues(spec)
+	return strings.Join(values, " ")
+}

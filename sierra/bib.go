@@ -30,8 +30,7 @@ type BibResp struct {
 	NormTitle       string            `json:"normTitle,omitempty"`
 	NormAuthor      string            `json:"normAuthor,omitempty"`
 	VarFields       []VarFieldResp    `json:"varFields,omitempty"`
-	Items           []ItemResp
-	// Locations    []map[string]string `json:"locations"`
+	Items           []ItemResp        // does not come on the Sierra response
 }
 
 func (b BibsResp) BibsIdStr() string {
@@ -60,6 +59,22 @@ func (bib BibResp) VernacularValues(specsStr string) []string {
 	return values
 }
 
+func (bib BibResp) VernacularValue(fieldSpec string) string {
+	values := bib.VernacularValues(fieldSpec)
+	if len(values) == 0 {
+		return ""
+	}
+	return strings.Join(values, " ")
+}
+
+func (bib BibResp) VernacularValueTrim(fieldSpec string) string {
+	values := bib.VernacularValues(fieldSpec)
+	if len(values) == 0 {
+		return ""
+	}
+	return trimPunct(strings.Join(values, " "))
+}
+
 func (bib BibResp) VernacularValuesTrim(specsStr string) []string {
 	values := []string{}
 	for _, value := range bib.VernacularValues(specsStr) {
@@ -72,9 +87,8 @@ func (bib BibResp) VernacularValuesTrim(specsStr string) []string {
 func (bib BibResp) vernacularValues(f880s []VarFieldResp, spec FieldSpec) []string {
 	values := []string{}
 	for _, f880 := range f880s {
-		for _, vern := range f880.VernacularValues(spec) {
-			safeAppend(&values, vern)
-		}
+		vern := f880.VernacularValue(spec)
+		safeAppend(&values, vern)
 	}
 	return values
 }
@@ -168,8 +182,8 @@ func (field VarFieldResp) getSubfieldsValues(subfields []string) []string {
 	// in which they are listed on the data, not on the spec.
 	for _, fieldSub := range field.Subfields {
 		for _, specSub := range subfields {
-			if fieldSub["tag"] == specSub && fieldSub["content"] != "" {
-				values = append(values, fieldSub["content"])
+			if fieldSub["tag"] == specSub {
+				safeAppend(&values, fieldSub["content"])
 			}
 		}
 	}
@@ -177,17 +191,10 @@ func (field VarFieldResp) getSubfieldsValues(subfields []string) []string {
 }
 
 func (bib BibResp) Isbn() []string {
-	values := []string{}
-	for _, value := range bib.MarcValues("020a:020z") {
-		if value != "" {
-			values = append(values, value)
-		}
-	}
-	return values
+	return bib.MarcValues("020a:020z")
 }
 
 func (bib BibResp) TitleDisplay() string {
-	bib.MarcValue("245abfgknp")
 	titles := bib.MarcValuesTrim("245apbfgkn")
 	if len(titles) > 0 {
 		return titles[0]
@@ -202,7 +209,15 @@ func (bib BibResp) TitleSeries() []string {
 }
 
 func (bib BibResp) TitleVernacularDisplay() string {
-	titles := bib.VernacularValuesTrim("245apbfgkn")
+	titles := bib.VernacularValues("245apbfgkn")
+	if len(titles) > 0 {
+		return trimPunct(titles[0])
+	}
+	return ""
+}
+
+func (bib BibResp) PublishedVernacularDisplay() string {
+	titles := bib.VernacularValues("260a")
 	if len(titles) > 0 {
 		return titles[0]
 	}
@@ -210,13 +225,7 @@ func (bib BibResp) TitleVernacularDisplay() string {
 }
 
 func (bib BibResp) Issn() []string {
-	values := []string{}
-	for _, value := range bib.MarcValues("022a:022l:022y:773x:774x:776x") {
-		if value != "" {
-			values = append(values, value)
-		}
-	}
-	return values
+	return bib.MarcValues("022a:022l:022y:773x:774x:776x")
 }
 
 func (bib BibResp) PublicationYear() (int, bool) {
@@ -288,31 +297,21 @@ func (bib BibResp) Format() string {
 }
 
 func (bib BibResp) Languages() []string {
-	codes := []string{}
+	values := []string{}
 
 	// 008[35-37]:041a:041d:041e:041j
 	f008 := bib.MarcValue("008")
 	f008_lang := ""
 	if len(f008) > 38 {
-		f008_lang = f008[35:38]
-		if f008_lang != "" {
-			codes = append(codes, f008_lang)
-		}
+		f008_lang = languageName(f008[35:38])
+		safeAppend(&values, f008_lang)
 	}
 
 	for _, value := range bib.MarcValues("041a:041d:041e:041j") {
-		if value != f008_lang {
-			codes = append(codes, value)
-		}
+		language := languageName(value)
+		safeAppend(&values, language)
 	}
 
-	values := []string{}
-	for _, code := range codes {
-		name := languageName(code)
-		if name != "" {
-			values = append(values, name)
-		}
-	}
 	return values
 }
 
@@ -366,9 +365,7 @@ func (bib BibResp) RegionFacetZFields() []string {
 				safeAppend(&values, parentRegion)
 				safeAppend(&values, region)
 			} else {
-				for _, subValue := range subValues {
-					safeAppend(&values, subValue)
-				}
+				arrayAppend(&values, subValues)
 			}
 		}
 
@@ -393,11 +390,22 @@ func (bib BibResp) AuthorFacet() []string {
 	return values
 }
 
+func (bib BibResp) AuthorDisplay() string {
+	authors := bib.MarcValues("100abcdq:110abcd:111abcd")
+	if len(authors) > 0 {
+		return trimPunct(authors[0])
+	}
+	return ""
+}
+
+func (bib BibResp) AuthorVernacularDisplay() string {
+	return bib.VernacularValueTrim("100abcdq:110abcd:111abcd")
+}
+
 func (bib BibResp) LocationCodes() []string {
 	values := []string{}
 	for _, item := range bib.Items {
-		code := item.Location["code"]
-		safeAppend(&values, code)
+		safeAppend(&values, item.Location["code"])
 	}
 	return values
 }
@@ -433,12 +441,7 @@ func (bib BibResp) SortableTitle() string {
 }
 
 func (bib BibResp) CallNumbers() []string {
-	values := []string{}
-	callNumbers := bib.MarcValuesTrim("050ab:090ab:091ab:092ab:096ab:099ab")
-	for _, number := range callNumbers {
-		values = append(values, number)
-	}
-	return values
+	return bib.MarcValuesTrim("050ab:090ab:091ab:092ab:096ab:099ab")
 }
 
 func (bib BibResp) Subjects() []string {
@@ -456,5 +459,5 @@ func (bib BibResp) Subjects() []string {
 	spec += "657a:658ab:"
 	spec += "658a:662abcdefgh:"
 	spec += "690a:690abcdevxyz"
-	return bib.MarcValuesTrim(spec)
+	return bib.MarcValues(spec)
 }
