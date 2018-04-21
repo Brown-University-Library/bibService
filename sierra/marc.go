@@ -24,6 +24,8 @@ func pubYear008(f008 string, tolerance int) (int, bool) {
 	dateStr1 = f008[7:11]
 	if len(f008) >= 15 {
 		dateStr2 = f008[11:15]
+	} else {
+		dateStr2 = dateStr1
 	}
 
 	if dateType == "q" {
@@ -34,9 +36,15 @@ func pubYear008(f008 string, tolerance int) (int, bool) {
 			return (date2 + date1) / 2, true
 		}
 	}
-
 	var dateStr string
-	if dateType == "r" && toInt(dateStr2) != 0 {
+	if dateType == "p" {
+		// use the oldest date
+		if dateStr1 <= dateStr2 {
+			dateStr = dateStr1
+		} else {
+			dateStr = dateStr2
+		}
+	} else if dateType == "r" && toInt(dateStr2) != 0 {
 		dateStr = dateStr2 // use the second date
 	} else {
 		dateStr = dateStr1 // use the first date
