@@ -22,9 +22,11 @@ func StartWebServer(settingsFile string) {
 	http.HandleFunc("/bibutils/solr/doc/", solrDoc)
 	http.HandleFunc("/bibutils/solr/deleteQuery/", solrDeleteQuery)
 	http.HandleFunc("/bibutils/solr/delete/", solrDelete)
+	// http.HandleFunc("/bibutils/solr/sync/", solrSync)
 	http.HandleFunc("/bibutils/bib/updated/", bibUpdated)
 	http.HandleFunc("/bibutils/bib/deleted/", bibDeleted)
 	http.HandleFunc("/bibutils/bib/", bibController)
+	http.HandleFunc("/bibutils/marc/updated/", marcUpdated)
 	http.HandleFunc("/bibutils/marc/", marcController)
 	http.HandleFunc("/bibutils/item/", itemController)
 	http.HandleFunc("/status", status)
@@ -182,6 +184,20 @@ func marcController(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	fmt.Fprint(resp, marcData)
+}
+
+func marcUpdated(resp http.ResponseWriter, req *http.Request) {
+	from := qsParam("from", req)
+	to := qsParam("to", req)
+	if from == "" || to == "" {
+		err := errors.New("No from/to parameters were received")
+		renderJSON(resp, nil, err, "marcUpdated")
+		return
+	}
+	log.Printf("Fetching MARC updated (%s - %s)", from, to)
+	model := bibModel.New(settings)
+	body, err := model.GetMarcUpdated(from, to)
+	renderJSON(resp, body, err, "marcUpdated")
 }
 
 func renderJSON(resp http.ResponseWriter, data interface{}, errFetch error, info string) {

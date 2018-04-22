@@ -33,6 +33,10 @@ type BibResp struct {
 	Items           []ItemResp        // does not come on the Sierra response
 }
 
+func (b BibResp) Bib() string {
+	return "b" + b.Id
+}
+
 func (b BibsResp) BibsIdStr() string {
 	ids := []string{}
 	for _, bib := range b.Entries {

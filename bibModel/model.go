@@ -4,9 +4,14 @@ import (
 	"bibService/sierra"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 )
+
+func x() {
+	log.Printf("dummy")
+}
 
 // 2000 seems to be the limit that Sierra imposes
 const pageSize = 1000
@@ -74,9 +79,11 @@ func (model BibModel) GetBibsUpdated(fromDate, toDate string) (sierra.BibsResp, 
 		if err != nil {
 			return sierra.BibsResp{}, err
 		}
-		bibs.Total += page.Total
 		for _, entry := range page.Entries {
-			bibs.Entries = append(bibs.Entries, entry)
+			if !entry.Deleted {
+				bibs.Total += 1
+				bibs.Entries = append(bibs.Entries, entry)
+			}
 		}
 		if page.Total < pageSize {
 			break
@@ -140,6 +147,8 @@ func (model BibModel) bibsDeletedPaginated(fromDate, toDate string, page int) (s
 	}
 
 	if fromDate == "" && toDate == "" {
+		// This gives a very large result set.
+		// Maybe we shouldn't support it.
 		params["deleted"] = "true"
 	} else {
 		params["deletedDate"] = dateRange(fromDate, toDate)
@@ -168,7 +177,7 @@ func (model BibModel) GetBibRaw(bib string) (string, error) {
 	params := map[string]string{
 		"id": id,
 	}
-	return model.api.GetRaw(params)
+	return model.api.GetRaw(params, "")
 }
 
 func (model BibModel) Marc(bib string) (string, error) {
@@ -178,6 +187,26 @@ func (model BibModel) Marc(bib string) (string, error) {
 	}
 
 	return model.api.Marc(id)
+}
+
+func (model BibModel) GetMarcUpdated(fromDate, toDate string) (string, error) {
+	bibs, err := model.GetBibsUpdated(fromDate, toDate)
+	if err != nil {
+		return "", err
+	}
+
+	bigMarc := ""
+	for _, bib := range bibs.Entries {
+		marc, err := model.Marc(bib.Bib())
+		if err != nil {
+			log.Printf("%s", err)
+			log.Printf("%#v", bib)
+			// TODO: be more forgiving
+			return "", err
+		}
+		bigMarc += marc
+	}
+	return bigMarc, err
 }
 
 func (model BibModel) ItemsRaw(bib string) (string, error) {

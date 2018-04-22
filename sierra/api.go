@@ -43,6 +43,8 @@ type Sierra struct {
 	SessionFile   string
 }
 
+func x() { log.Printf("dummy") }
+
 func NewSierra(apiUrl, keySecret, sessionFile string) Sierra {
 	s := Sierra{
 		ApiUrl:      apiUrl,
@@ -81,7 +83,9 @@ func (s *Sierra) Search(value string) (string, error) {
 //
 // TODO: make these explicit parameters instead.
 func (s *Sierra) Get(params map[string]string) (BibsResp, error) {
-	body, err := s.GetRaw(params)
+	// fixedFields,
+	fields := "fields=default,available,orders,normTitle,normAuthor,locations,varFields"
+	body, err := s.GetRaw(params, fields)
 	if err != nil {
 		return BibsResp{}, err
 	}
@@ -93,9 +97,14 @@ func (s *Sierra) Get(params map[string]string) (BibsResp, error) {
 	}
 
 	for i, bib := range bibs.Entries {
+		if bib.Deleted {
+			continue
+		}
 		items, err := s.Items(bib.Id)
 		if err != nil {
-			// TODO: make sure we only ignore errors for deleted records
+			// TODO: Figure out why some records return "404 not found"
+			// even though they have not been deleted (and I think they
+			// do have items)
 			errorMsg := fmt.Sprintf("Error fetching items for %s", bib.Id)
 			s.log(errorMsg, err.Error())
 		}
@@ -112,6 +121,9 @@ func (s *Sierra) Get(params map[string]string) (BibsResp, error) {
 	//
 	// 		A possible workaround would be to get the list of deleted BIBs
 	// 		in the same time frame and exclude those from the list.
+	//
+	//		Need to also figure out the other "404 not found" error before
+	//		attempting this workaround.
 	//
 	// // fetch the items (fetch items for many bibs at once)
 	// for _, page := range bibs.BibsIdPages() {
@@ -130,14 +142,32 @@ func (s *Sierra) Get(params map[string]string) (BibsResp, error) {
 	return bibs, err
 }
 
-func (s *Sierra) GetRaw(params map[string]string) (string, error) {
+// Fetches minimal information about the records,
+// we could eventually return an []string but I need to
+// decide how to handle deleted records in that case.
+func (s *Sierra) GetBibs(params map[string]string) (BibsResp, error) {
+	// TODO: could I use "id,deleted"?
+	fields := "fields=default"
+	body, err := s.GetRaw(params, fields)
+	if err != nil {
+		return BibsResp{}, err
+	}
+
+	var bibs BibsResp
+	err = json.Unmarshal([]byte(body), &bibs)
+	return bibs, err
+}
+
+func (s *Sierra) GetRaw(params map[string]string, fields string) (string, error) {
 	err := s.authenticate()
 	if err != nil {
 		return "", err
 	}
 
-	// fixedFields,
-	fields := "fields=default,available,orders,normTitle,normAuthor,locations,varFields"
+	if fields == "" {
+		fields = "fields=default,available,orders,normTitle,normAuthor,locations,varFields"
+	}
+
 	url := s.ApiUrl + "/bibs?"
 	for key, value := range params {
 		url += key + "=" + value + "&"
@@ -319,7 +349,7 @@ func (s Sierra) httpGet(url, accessToken string) (string, error) {
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		// s.log("HTTP ERROR", string(body))
+		s.log("HTTP ERROR", string(body))
 		err := errors.New(fmt.Sprintf("Status code %d", resp.StatusCode))
 		return string(body), err
 	}
