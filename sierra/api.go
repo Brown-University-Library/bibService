@@ -187,7 +187,7 @@ func (s *Sierra) ItemsRaw(bibsList string) (string, error) {
 	}
 
 	url := s.ApiUrl + "/items?bibIds=" + bibsList
-	url += "&fields=default,fixedFields,varFields"
+	url += "&fields=default,varFields" // ,fixedFields
 	return s.httpGet(url, s.Authorization.AccessToken)
 }
 

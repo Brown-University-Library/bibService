@@ -392,6 +392,14 @@ func (bib BibResp) AuthorDisplay() string {
 	return ""
 }
 
+func (bib BibResp) AbstractDisplay() string {
+	values := bib.MarcValues("520a")
+	if len(values) > 0 {
+		return values[0]
+	}
+	return ""
+}
+
 func (bib BibResp) AuthorVernacularDisplay() string {
 	return bib.VernacularValueTrim("100abcdq:110abcd:111abcd")
 }

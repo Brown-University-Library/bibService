@@ -26,7 +26,7 @@ type SolrDoc struct {
 	PublishedDisplay             []string `json:"published_display"`
 	PublishedVernDisplay         []string `json:"published_vern_display"`
 	PhysicalDisplay              []string `json:"physical_display"`
-	// y                            []string `json:"abstract_display"`
+	AbstractDisplay              []string `json:"abstract_display"`
 	// y                            []string `json:"toc_display"`
 	// y                            []string `json:"toc_970_display"`
 	PublicationYear    []int    `json:"pub_date"`
@@ -95,11 +95,10 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 	doc.AuthorT = bib.MarcValuesTrim("100abcdq:110abcd:111abcdeq")
 	doc.AuthorAddlT = bib.MarcValues("700aqbcd:710abcd:711aqbcde:810abc:811aqdce")
 
-	// TODO: check this record b4642997
-	// It has two subfield "a" values.
 	doc.PublishedDisplay = bib.MarcValuesTrim("260a")
 	doc.PublishedVernDisplay = []string{bib.PublishedVernacularDisplay()}
 	doc.PhysicalDisplay = bib.MarcValues("300abcefg:530abcd")
+	doc.AbstractDisplay = []string{bib.AbstractDisplay()}
 	doc.BuildingFacet = bib.BuildingFacets()
 	doc.LocationCodeT = bib.LocationCodes()
 	doc.TopicFacet = bib.MarcValuesTrim("650a:690a")
