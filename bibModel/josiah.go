@@ -45,8 +45,8 @@ type SolrDoc struct {
 	CallNumbers        []string `json:"callnumber_t"`
 	// y                            []string `json:"text"`
 	// y                            []string `json:"marc_display"`
-	// y                            []string `json:"bookplate_code_facet"`
-	// y                            []string `json:"bookplate_code_ss"`
+	BookplateCodeFacet []string `json:"bookplate_code_facet"`
+	BookplateCodeSS    []string `json:"bookplate_code_ss"`
 }
 
 func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
@@ -109,5 +109,8 @@ func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
 
 	doc.UrlFullTextDisplay = bib.MarcValues("856u")
 	doc.UrlSupplDisplay = bib.MarcValues("856z")
+
+	doc.BookplateCodeFacet = bib.BookplateCodes()
+	doc.BookplateCodeSS = doc.BookplateCodeFacet
 	return doc, nil
 }

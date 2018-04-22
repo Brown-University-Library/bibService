@@ -18,6 +18,7 @@ type ItemResp struct {
 	Location    map[string]string `json:"location"`
 	Status      map[string]string `json:"status"`
 	Barcode     string            `json:"barcode"`
+	Fields      []VarFieldResp    `json:"varFields"`
 }
 
 func (i ItemResp) Bib() (string, bool) {
@@ -57,6 +58,16 @@ func (i ItemResp) StatusDisplay() string {
 		return "DUE " + dueDate
 	}
 	return i.Status["display"]
+}
+
+func (i ItemResp) BookplateCodes() []string {
+	values := []string{}
+	for _, field := range i.Fields {
+		if field.FieldTag == "f" {
+			safeAppend(&values, field.Content)
+		}
+	}
+	return values
 }
 
 func (ii ItemsResp) ForBib(bib string) []ItemResp {

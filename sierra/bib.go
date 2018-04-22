@@ -455,3 +455,14 @@ func (bib BibResp) Subjects() []string {
 	spec += "690a:690abcdevxyz"
 	return bib.MarcValuesTrim(spec)
 }
+
+func (bib BibResp) BookplateCodes() []string {
+	values := []string{}
+	for _, item := range bib.Items {
+		arrayAppend(&values, item.BookplateCodes())
+	}
+	// Do we need this? It seems that the data has been consolidate in the
+	// item records.
+	// arrayAppend(&values, MarcValues("935a"))
+	return values
+}
