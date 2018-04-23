@@ -6,6 +6,9 @@ import (
 	"time"
 )
 
+// Bib represents a bibliographic record.
+// Notice that Bib records in Sierra don't include "item" data but this
+// struct can accomodate them.
 type Bib struct {
 	Id              string            `json:"id"`
 	UpdatedDateTime string            `json:"updatedDate,omitempty"`
@@ -25,7 +28,7 @@ type Bib struct {
 	NormTitle       string            `json:"normTitle,omitempty"`
 	NormAuthor      string            `json:"normAuthor,omitempty"`
 	VarFields       []Field           `json:"varFields,omitempty"`
-	Items           []Item        // does not come on the Sierra response
+	Items           []Item            // does not come on the Sierra response
 }
 
 func (b Bib) Bib() string {
