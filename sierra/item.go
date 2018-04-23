@@ -16,15 +16,6 @@ type Item struct {
 	Fields      []Field           `json:"varFields"`
 }
 
-func (i Item) Bib() (string, bool) {
-	if len(i.BibIds) == 1 {
-		// Most items belong to 1 bib
-		// TODO: handle those that belong to more than one
-		return i.BibIds[0], true
-	}
-	return "", false
-}
-
 func (i Item) IsForBib(bib string) bool {
 	for _, b := range i.BibIds {
 		if b == bib {
