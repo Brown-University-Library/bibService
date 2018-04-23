@@ -47,6 +47,11 @@ type BibModel struct {
 	api      sierra.Sierra
 }
 
+type Range struct {
+	first int
+	last  int
+}
+
 func New(settings Settings) BibModel {
 	model := BibModel{settings: settings}
 	model.api = sierra.NewSierra(model.settings.SierraUrl, model.settings.KeySecret, model.settings.SessionFile)
@@ -63,19 +68,19 @@ func (model BibModel) GetBib(bibs string) (sierra.BibsResp, error) {
 	params := map[string]string{
 		"id": ids,
 	}
-	sierraBibs, err := model.api.Get(params)
+	sierraBibs, err := model.api.Get(params, true)
 	if err != nil {
 		return sierra.BibsResp{}, err
 	}
 	return sierraBibs, err
 }
 
-func (model BibModel) GetBibsUpdated(fromDate, toDate string) (sierra.BibsResp, error) {
+func (model BibModel) GetBibsUpdated(fromDate, toDate string, includeItems bool) (sierra.BibsResp, error) {
 	bibs := sierra.BibsResp{}
 	pageNum := 0
 	for {
 		pageNum += 1
-		page, err := model.bibsUpdatedPaginated(fromDate, toDate, pageNum)
+		page, err := model.bibsUpdatedPaginated(fromDate, toDate, pageNum, includeItems)
 		if err != nil {
 			return sierra.BibsResp{}, err
 		}
@@ -154,10 +159,10 @@ func (model BibModel) bibsDeletedPaginated(fromDate, toDate string, page int) (s
 		params["deletedDate"] = dateRange(fromDate, toDate)
 	}
 
-	return model.api.Get(params)
+	return model.api.Get(params, false)
 }
 
-func (model BibModel) bibsUpdatedPaginated(fromDate, toDate string, page int) (sierra.BibsResp, error) {
+func (model BibModel) bibsUpdatedPaginated(fromDate, toDate string, page int, includeItems bool) (sierra.BibsResp, error) {
 	offset := (page - 1) * pageSize
 	params := map[string]string{
 		"offset":      strconv.Itoa(offset),
@@ -165,7 +170,7 @@ func (model BibModel) bibsUpdatedPaginated(fromDate, toDate string, page int) (s
 		"updatedDate": dateRange(fromDate, toDate),
 	}
 
-	return model.api.Get(params)
+	return model.api.Get(params, includeItems)
 }
 
 func (model BibModel) GetBibRaw(bib string) (string, error) {
@@ -189,24 +194,74 @@ func (model BibModel) Marc(bib string) (string, error) {
 	return model.api.Marc(id)
 }
 
+// func bibRanges(bibs sierra.BibsResp) []Range {
+// 	min, _ := strconv.Atoi(bibs.Entries[0].Id)
+// 	max := min
+// 	for _, bib := range bibs.Entries {
+// 		id, _ := strconv.Atoi(bib.Id)
+// 		if id < min {
+// 			min = id
+// 		}
+// 		if id > max {
+// 			max = id
+// 		}
+// 	}
+//
+// 	ranges := []Range{}
+// 	numBatches := 50
+// 	batchSize := len(bibs.Entries) / numBatches
+// 	if batchSize < 300 {
+// 		batchSize = 300
+// 	}
+// 	i := 0
+// 	for {
+// 		x := min + (batchSize * (i - 1))
+// 		y := x + batchSize - 1
+// 		if y > max {
+// 			y = max
+// 		}
+// 		r := Range{first: x, last: y}
+// 		ranges = append(ranges, r)
+// 		if y == max {
+// 			break
+// 		}
+// 		i += 1
+// 	}
+// 	return ranges
+// }
+
 func (model BibModel) GetMarcUpdated(fromDate, toDate string) (string, error) {
-	bibs, err := model.GetBibsUpdated(fromDate, toDate)
+	bibs, err := model.GetBibsUpdated(fromDate, toDate, false)
 	if err != nil {
 		return "", err
 	}
 
-	bigMarc := ""
-	for _, bib := range bibs.Entries {
-		marc, err := model.Marc(bib.Bib())
-		if err != nil {
-			log.Printf("%s", err)
-			log.Printf("%#v", bib)
-			// TODO: be more forgiving
-			return "", err
-		}
-		bigMarc += marc
-	}
-	return bigMarc, err
+	// Breaking by fixed size ranges is very inneficient.
+	// If bib 100 and 80000 are modified it will get a lot of
+	// records in between unnecessarily.
+	//
+	// Getting individual records is not good either because
+	// we hit a rate limit on the III side after 100 requested
+	// files.
+	//
+	// We could try to calculate batches to minimize the number
+	// of records per batch without requesting more than 100. Yikes.
+
+	// bibRanges(bibs)
+	// log.Printf("Ranges--")
+	// log.Printf("%#v", ranges)
+	// bigMarc := ""
+	// for _, bib := range bibs.Entries {
+	// 	marc, err := model.Marc(bib.Bib())
+	// 	if err != nil {
+	// 		log.Printf("%s", err)
+	// 		log.Printf("%#v", bib)
+	// 		// TODO: be more forgiving
+	// 		return "", err
+	// 	}
+	// 	bigMarc += marc
+	// }
+	return "bigMarc", err
 }
 
 func (model BibModel) ItemsRaw(bib string) (string, error) {

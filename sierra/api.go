@@ -82,7 +82,7 @@ func (s *Sierra) Search(value string) (string, error) {
 //		"updatedDate": "date-range"
 //
 // TODO: make these explicit parameters instead.
-func (s *Sierra) Get(params map[string]string) (BibsResp, error) {
+func (s *Sierra) Get(params map[string]string, includeItems bool) (BibsResp, error) {
 	// fixedFields,
 	fields := "fields=default,available,orders,normTitle,normAuthor,locations,varFields"
 	body, err := s.GetRaw(params, fields)
@@ -100,16 +100,17 @@ func (s *Sierra) Get(params map[string]string) (BibsResp, error) {
 		if bib.Deleted {
 			continue
 		}
-		items, err := s.Items(bib.Id)
-		if err != nil {
-			// TODO: Figure out why some records return "404 not found"
-			// even though they have not been deleted (and I think they
-			// do have items)
-			errorMsg := fmt.Sprintf("Error fetching items for %s", bib.Id)
-			s.log(errorMsg, err.Error())
+		if includeItems {
+			items, err := s.Items(bib.Id)
+			if err != nil {
+				// TODO: Figure out why some records return "404 not found"
+				// even though they have not been deleted (and I think they
+				// do have items)
+				errorMsg := fmt.Sprintf("Error fetching items for %s", bib.Id)
+				s.log(errorMsg, err.Error())
+			}
+			bibs.Entries[i].Items = items.ForBib(bib.Id)
 		}
-		bibItems := items.ForBib(bib.Id)
-		bibs.Entries[i].Items = bibItems
 	}
 
 	// This approach unfortunately does not work when there are BIBs

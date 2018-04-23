@@ -93,7 +93,7 @@ func bibUpdated(resp http.ResponseWriter, req *http.Request) {
 	}
 	log.Printf("Fetching BIB updated (%s - %s)", from, to)
 	model := bibModel.New(settings)
-	body, err := model.GetBibsUpdated(from, to)
+	body, err := model.GetBibsUpdated(from, to, true)
 	renderJSON(resp, body, err, "bibUpdated")
 }
 
