@@ -25,7 +25,7 @@ type Bib struct {
 	NormTitle       string            `json:"normTitle,omitempty"`
 	NormAuthor      string            `json:"normAuthor,omitempty"`
 	VarFields       []Field           `json:"varFields,omitempty"`
-	Items           []ItemResp        // does not come on the Sierra response
+	Items           []Item        // does not come on the Sierra response
 }
 
 func (b Bib) Bib() string {

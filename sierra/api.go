@@ -195,18 +195,18 @@ func (s *Sierra) BibsUpdatedSince(date string) (Bibs, error) {
 	return bibs, err
 }
 
-func (s *Sierra) Items(bibsList string) (ItemsResp, error) {
+func (s *Sierra) Items(bibsList string) (Items, error) {
 	err := s.authenticate()
 	if err != nil {
-		return ItemsResp{}, err
+		return Items{}, err
 	}
 
 	body, err := s.ItemsRaw(bibsList)
 	if err != nil {
-		return ItemsResp{}, err
+		return Items{}, err
 	}
 
-	var items ItemsResp
+	var items Items
 	err = json.Unmarshal([]byte(body), &items)
 	return items, err
 }
