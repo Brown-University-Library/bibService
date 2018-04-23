@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-type BibsResp struct {
-	Total   int       `json:"total"`
-	Entries []BibResp `json:"entries"`
+type Bibs struct {
+	Total   int   `json:"total"`
+	Entries []Bib `json:"entries"`
 }
 
-type BibResp struct {
+type Bib struct {
 	Id              string            `json:"id"`
 	UpdatedDateTime string            `json:"updatedDate,omitempty"`
 	CreatedDate     string            `json:"createdDate,omitempty"`
@@ -33,11 +33,11 @@ type BibResp struct {
 	Items           []ItemResp        // does not come on the Sierra response
 }
 
-func (b BibResp) Bib() string {
+func (b Bib) Bib() string {
 	return "b" + b.Id
 }
 
-func (b BibsResp) BibsIdStr() string {
+func (b Bibs) BibsIdStr() string {
 	ids := []string{}
 	for _, bib := range b.Entries {
 		ids = append(ids, bib.Id)
@@ -45,7 +45,7 @@ func (b BibsResp) BibsIdStr() string {
 	return strings.Join(ids, ",")
 }
 
-func (b BibsResp) BibsIdPages() [][]string {
+func (b Bibs) BibsIdPages() [][]string {
 	ids := []string{}
 	for _, bib := range b.Entries {
 		ids = append(ids, bib.Id)
@@ -53,7 +53,7 @@ func (b BibsResp) BibsIdPages() [][]string {
 	return arrayToPages(ids, 10)
 }
 
-func (bib BibResp) VernacularValues(specsStr string) []string {
+func (bib Bib) VernacularValues(specsStr string) []string {
 	values := []string{}
 	f880s := bib.getFields("880")
 	for _, spec := range NewFieldSpecs(specsStr) {
@@ -63,7 +63,7 @@ func (bib BibResp) VernacularValues(specsStr string) []string {
 	return values
 }
 
-func (bib BibResp) VernacularValue(fieldSpec string) string {
+func (bib Bib) VernacularValue(fieldSpec string) string {
 	values := bib.VernacularValues(fieldSpec)
 	if len(values) == 0 {
 		return ""
@@ -71,7 +71,7 @@ func (bib BibResp) VernacularValue(fieldSpec string) string {
 	return strings.Join(values, " ")
 }
 
-func (bib BibResp) VernacularValueTrim(fieldSpec string) string {
+func (bib Bib) VernacularValueTrim(fieldSpec string) string {
 	values := bib.VernacularValues(fieldSpec)
 	if len(values) == 0 {
 		return ""
@@ -79,7 +79,7 @@ func (bib BibResp) VernacularValueTrim(fieldSpec string) string {
 	return trimPunct(strings.Join(values, " "))
 }
 
-func (bib BibResp) VernacularValuesTrim(specsStr string) []string {
+func (bib Bib) VernacularValuesTrim(specsStr string) []string {
 	values := []string{}
 	for _, value := range bib.VernacularValues(specsStr) {
 		trimValue := trimPunct(value)
@@ -88,7 +88,7 @@ func (bib BibResp) VernacularValuesTrim(specsStr string) []string {
 	return values
 }
 
-func (bib BibResp) vernacularValues(f880s []VarFieldResp, spec FieldSpec) []string {
+func (bib Bib) vernacularValues(f880s []VarFieldResp, spec FieldSpec) []string {
 	values := []string{}
 	for _, f880 := range f880s {
 		vern := f880.VernacularValue(spec)
@@ -101,7 +101,7 @@ func (bib BibResp) vernacularValues(f880s []VarFieldResp, spec FieldSpec) []stri
 // field and "a" represents the subfields. For example: "100ac" means
 // field "100" subfields "a" and "c". Multiple fields can be indicated
 // separated by colons, for example: "100ac:210f"
-func (bib BibResp) MarcValues(fieldSpec string) []string {
+func (bib Bib) MarcValues(fieldSpec string) []string {
 	values := []string{}
 	f880s := bib.getFields("880")
 
@@ -144,7 +144,7 @@ func (bib BibResp) MarcValues(fieldSpec string) []string {
 	return values
 }
 
-func (bib BibResp) MarcValuesTrim(fieldSpec string) []string {
+func (bib Bib) MarcValuesTrim(fieldSpec string) []string {
 	values := []string{}
 	for _, value := range bib.MarcValues(fieldSpec) {
 		trimValue := trimPunct(value)
@@ -153,7 +153,7 @@ func (bib BibResp) MarcValuesTrim(fieldSpec string) []string {
 	return values
 }
 
-func (bib BibResp) MarcValue(fieldSpec string) string {
+func (bib Bib) MarcValue(fieldSpec string) string {
 	values := bib.MarcValues(fieldSpec)
 	if len(values) == 0 {
 		return ""
@@ -161,7 +161,7 @@ func (bib BibResp) MarcValue(fieldSpec string) string {
 	return strings.Join(values, " ")
 }
 
-func (bib BibResp) MarcValueTrim(fieldSpec string) string {
+func (bib Bib) MarcValueTrim(fieldSpec string) string {
 	values := bib.MarcValues(fieldSpec)
 	if len(values) == 0 {
 		return ""
@@ -169,7 +169,7 @@ func (bib BibResp) MarcValueTrim(fieldSpec string) string {
 	return trimPunct(strings.Join(values, " "))
 }
 
-func (bib BibResp) getFields(marcTag string) []VarFieldResp {
+func (bib Bib) getFields(marcTag string) []VarFieldResp {
 	fields := []VarFieldResp{}
 	for _, field := range bib.VarFields {
 		if field.MarcTag == marcTag {
@@ -179,11 +179,11 @@ func (bib BibResp) getFields(marcTag string) []VarFieldResp {
 	return fields
 }
 
-func (bib BibResp) Isbn() []string {
+func (bib Bib) Isbn() []string {
 	return bib.MarcValues("020a:020z")
 }
 
-func (bib BibResp) TitleDisplay() string {
+func (bib Bib) TitleDisplay() string {
 	titles := bib.MarcValuesTrim("245apbfgkn")
 	if len(titles) > 0 {
 		return titles[0]
@@ -191,13 +191,13 @@ func (bib BibResp) TitleDisplay() string {
 	return ""
 }
 
-func (bib BibResp) TitleSeries() []string {
+func (bib Bib) TitleSeries() []string {
 	specsStr := "400flnptv:410flnptv:411fklnptv:440ap:490a:800abcdflnpqt:"
 	specsStr += "810tflnp:811tfklpsv:830adfklmnoprstv"
 	return bib.MarcValuesTrim(specsStr)
 }
 
-func (bib BibResp) TitleVernacularDisplay() string {
+func (bib Bib) TitleVernacularDisplay() string {
 	titles := bib.VernacularValues("245apbfgkn")
 	if len(titles) > 0 {
 		return trimPunct(titles[0])
@@ -205,7 +205,7 @@ func (bib BibResp) TitleVernacularDisplay() string {
 	return ""
 }
 
-func (bib BibResp) PublishedVernacularDisplay() string {
+func (bib Bib) PublishedVernacularDisplay() string {
 	titles := bib.VernacularValues("260a")
 	if len(titles) > 0 {
 		return titles[0]
@@ -213,7 +213,7 @@ func (bib BibResp) PublishedVernacularDisplay() string {
 	return ""
 }
 
-func (bib BibResp) IsDissertaion() bool {
+func (bib Bib) IsDissertaion() bool {
 	subs := []string{"a", "c"}
 	for _, field := range bib.getFields("502") {
 		for _, value := range field.getSubfieldsValues(subs) {
@@ -225,11 +225,11 @@ func (bib BibResp) IsDissertaion() bool {
 	return false
 }
 
-func (bib BibResp) Issn() []string {
+func (bib Bib) Issn() []string {
 	return bib.MarcValues("022a:022l:022y:773x:774x:776x")
 }
 
-func (bib BibResp) PublicationYear() (int, bool) {
+func (bib Bib) PublicationYear() (int, bool) {
 	rangeStart := 500
 	rangeEnd := time.Now().Year()
 	tolerance := 15
@@ -246,14 +246,14 @@ func (bib BibResp) PublicationYear() (int, bool) {
 	return 0, false
 }
 
-func (bib BibResp) pubYear260() (int, bool) {
+func (bib Bib) pubYear260() (int, bool) {
 	f260c := bib.MarcValue("260c")
 	re := regexp.MustCompile("(\\d{4})")
 	year := re.FindString(f260c)
 	return toIntTry(year)
 }
 
-func (bib BibResp) OclcNum() []string {
+func (bib Bib) OclcNum() []string {
 	// RegEx based on Traject's marc21.rb
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	re := regexp.MustCompile("\\s*(ocm|ocn|on|\\(OCoLC\\))(\\d+)")
@@ -270,7 +270,7 @@ func (bib BibResp) OclcNum() []string {
 	return values
 }
 
-func (bib BibResp) UpdatedDate() string {
+func (bib Bib) UpdatedDate() string {
 	if len(bib.UpdatedDateTime) < 10 {
 		return bib.UpdatedDateTime
 	}
@@ -278,7 +278,7 @@ func (bib BibResp) UpdatedDate() string {
 	return bib.UpdatedDateTime[0:10]
 }
 
-func (bib BibResp) IsOnline() bool {
+func (bib Bib) IsOnline() bool {
 	for _, item := range bib.Items {
 		if strings.HasPrefix(item.Location["code"], "es") {
 			return true
@@ -292,12 +292,12 @@ func (bib BibResp) IsOnline() bool {
 	return false
 }
 
-func (bib BibResp) Format() string {
+func (bib Bib) Format() string {
 	// TODO: Do we need the Traject logic for this or is this value enough?
 	return formatName(bib.MaterialType["value"])
 }
 
-func (bib BibResp) Languages() []string {
+func (bib Bib) Languages() []string {
 	values := []string{}
 	f008 := bib.MarcValue("008")
 	f008_lang := ""
@@ -313,7 +313,7 @@ func (bib BibResp) Languages() []string {
 	return values
 }
 
-func (bib BibResp) RegionFacet() []string {
+func (bib Bib) RegionFacet() []string {
 	// Stolen from Traject's marc_geo_facet
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	values := []string{}
@@ -336,7 +336,7 @@ func (bib BibResp) RegionFacet() []string {
 	return values
 }
 
-func (bib BibResp) RegionFacetZFields() []string {
+func (bib Bib) RegionFacetZFields() []string {
 	values := []string{}
 
 	zFieldSpecs := []string{
@@ -370,7 +370,7 @@ func (bib BibResp) RegionFacetZFields() []string {
 	return values
 }
 
-func (bib BibResp) AuthorFacet() []string {
+func (bib Bib) AuthorFacet() []string {
 	specStr := "100abcd:110ab:111ab:700abcd:711ab"
 
 	f710 := bib.getFields("710")
@@ -388,7 +388,7 @@ func (bib BibResp) AuthorFacet() []string {
 	return values
 }
 
-func (bib BibResp) AuthorDisplay() string {
+func (bib Bib) AuthorDisplay() string {
 	authors := bib.MarcValues("100abcdq:110abcd:111abcd")
 	if len(authors) > 0 {
 		return trimPunct(authors[0])
@@ -396,7 +396,7 @@ func (bib BibResp) AuthorDisplay() string {
 	return ""
 }
 
-func (bib BibResp) AbstractDisplay() string {
+func (bib Bib) AbstractDisplay() string {
 	values := bib.MarcValues("520a")
 	if len(values) > 0 {
 		return values[0]
@@ -404,11 +404,11 @@ func (bib BibResp) AbstractDisplay() string {
 	return ""
 }
 
-func (bib BibResp) AuthorVernacularDisplay() string {
+func (bib Bib) AuthorVernacularDisplay() string {
 	return bib.VernacularValueTrim("100abcdq:110abcd:111abcd")
 }
 
-func (bib BibResp) LocationCodes() []string {
+func (bib Bib) LocationCodes() []string {
 	values := []string{}
 	for _, item := range bib.Items {
 		safeAppend(&values, item.Location["code"])
@@ -416,7 +416,7 @@ func (bib BibResp) LocationCodes() []string {
 	return values
 }
 
-func (bib BibResp) BuildingFacets() []string {
+func (bib Bib) BuildingFacets() []string {
 	values := []string{}
 	for _, item := range bib.Items {
 		name := item.BuildingName()
@@ -425,7 +425,7 @@ func (bib BibResp) BuildingFacets() []string {
 	return values
 }
 
-func (bib BibResp) SortableTitle() string {
+func (bib Bib) SortableTitle() string {
 	// Logic stolen from
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	// TODO do we need the field k logic here?
@@ -446,11 +446,11 @@ func (bib BibResp) SortableTitle() string {
 	return trimPunct(sortTitle)
 }
 
-func (bib BibResp) CallNumbers() []string {
+func (bib Bib) CallNumbers() []string {
 	return bib.MarcValuesTrim("050ab:090ab:091ab:092ab:096ab:099ab")
 }
 
-func (bib BibResp) Subjects() []string {
+func (bib Bib) Subjects() []string {
 	spec := "600a:600abcdefghjklmnopqrstuvxyz:"
 	spec += "610a:610abcdefghklmnoprstuvxyz:"
 	spec += "611a:611acdefghjklnpqstuvxyz:"
@@ -468,7 +468,7 @@ func (bib BibResp) Subjects() []string {
 	return bib.MarcValuesTrim(spec)
 }
 
-func (bib BibResp) BookplateCodes() []string {
+func (bib Bib) BookplateCodes() []string {
 	values := []string{}
 	for _, item := range bib.Items {
 		arrayAppend(&values, item.BookplateCodes())

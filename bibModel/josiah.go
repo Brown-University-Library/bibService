@@ -49,7 +49,7 @@ type SolrDoc struct {
 	BookplateCodeSS    []string `json:"bookplate_code_ss"`
 }
 
-func NewSolrDoc(bib sierra.BibResp) (SolrDoc, error) {
+func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 	doc := SolrDoc{}
 	doc.Id = []string{"b" + bib.Id}
 	doc.UpdatedDt = []string{bib.UpdatedDate() + "T00:00:00Z"}

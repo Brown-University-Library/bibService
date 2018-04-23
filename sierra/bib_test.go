@@ -68,7 +68,7 @@ func TestLanguage(t *testing.T) {
 	field := VarFieldResp{MarcTag: "041"}
 	field.Subfields = []map[string]string{lang1, lang2, lang3}
 	fieldData := []VarFieldResp{field}
-	bib := BibResp{VarFields: fieldData}
+	bib := Bib{VarFields: fieldData}
 	values := bib.Languages()
 	if !in(values, "English") || !in(values, "Spanish") || !in(values, "French") {
 		t.Errorf("Expected languages not found: %#v", values)
@@ -117,7 +117,7 @@ func TestRegionFacetWithParent(t *testing.T) {
 	field := VarFieldResp{MarcTag: "650"}
 	field.Subfields = []map[string]string{z1, z2}
 	fieldData := []VarFieldResp{field}
-	bib := BibResp{VarFields: fieldData}
+	bib := Bib{VarFields: fieldData}
 	facets := bib.RegionFacet()
 	if !in(facets, "usa") || !in(facets, "ri (usa)") {
 		t.Errorf("Failed to detect parent region: %#v", facets)
@@ -131,7 +131,7 @@ func TestRegionFacet(t *testing.T) {
 	field := VarFieldResp{MarcTag: "650"}
 	field.Subfields = []map[string]string{z1, z2, z3}
 	fieldData := []VarFieldResp{field}
-	bib := BibResp{VarFields: fieldData}
+	bib := Bib{VarFields: fieldData}
 	facets := bib.RegionFacet()
 	if !in(facets, "usa") || !in(facets, "ri") || !in(facets, "zz") {
 		t.Errorf("Incorrectly handled regions: %#v", facets)

@@ -59,10 +59,10 @@ func New(settings Settings) BibModel {
 	return model
 }
 
-func (model BibModel) GetBib(bibs string) (sierra.BibsResp, error) {
+func (model BibModel) GetBib(bibs string) (sierra.Bibs, error) {
 	ids := idsFromBib(bibs)
 	if ids == "" {
-		return sierra.BibsResp{}, errors.New("No ID was received")
+		return sierra.Bibs{}, errors.New("No ID was received")
 	}
 
 	params := map[string]string{
@@ -70,19 +70,19 @@ func (model BibModel) GetBib(bibs string) (sierra.BibsResp, error) {
 	}
 	sierraBibs, err := model.api.Get(params, true)
 	if err != nil {
-		return sierra.BibsResp{}, err
+		return sierra.Bibs{}, err
 	}
 	return sierraBibs, err
 }
 
-func (model BibModel) GetBibsUpdated(fromDate, toDate string, includeItems bool) (sierra.BibsResp, error) {
-	bibs := sierra.BibsResp{}
+func (model BibModel) GetBibsUpdated(fromDate, toDate string, includeItems bool) (sierra.Bibs, error) {
+	bibs := sierra.Bibs{}
 	pageNum := 0
 	for {
 		pageNum += 1
 		page, err := model.bibsUpdatedPaginated(fromDate, toDate, pageNum, includeItems)
 		if err != nil {
-			return sierra.BibsResp{}, err
+			return sierra.Bibs{}, err
 		}
 		for _, entry := range page.Entries {
 			if !entry.Deleted {
@@ -97,14 +97,14 @@ func (model BibModel) GetBibsUpdated(fromDate, toDate string, includeItems bool)
 	return bibs, nil
 }
 
-func (model BibModel) GetBibsDeleted(fromDate, toDate string) (sierra.BibsResp, error) {
-	bibs := sierra.BibsResp{}
+func (model BibModel) GetBibsDeleted(fromDate, toDate string) (sierra.Bibs, error) {
+	bibs := sierra.Bibs{}
 	pageNum := 0
 	for {
 		pageNum += 1
 		page, err := model.bibsDeletedPaginated(fromDate, toDate, pageNum)
 		if err != nil {
-			return sierra.BibsResp{}, err
+			return sierra.Bibs{}, err
 		}
 		bibs.Total += page.Total
 		for _, entry := range page.Entries {
@@ -144,7 +144,7 @@ func (model BibModel) GetSolrDeleteQuery(fromDate, toDate string) (string, error
 	return query, nil
 }
 
-func (model BibModel) bibsDeletedPaginated(fromDate, toDate string, page int) (sierra.BibsResp, error) {
+func (model BibModel) bibsDeletedPaginated(fromDate, toDate string, page int) (sierra.Bibs, error) {
 	offset := (page - 1) * pageSize
 	params := map[string]string{
 		"offset": strconv.Itoa(offset),
@@ -162,7 +162,7 @@ func (model BibModel) bibsDeletedPaginated(fromDate, toDate string, page int) (s
 	return model.api.Get(params, false)
 }
 
-func (model BibModel) bibsUpdatedPaginated(fromDate, toDate string, page int, includeItems bool) (sierra.BibsResp, error) {
+func (model BibModel) bibsUpdatedPaginated(fromDate, toDate string, page int, includeItems bool) (sierra.Bibs, error) {
 	offset := (page - 1) * pageSize
 	params := map[string]string{
 		"offset":      strconv.Itoa(offset),
@@ -194,7 +194,7 @@ func (model BibModel) Marc(bib string) (string, error) {
 	return model.api.Marc(id)
 }
 
-// func bibRanges(bibs sierra.BibsResp) []Range {
+// func bibRanges(bibs sierra.Bibs) []Range {
 // 	min, _ := strconv.Atoi(bibs.Entries[0].Id)
 // 	max := min
 // 	for _, bib := range bibs.Entries {
@@ -231,10 +231,10 @@ func (model BibModel) Marc(bib string) (string, error) {
 // }
 
 func (model BibModel) GetMarcUpdated(fromDate, toDate string) (string, error) {
-	bibs, err := model.GetBibsUpdated(fromDate, toDate, false)
-	if err != nil {
-		return "", err
-	}
+	// bibs, err := model.GetBibsUpdated(fromDate, toDate, false)
+	// if err != nil {
+	// 	return "", err
+	// }
 
 	// Breaking by fixed size ranges is very inneficient.
 	// If bib 100 and 80000 are modified it will get a lot of
@@ -261,7 +261,7 @@ func (model BibModel) GetMarcUpdated(fromDate, toDate string) (string, error) {
 	// 	}
 	// 	bigMarc += marc
 	// }
-	return "bigMarc", err
+	return "bigMarc", errors.New("not implemented")
 }
 
 func (model BibModel) ItemsRaw(bib string) (string, error) {

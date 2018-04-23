@@ -25,7 +25,7 @@ func formatName(code string) string {
 	return name
 }
 
-// func FormatForBib(bib BibResp) string {
+// func FormatForBib(bib Bib) string {
 // 	fixed := ""
 // 	f008 := bib.MarcValue("008")
 // 	if len(f008) >= 22 {

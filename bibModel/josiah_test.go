@@ -14,7 +14,7 @@ func TestX(t *testing.T) {
 		t.Errorf("Error reading test file: %s", err)
 	}
 
-	var bibs sierra.BibsResp
+	var bibs sierra.Bibs
 	err = json.Unmarshal(bytes, &bibs)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %s", err)

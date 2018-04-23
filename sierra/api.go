@@ -82,18 +82,18 @@ func (s *Sierra) Search(value string) (string, error) {
 //		"updatedDate": "date-range"
 //
 // TODO: make these explicit parameters instead.
-func (s *Sierra) Get(params map[string]string, includeItems bool) (BibsResp, error) {
+func (s *Sierra) Get(params map[string]string, includeItems bool) (Bibs, error) {
 	// fixedFields,
 	fields := "fields=default,available,orders,normTitle,normAuthor,locations,varFields"
 	body, err := s.GetRaw(params, fields)
 	if err != nil {
-		return BibsResp{}, err
+		return Bibs{}, err
 	}
 
-	var bibs BibsResp
+	var bibs Bibs
 	err = json.Unmarshal([]byte(body), &bibs)
 	if err != nil {
-		return BibsResp{}, err
+		return Bibs{}, err
 	}
 
 	for i, bib := range bibs.Entries {
@@ -131,7 +131,7 @@ func (s *Sierra) Get(params map[string]string, includeItems bool) (BibsResp, err
 	// 	bibIdsStr := strings.Join(page, ",")
 	// 	items, err := s.Items(bibIdsStr)
 	// 	if err != nil {
-	// 		return BibsResp{}, err
+	// 		return Bibs{}, err
 	// 	}
 	// 	for i, bib := range page {
 	// 		bibItems := items.ForBib(bib)
@@ -146,15 +146,15 @@ func (s *Sierra) Get(params map[string]string, includeItems bool) (BibsResp, err
 // Fetches minimal information about the records,
 // we could eventually return an []string but I need to
 // decide how to handle deleted records in that case.
-func (s *Sierra) GetBibs(params map[string]string) (BibsResp, error) {
+func (s *Sierra) GetBibs(params map[string]string) (Bibs, error) {
 	// TODO: could I use "id,deleted"?
 	fields := "fields=default"
 	body, err := s.GetRaw(params, fields)
 	if err != nil {
-		return BibsResp{}, err
+		return Bibs{}, err
 	}
 
-	var bibs BibsResp
+	var bibs Bibs
 	err = json.Unmarshal([]byte(body), &bibs)
 	return bibs, err
 }
@@ -177,19 +177,19 @@ func (s *Sierra) GetRaw(params map[string]string, fields string) (string, error)
 	return s.httpGet(url, s.Authorization.AccessToken)
 }
 
-func (s *Sierra) BibsUpdatedSince(date string) (BibsResp, error) {
+func (s *Sierra) BibsUpdatedSince(date string) (Bibs, error) {
 	err := s.authenticate()
 	if err != nil {
-		return BibsResp{}, err
+		return Bibs{}, err
 	}
 
 	url := s.ApiUrl + "/bibs?updatedDate=" + date
 	body, err := s.httpGet(url, s.Authorization.AccessToken)
 	if err != nil {
-		return BibsResp{}, err
+		return Bibs{}, err
 	}
 
-	var bibs BibsResp
+	var bibs Bibs
 	err = json.Unmarshal([]byte(body), &bibs)
 	// Should this return an array of IDs instead?
 	return bibs, err
