@@ -18,7 +18,7 @@ type ItemResp struct {
 	Location    map[string]string `json:"location"`
 	Status      map[string]string `json:"status"`
 	Barcode     string            `json:"barcode"`
-	Fields      []VarFieldResp    `json:"varFields"`
+	Fields      []Field    `json:"varFields"`
 }
 
 func (i ItemResp) Bib() (string, bool) {

@@ -24,7 +24,7 @@ type Bib struct {
 	Country         map[string]string `json:"country,omitempty"`
 	NormTitle       string            `json:"normTitle,omitempty"`
 	NormAuthor      string            `json:"normAuthor,omitempty"`
-	VarFields       []VarFieldResp    `json:"varFields,omitempty"`
+	VarFields       []Field           `json:"varFields,omitempty"`
 	Items           []ItemResp        // does not come on the Sierra response
 }
 
@@ -67,7 +67,7 @@ func (bib Bib) VernacularValuesTrim(specsStr string) []string {
 	return values
 }
 
-func (bib Bib) vernacularValues(f880s []VarFieldResp, spec FieldSpec) []string {
+func (bib Bib) vernacularValues(f880s []Field, spec FieldSpec) []string {
 	values := []string{}
 	for _, f880 := range f880s {
 		vern := f880.VernacularValue(spec)
@@ -148,8 +148,8 @@ func (bib Bib) MarcValueTrim(fieldSpec string) string {
 	return trimPunct(strings.Join(values, " "))
 }
 
-func (bib Bib) getFields(marcTag string) []VarFieldResp {
-	fields := []VarFieldResp{}
+func (bib Bib) getFields(marcTag string) []Field {
+	fields := []Field{}
 	for _, field := range bib.VarFields {
 		if field.MarcTag == marcTag {
 			fields = append(fields, field)

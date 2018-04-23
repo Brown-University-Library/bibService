@@ -8,7 +8,7 @@ func TestIsVernacularFor(t *testing.T) {
 	sub1 := map[string]string{"content": "710-05/$1", "tag": "6"}
 	sub2 := map[string]string{"content": "gabriel garcia", "tag": "a"}
 	sub3 := map[string]string{"content": "author", "tag": "e"}
-	field := VarFieldResp{MarcTag: "880"}
+	field := Field{MarcTag: "880"}
 	field.Subfields = []map[string]string{sub1, sub2, sub3}
 
 	spec710, _ := NewFieldSpec("710ab")
@@ -27,7 +27,7 @@ func TestVernacularValues(t *testing.T) {
 	sub2 := map[string]string{"content": "gabriel x garcia", "tag": "a"}
 	sub3 := map[string]string{"content": "author", "tag": "e"}
 	sub4 := map[string]string{"content": "gabriel y garcia", "tag": "a"}
-	field := VarFieldResp{MarcTag: "880"}
+	field := Field{MarcTag: "880"}
 	field.Subfields = []map[string]string{sub1, sub2, sub3, sub4}
 
 	spec710, _ := NewFieldSpec("710ab")
