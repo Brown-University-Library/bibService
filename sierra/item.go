@@ -34,8 +34,7 @@ func (i Item) LocationName() string {
 }
 
 func (i Item) BuildingName() string {
-	// TODO: Translate this to a full building name (e.g. SCI to Sciences)
-	return i.LocationName()
+	return buildingName(i.Location["code"])
 }
 
 func (i Item) StatusDisplay() string {

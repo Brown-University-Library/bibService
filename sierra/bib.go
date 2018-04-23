@@ -266,6 +266,15 @@ func (bib Bib) IsOnline() bool {
 			return true
 		}
 	}
+
+	for _, value := range bib.MarcValues("338a") {
+		if value == "online resource" {
+			return true
+		}
+	}
+
+	// It seems that field 998 does not come in the API and
+	// therfore this code does nothing for now.
 	for _, value := range bib.MarcValues("998a") {
 		if value == "es001" {
 			return true
