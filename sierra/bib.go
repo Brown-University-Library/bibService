@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-type Bibs struct {
-	Total   int   `json:"total"`
-	Entries []Bib `json:"entries"`
-}
-
 type Bib struct {
 	Id              string            `json:"id"`
 	UpdatedDateTime string            `json:"updatedDate,omitempty"`
@@ -35,22 +30,6 @@ type Bib struct {
 
 func (b Bib) Bib() string {
 	return "b" + b.Id
-}
-
-func (b Bibs) BibsIdStr() string {
-	ids := []string{}
-	for _, bib := range b.Entries {
-		ids = append(ids, bib.Id)
-	}
-	return strings.Join(ids, ",")
-}
-
-func (b Bibs) BibsIdPages() [][]string {
-	ids := []string{}
-	for _, bib := range b.Entries {
-		ids = append(ids, bib.Id)
-	}
-	return arrayToPages(ids, 10)
 }
 
 func (bib Bib) VernacularValues(specsStr string) []string {
@@ -473,8 +452,8 @@ func (bib Bib) BookplateCodes() []string {
 	for _, item := range bib.Items {
 		arrayAppend(&values, item.BookplateCodes())
 	}
-	// Do we need this? It seems that the data has been consolidate in the
-	// item records.
+	// TODO: Do we need this? It seems that the data has been
+	// consolidate in the item records.
 	// arrayAppend(&values, MarcValues("935a"))
 	return values
 }
