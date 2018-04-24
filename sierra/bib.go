@@ -73,8 +73,16 @@ func (bib Bib) VernacularValuesTrim(specsStr string) []string {
 func (bib Bib) vernacularValues(f880s []Field, spec FieldSpec) []string {
 	values := []string{}
 	for _, f880 := range f880s {
-		vern := f880.VernacularValue(spec)
-		safeAppend(&values, vern)
+		if len(spec.Subfields) == 0 {
+			vern := f880.VernacularValue(spec)
+			safeAppend(&values, vern)
+		} else {
+			for _, subField := range spec.Subfields {
+				subSpec, _ := NewFieldSpec(spec.MarcTag + subField)
+				vern := f880.VernacularValue(subSpec)
+				safeAppend(&values, vern)
+			}
+		}
 	}
 	return values
 }
@@ -159,6 +167,27 @@ func (bib Bib) getFields(marcTag string) []Field {
 		}
 	}
 	return fields
+}
+
+func (bib Bib) UniformTitles(newVersion bool) []UniformTitles {
+	var spec string
+	if newVersion {
+		spec = "240adfgklmnoprs"
+	} else {
+		spec = "130adfgklmnoprst"
+	}
+	return NewUniformTitles(bib, spec)
+}
+
+func (bib Bib) UniformTitlesDisplay(newVersion bool) string {
+	var spec string
+	if newVersion {
+		spec = "240adfgklmnoprs"
+	} else {
+		spec = "130adfgklmnoprst"
+	}
+	titles, _ := NewUniformTitlesString(bib, spec)
+	return titles
 }
 
 func (bib Bib) Isbn() []string {
