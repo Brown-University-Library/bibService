@@ -1,6 +1,7 @@
 package sierra
 
 import (
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -127,6 +128,44 @@ func (bib Bib) VernacularValuesFor(field Field, spec FieldSpec) []string {
 // 	return values
 // }
 
+func (bib Bib) MarcValuesByField(fieldSpec string) [][]string {
+	values := [][]string{}
+
+	for _, spec := range NewFieldSpecs(fieldSpec) {
+		fields := bib.getFields(spec.MarcTag)
+
+		if len(spec.Subfields) == 0 {
+			// Get the value directly
+			for _, field := range fields {
+				if field.Content != "" {
+					values = append(values, []string{field.Content})
+				}
+			}
+			continue
+		}
+
+		// Process the subfields
+		for _, field := range fields {
+			subValues := field.getSubfieldsValues(spec.Subfields)
+			fieldValues := []string{}
+			for _, subValue := range subValues {
+				fieldValues = append(fieldValues, subValue)
+			}
+			values = append(values, fieldValues)
+		}
+
+		for _, field := range fields {
+			vernacular := bib.VernacularValuesFor(field, spec)
+			fieldValues := []string{}
+			for _, vernValue := range vernacular {
+				fieldValues = append(fieldValues, vernValue)
+			}
+			values = append(values, fieldValues)
+		}
+	}
+	return values
+}
+
 // fieldSpec is something in the form "nnna" where "nnn" is the tag of the
 // field and "a" represents the subfields. For example: "100ac" means
 // field "100" subfields "a" and "c". Multiple fields can be indicated
@@ -159,18 +198,21 @@ func (bib Bib) MarcValues(fieldSpec string) []string {
 				// append each individual value
 				for _, subValue := range subValues {
 					safeAppend(&values, subValue)
+					log.Printf("Field (S): %#v => %s", field, subValue)
 				}
 			} else {
 				// multi-subfields specified (e.g. 060abc)
 				// concatenate the values and then append them
 				strVal := strings.Join(subValues, " ")
 				safeAppend(&values, strVal)
+				log.Printf("Field (J): %#v => %s", field, strVal)
 			}
 		}
 
 		for _, field := range fields {
 			vernacular := bib.VernacularValuesFor(field, spec)
 			arrayAppend(&values, vernacular)
+			log.Printf("Field (V): %#v => %#v", field, vernacular)
 		}
 
 		// vernacular := bib.vernacularValues(f880s, spec)

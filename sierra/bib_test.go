@@ -1,6 +1,7 @@
 package sierra
 
 import (
+	"log"
 	"regexp"
 	"testing"
 )
@@ -271,21 +272,46 @@ func TestUniformTitleVernacular(t *testing.T) {
 func TestUniformTitleVernacularMany(t *testing.T) {
 	// real sample: https://search.library.brown.edu/catalog/b8060012
 	// title in english
+	f2406 := map[string]string{"content": "880-02", "tag": "6"}
 	f240a := map[string]string{"content": "title in english", "tag": "a"}
 	f240l := map[string]string{"content": "English", "tag": "l"}
 	f240 := Field{MarcTag: "240"}
-	f240.Subfields = []map[string]string{f240a, f240l}
+	f240.Subfields = []map[string]string{f240a, f240l, f2406}
 
 	// title in language
-	f8806 := map[string]string{"content": "240-00", "tag": "6"}
+	f8806 := map[string]string{"content": "240-02", "tag": "6"}
 	f880a := map[string]string{"content": "titulo en español", "tag": "a"}
 	f880l := map[string]string{"content": "Spanish", "tag": "l"}
 	f880 := Field{MarcTag: "880"}
 	f880.Subfields = []map[string]string{f8806, f880a, f880l}
 
+	/*
+
+	   getting
+	   {"title in english English", "titulo en español Spanish"}
+
+	   need to produce
+	   {"title in english", "English"}
+	   {"titulo en español", "Spanish"}
+
+
+	   expecting
+	   {"title in english", "title in english" }
+	   {"english", "title in english. english" }
+	   {"titulo en español", "titulo en español" }
+	   {"spanish", "titulo en español. spanish" }
+
+	*/
 	fields := []Field{f240, f880}
 	bib := Bib{VarFields: fields}
 	titles := bib.UniformTitles(true)
+	log.Printf("-------------------")
+	log.Printf("%#v", bib.MarcValues("240adfgklmnoprs"))
+	log.Printf("-------------------")
+	log.Printf("===================")
+	log.Printf("%#v", bib.MarcValuesByField("240adfgklmnoprs"))
+	log.Printf("===================")
+
 	if len(titles) != 2 {
 		t.Errorf("Invalid number of titles found (field 240): %d, %v", len(titles), titles)
 	}
