@@ -176,9 +176,10 @@ func TestRegionFacet(t *testing.T) {
 func TestTitleVernacularDisplay(t *testing.T) {
 	// real sample: https://search.library.brown.edu/catalog/b8060012
 	// title in english
+	f2456 := map[string]string{"content": "880-03", "tag": "6"}
 	f245a := map[string]string{"content": "whatever", "tag": "a"}
 	f245 := Field{MarcTag: "245"}
-	f245.Subfields = []map[string]string{f245a}
+	f245.Subfields = []map[string]string{f245a, f2456}
 
 	// title in language
 	f8806 := map[string]string{"content": "245-03/$1", "tag": "6"}
