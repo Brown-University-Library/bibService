@@ -110,6 +110,41 @@ func TestOclcNum(t *testing.T) {
 	}
 }
 
+func TestValuesWithVernacular(t *testing.T) {
+	// Two author values
+	s1 := map[string]string{"tag": "6", "content": "880-04"}
+	a1 := map[string]string{"tag": "a", "content": "aaa"}
+	b1 := map[string]string{"tag": "b", "content": "bbb"}
+	f700_1 := Field{MarcTag: "700"}
+	f700_1.Subfields = []map[string]string{s1, a1, b1}
+
+	s2 := map[string]string{"tag": "6", "content": "880-05"}
+	a2 := map[string]string{"tag": "a", "content": "ccc"}
+	f700_2 := Field{MarcTag: "700"}
+	f700_2.Subfields = []map[string]string{s2, a2}
+
+	// and their vernacular values
+	s3 := map[string]string{"tag": "6", "content": "700-04/$1"}
+	a3 := map[string]string{"tag": "a", "content": "AAA"}
+	b3 := map[string]string{"tag": "b", "content": "BBB"}
+	f880_1 := Field{MarcTag: "880"}
+	f880_1.Subfields = []map[string]string{s3, a3, b3}
+
+	s4 := map[string]string{"tag": "6", "content": "700-05/$1"}
+	a4 := map[string]string{"tag": "a", "content": "CCC"}
+	f880_2 := Field{MarcTag: "880"}
+	f880_2.Subfields = []map[string]string{s4, a4}
+
+	// A document with all the values
+	fields := []Field{f700_1, f700_2, f880_1, f880_2}
+	bib := Bib{VarFields: fields}
+	// values := bib.MarcValues("700ab")
+	spec, _ := NewFieldSpec("700abc")
+	t.Errorf("FIRST.: %#v", bib.VernacularValuesFor(bib.VarFields[0], spec))
+	t.Errorf("SECOND:%#v", bib.VernacularValuesFor(bib.VarFields[1], spec))
+	t.Errorf("ALL...:%#v", bib.MarcValues("700abc"))
+}
+
 func TestRegionFacetWithParent(t *testing.T) {
 	z1 := map[string]string{"content": "usa", "tag": "z"}
 	z2 := map[string]string{"content": "ri", "tag": "z"}
@@ -138,6 +173,29 @@ func TestRegionFacet(t *testing.T) {
 	}
 }
 
+func TestTitleVernacularDisplay(t *testing.T) {
+	// real sample: https://search.library.brown.edu/catalog/b8060012
+	// title in english
+	f245a := map[string]string{"content": "whatever", "tag": "a"}
+	f245 := Field{MarcTag: "245"}
+	f245.Subfields = []map[string]string{f245a}
+
+	// title in language
+	f8806 := map[string]string{"content": "245-03/$1", "tag": "6"}
+	f880a := map[string]string{"content": "titulo en español:", "tag": "a"}
+	f880b := map[string]string{"content": "bb", "tag": "b"}
+	f880c := map[string]string{"content": "cc", "tag": "c"}
+	f880 := Field{MarcTag: "880"}
+	f880.Subfields = []map[string]string{f8806, f880a, f880b, f880c}
+
+	fields := []Field{f245, f880}
+	bib := Bib{VarFields: fields}
+	title := bib.TitleVernacularDisplay()
+	if title != "titulo en español: bb" {
+		t.Errorf("Invalid vernacular title found: %s", title)
+	}
+}
+
 func TestUniformTitleTwoValues(t *testing.T) {
 	// real sample https://search.library.brown.edu/catalog/b8060083
 	f130a := map[string]string{"content": "Neues Licht.", "tag": "a"}
@@ -156,6 +214,25 @@ func TestUniformTitleTwoValues(t *testing.T) {
 
 		if titles[0].Title[1].Display != "English." {
 			t.Errorf("Subfield l not found: %v", titles)
+		}
+	}
+
+	// real sample https://search.library.brown.edu/catalog/b8060295
+	f240a := map[string]string{"content": "Poems.", "tag": "a"}
+	f240k := map[string]string{"content": "Selections", "tag": "k"}
+	f240 := Field{MarcTag: "240"}
+	f240.Subfields = []map[string]string{f240a, f240k}
+	fields = []Field{f240}
+	bib = Bib{VarFields: fields}
+	titles = bib.UniformTitles(true)
+	if len(titles) != 1 {
+		t.Errorf("Invalid number of titles found (field 240): %d, %v", len(titles), titles)
+	} else {
+		if titles[0].Title[0].Display != "Poems." {
+			t.Errorf("Subfield a not found: %v", titles)
+		}
+		if titles[0].Title[1].Display != "Selections." {
+			t.Errorf("Subfield k not found: %v", titles)
 		}
 	}
 }

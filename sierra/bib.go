@@ -35,12 +35,39 @@ func (b Bib) Bib() string {
 	return "b" + b.Id
 }
 
+func (bib Bib) VernacularValuesFor(field Field, spec FieldSpec) []string {
+	values := []string{}
+
+	// True if the field has subfield with tag 6
+	// target would be "880-04"
+	vern, target := field.HasVernacular()
+	if !vern {
+		return values
+	}
+
+	tokens := strings.Split(target, "-")
+	marcTag := tokens[0]                    // 880
+	tag6 := field.MarcTag + "-" + tokens[1] // 700-04
+
+	// Process the fields indicated in target (e.g. 880s)
+	for _, vernField := range bib.getFields(marcTag) {
+		// if this is the one that corresponds with our target
+		// e.g. 700-04
+		if vernField.IsVernacularForTag6(tag6) {
+			vernValues := vernField.ValuesForForTag6(spec.Subfields)
+			safeAppend(&values, strings.Join(vernValues, " "))
+		}
+	}
+	return values
+}
+
 func (bib Bib) VernacularValues(specsStr string) []string {
 	values := []string{}
 	f880s := bib.getFields("880")
 	for _, spec := range NewFieldSpecs(specsStr) {
 		vern := bib.vernacularValues(f880s, spec)
-		arrayAppend(&values, vern)
+		safeAppend(&values, strings.Join(vern, " "))
+		// arrayAppend(&values, vern)
 	}
 	return values
 }
@@ -73,16 +100,18 @@ func (bib Bib) VernacularValuesTrim(specsStr string) []string {
 func (bib Bib) vernacularValues(f880s []Field, spec FieldSpec) []string {
 	values := []string{}
 	for _, f880 := range f880s {
-		if len(spec.Subfields) == 0 {
-			vern := f880.VernacularValue(spec)
-			safeAppend(&values, vern)
-		} else {
-			for _, subField := range spec.Subfields {
-				subSpec, _ := NewFieldSpec(spec.MarcTag + subField)
-				vern := f880.VernacularValue(subSpec)
-				safeAppend(&values, vern)
-			}
-		}
+		vern := f880.VernacularValues(spec)
+		arrayAppend(&values, vern)
+		// if len(spec.Subfields) == 0 {
+		// 	vern := f880.VernacularValue(spec)
+		// 	safeAppend(&values, vern)
+		// } else {
+		// 	for _, subField := range spec.Subfields {
+		// 		subSpec, _ := NewFieldSpec(spec.MarcTag + subField)
+		// 		vern := f880.VernacularValue(subSpec)
+		// 		safeAppend(&values, vern)
+		// 	}
+		// }
 	}
 	return values
 }
@@ -92,6 +121,54 @@ func (bib Bib) vernacularValues(f880s []Field, spec FieldSpec) []string {
 // field "100" subfields "a" and "c". Multiple fields can be indicated
 // separated by colons, for example: "100ac:210f"
 func (bib Bib) MarcValues(fieldSpec string) []string {
+	values := []string{}
+	f880s := bib.getFields("880")
+
+	for _, spec := range NewFieldSpecs(fieldSpec) {
+		fields := bib.getFields(spec.MarcTag)
+		if len(fields) == 0 {
+			vernacular := bib.vernacularValues(f880s, spec)
+			arrayAppend(&values, vernacular)
+			continue
+		}
+
+		if len(spec.Subfields) == 0 {
+			// Get the value directly
+			for _, field := range fields {
+				safeAppend(&values, field.Content)
+			}
+			continue
+		}
+
+		// Process the subfields
+		for _, field := range fields {
+			subValues := field.getSubfieldsValues(spec.Subfields)
+			if len(spec.Subfields) == 1 {
+				// single subfields specified (060a)
+				// append each individual value
+				for _, subValue := range subValues {
+					safeAppend(&values, subValue)
+				}
+			} else {
+				// multi-subfields specified (e.g. 060abc)
+				// concatenate the values and then append them
+				strVal := strings.Join(subValues, " ")
+				safeAppend(&values, strVal)
+			}
+		}
+
+		for _, field := range fields {
+			vernacular := bib.VernacularValuesFor(field, spec)
+			arrayAppend(&values, vernacular)
+		}
+
+		// vernacular := bib.vernacularValues(f880s, spec)
+		// arrayAppend(&values, vernacular)
+	}
+	return values
+}
+
+func (bib Bib) MarcValuesOld(fieldSpec string) []string {
 	values := []string{}
 	f880s := bib.getFields("880")
 
@@ -211,15 +288,15 @@ func (bib Bib) TitleSeries() []string {
 func (bib Bib) TitleVernacularDisplay() string {
 	titles := bib.VernacularValues("245apbfgkn")
 	if len(titles) > 0 {
-		return trimPunct(titles[0])
+		return trimPunct(strings.Join(titles, " "))
 	}
 	return ""
 }
 
 func (bib Bib) PublishedVernacularDisplay() string {
-	titles := bib.VernacularValues("260a")
-	if len(titles) > 0 {
-		return titles[0]
+	values := bib.VernacularValues("260a")
+	if len(values) > 0 {
+		return strings.Join(values, " ")
 	}
 	return ""
 }
