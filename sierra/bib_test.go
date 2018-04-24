@@ -241,9 +241,10 @@ func TestUniformTitleTwoValues(t *testing.T) {
 func TestUniformTitleVernacular(t *testing.T) {
 	// real sample: https://search.library.brown.edu/catalog/b8060012
 	// title in english
+	f2406 := map[string]string{"content": "880-02", "tag": "6"}
 	f240a := map[string]string{"content": "title in english", "tag": "a"}
 	f240 := Field{MarcTag: "240"}
-	f240.Subfields = []map[string]string{f240a}
+	f240.Subfields = []map[string]string{f240a, f2406}
 
 	// title in language
 	f8806 := map[string]string{"content": "240-02/$1", "tag": "6"}
