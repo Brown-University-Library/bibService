@@ -306,10 +306,21 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 	bib := Bib{VarFields: fields}
 	titles := bib.UniformTitles(true)
 	log.Printf("-------------------")
-	log.Printf("%#v", bib.MarcValues("240adfgklmnoprs"))
+	log.Printf("%#v", titles)
 	log.Printf("-------------------")
 	log.Printf("===================")
-	log.Printf("%#v", bib.MarcValuesByField("240adfgklmnoprs"))
+	for i, valuesForField := range bib.MarcValuesByField("240adfgklmnoprs") {
+		query := ""
+		for _, value := range valuesForField {
+			display := value
+			if query == "" {
+				query = value
+			} else {
+				query = "(" + query + ") " + value
+			}
+			log.Printf("%d. %s / %s", i, display, query)
+		}
+	}
 	log.Printf("===================")
 
 	if len(titles) != 2 {
@@ -336,10 +347,14 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 		t1 := titles[1].Title[0]
 		if t1.Display != "titulo en español." || t1.Query != "titulo en español." {
 			t.Errorf("Invalid values in second title (1/2): %#v", t1)
+			t.Errorf("%#v", t1.Display)
+			t.Errorf("%#v", t1.Query)
 		}
 		t2 := titles[1].Title[1]
 		if t2.Display != "Spanish." || t2.Query != "titulo en español. Spanish." {
 			t.Errorf("Invalid values in second title (2/2): %v", t2)
+			t.Errorf("%#v", t2.Display)
+			t.Errorf("%#v", t2.Query)
 		}
 	}
 }
