@@ -74,10 +74,7 @@ func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 		doc.PublicationYear = []int{}
 	}
 
-	titleSpec := "100tflnp:110tflnp:111tfklpsv:130adfklmnoprst:210ab:222ab:"
-	titleSpec += "240adfklmnoprs:242abnp:246abnp:247abnp:505t:"
-	titleSpec += "700fklmtnoprsv:710fklmorstv:711fklpt:730adfklmnoprstv:740ap"
-	doc.TitleT = bib.MarcValuesTrim(titleSpec)
+	doc.TitleT = bib.TitleT()
 	doc.TitleDisplay = []string{bib.TitleDisplay()}
 	doc.TitleVernDisplay = []string{bib.TitleVernacularDisplay()}
 	doc.TitleSeriesT = bib.TitleSeries()
@@ -91,9 +88,10 @@ func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 	doc.AuthorDisplay = []string{bib.AuthorDisplay()}
 	doc.AuthorVernDisplay = []string{bib.AuthorVernacularDisplay()}
 	doc.AuthorFacet = bib.AuthorFacet()
-	doc.AuthorAddlDisplay = bib.MarcValuesTrim("700abcd:710ab:711ab")
-	doc.AuthorT = bib.MarcValuesTrim("100abcdq:110abcd:111abcdeq")
-	doc.AuthorAddlT = bib.MarcValues("700aqbcd:710abcd:711aqbcde:810abc:811aqdce")
+
+	doc.AuthorAddlDisplay = bib.AuthorsAddlDisplay()
+	doc.AuthorT = bib.AuthorsT()
+	doc.AuthorAddlT = bib.AuthorsAddlT()
 
 	doc.PublishedDisplay = bib.MarcValuesTrim("260a")
 	doc.PublishedVernDisplay = []string{bib.PublishedVernacularDisplay()}

@@ -238,6 +238,66 @@ func valuesToString(values [][]string, trim bool) string {
 	return strings.Join(rowValues, " ")
 }
 
+/*
+ * Author functions
+ */
+func (bib Bib) AuthorsAddlT() []string {
+	authors := bib.MarcValuesByField("700aqbcd:710abcd:711aqbcde:810abc:811aqdce")
+	return valuesToArray(authors, false)
+}
+
+func (bib Bib) AuthorsT() []string {
+	authors := bib.MarcValuesByField("100abcdq:110abcd:111abcdeq")
+	return valuesToArray(authors, true)
+}
+
+func (bib Bib) AuthorsAddlDisplay() []string {
+	authors := bib.MarcValuesByField("700abcd:710ab:711ab")
+	return valuesToArray(authors, true)
+}
+
+func (bib Bib) AuthorFacet() []string {
+	specStr := "100abcd:110ab:111ab:700abcd:711ab"
+
+	f710 := bib.getFields("710")
+	if len(f710) > 0 {
+		// If there is more than one 710 field this will only check the first one.
+		// TODO: handle multi 710 fields
+		if f710[0].Ind2 != "9" {
+			specStr += ":710ab"
+		}
+	}
+
+	values := bib.MarcValuesTrim(specStr)
+	vernValues := bib.VernacularValues(specStr)
+	arrayAppend(&values, vernValues)
+	return values
+}
+
+func (bib Bib) AuthorDisplay() string {
+	authors := bib.MarcValues("100abcdq:110abcd:111abcd")
+	if len(authors) > 0 {
+		return trimPunct(authors[0])
+	}
+	return ""
+}
+
+func (bib Bib) AuthorVernacularDisplay() string {
+	vernAuthors := bib.VernacularValuesByField("100abcdq:110abcd:111abcd")
+	return valuesToString(vernAuthors, true)
+}
+
+func (bib Bib) AbstractDisplay() string {
+	values := bib.MarcValues("520a")
+	if len(values) > 0 {
+		return values[0]
+	}
+	return ""
+}
+
+/*
+ * Title functions
+ */
 func (bib Bib) UniformTitles(newVersion bool) []UniformTitles {
 	var spec string
 	if newVersion {
@@ -276,16 +336,32 @@ func (bib Bib) UniformTitlesDisplay(newVersion bool) string {
 	return string(bytes)
 }
 
-func (bib Bib) Isbn() []string {
-	return bib.MarcValues("020a:020z")
-}
-
 func (bib Bib) TitleDisplay() string {
 	titles := bib.MarcValuesTrim("245apbfgkn")
 	if len(titles) > 0 {
 		return titles[0]
 	}
 	return ""
+}
+
+func (bib Bib) TitleT() []string {
+	// TODO: This does not give proper results for record b8060047
+	// because there are more than one subfield with value (e.g. t & n)
+	// and they are not being joined as a single string.
+	//
+	// But there are other instances where we don't want to join them as
+	// as single string (see record b8060047 where there are many t subfield
+	// values and they should be kept separate)
+	specsStr := "100tflnp:110tflnp:111tfklpsv:130adfklmnoprst:210ab:222ab:"
+	specsStr += "240adfklmnoprs:242abnp:246abnp:247abnp:505t:"
+	specsStr += "700fklmtnoprsv:710fklmorstv:711fklpt:730adfklmnoprstv:740ap"
+	titles := []string{}
+	for _, fieldValues := range bib.MarcValuesByField(specsStr) {
+		for _, title := range fieldValues {
+			safeAppend(&titles, trimPunct(title))
+		}
+	}
+	return titles
 }
 
 func (bib Bib) TitleSeries() []string {
@@ -298,6 +374,84 @@ func (bib Bib) TitleSeries() []string {
 func (bib Bib) TitleVernacularDisplay() string {
 	vernTitles := bib.VernacularValuesByField("245apbfgkn")
 	return valuesToString(vernTitles, true)
+}
+
+/*
+ * Others
+ */
+func (bib Bib) LocationCodes() []string {
+	values := []string{}
+	for _, item := range bib.Items {
+		safeAppend(&values, item.Location["code"])
+	}
+	return values
+}
+
+func (bib Bib) BuildingFacets() []string {
+	values := []string{}
+	for _, item := range bib.Items {
+		name := item.BuildingName()
+		safeAppend(&values, name)
+	}
+	return values
+}
+
+func (bib Bib) SortableTitle() string {
+	// Logic stolen from
+	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
+	// TODO do we need the field k logic here?
+	titles := bib.MarcValues("245ab")
+	if len(titles) == 0 {
+		return ""
+	}
+
+	sortTitle := titles[0]
+	fields := bib.getFields("245")
+	if len(fields) > 0 {
+		ind2 := toInt(fields[0].Ind2)
+		if ind2 > 0 && len(sortTitle) > ind2 {
+			// drop the prefix as notes in the second indicator
+			sortTitle = sortTitle[ind2:len(sortTitle)]
+		}
+	}
+	return trimPunct(sortTitle)
+}
+
+func (bib Bib) CallNumbers() []string {
+	return bib.MarcValuesTrim("050ab:090ab:091ab:092ab:096ab:099ab")
+}
+
+func (bib Bib) Subjects() []string {
+	spec := "600a:600abcdefghjklmnopqrstuvxyz:"
+	spec += "610a:610abcdefghklmnoprstuvxyz:"
+	spec += "611a:611acdefghjklnpqstuvxyz:"
+	spec += "630a:630adefghklmnoprstvxyz:"
+	spec += "648a:648avxyz:"
+	spec += "650a:650abcdezxvy:"
+	spec += "651a:651aexzvy:"
+	spec += "653a:654abevyz:"
+	spec += "654a:655abvxyz:"
+	spec += "655a:656akvxyz:"
+	spec += "656a:657avxyz:"
+	spec += "657a:658ab:"
+	spec += "658a:662abcdefgh:"
+	spec += "690a:690abcdevxyz"
+	return bib.MarcValuesTrim(spec)
+}
+
+func (bib Bib) BookplateCodes() []string {
+	values := []string{}
+	for _, item := range bib.Items {
+		arrayAppend(&values, item.BookplateCodes())
+	}
+	// TODO: Do we need this? It seems that the data has been
+	// consolidate in the item records.
+	// arrayAppend(&values, MarcValues("935a"))
+	return values
+}
+
+func (bib Bib) Isbn() []string {
+	return bib.MarcValues("020a:020z")
 }
 
 func (bib Bib) PublishedVernacularDisplay() string {
@@ -470,116 +624,5 @@ func (bib Bib) RegionFacetZFields() []string {
 		}
 
 	}
-	return values
-}
-
-func (bib Bib) AuthorFacet() []string {
-	specStr := "100abcd:110ab:111ab:700abcd:711ab"
-
-	f710 := bib.getFields("710")
-	if len(f710) > 0 {
-		// If there is more than one 710 field this will only check the first one.
-		// TODO: handle multi 710 fields
-		if f710[0].Ind2 != "9" {
-			specStr += ":710ab"
-		}
-	}
-
-	values := bib.MarcValuesTrim(specStr)
-	vernValues := bib.VernacularValues(specStr)
-	arrayAppend(&values, vernValues)
-	return values
-}
-
-func (bib Bib) AuthorDisplay() string {
-	authors := bib.MarcValues("100abcdq:110abcd:111abcd")
-	if len(authors) > 0 {
-		return trimPunct(authors[0])
-	}
-	return ""
-}
-
-func (bib Bib) AbstractDisplay() string {
-	values := bib.MarcValues("520a")
-	if len(values) > 0 {
-		return values[0]
-	}
-	return ""
-}
-
-func (bib Bib) AuthorVernacularDisplay() string {
-	values := bib.VernacularValues("100abcdq:110abcd:111abcd")
-	return strings.Join(values, " ")
-	// return bib.VernacularValueTrim("100abcdq:110abcd:111abcd")
-}
-
-func (bib Bib) LocationCodes() []string {
-	values := []string{}
-	for _, item := range bib.Items {
-		safeAppend(&values, item.Location["code"])
-	}
-	return values
-}
-
-func (bib Bib) BuildingFacets() []string {
-	values := []string{}
-	for _, item := range bib.Items {
-		name := item.BuildingName()
-		safeAppend(&values, name)
-	}
-	return values
-}
-
-func (bib Bib) SortableTitle() string {
-	// Logic stolen from
-	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
-	// TODO do we need the field k logic here?
-	titles := bib.MarcValues("245ab")
-	if len(titles) == 0 {
-		return ""
-	}
-
-	sortTitle := titles[0]
-	fields := bib.getFields("245")
-	if len(fields) > 0 {
-		ind2 := toInt(fields[0].Ind2)
-		if ind2 > 0 && len(sortTitle) > ind2 {
-			// drop the prefix as notes in the second indicator
-			sortTitle = sortTitle[ind2:len(sortTitle)]
-		}
-	}
-	return trimPunct(sortTitle)
-}
-
-func (bib Bib) CallNumbers() []string {
-	return bib.MarcValuesTrim("050ab:090ab:091ab:092ab:096ab:099ab")
-}
-
-func (bib Bib) Subjects() []string {
-	spec := "600a:600abcdefghjklmnopqrstuvxyz:"
-	spec += "610a:610abcdefghklmnoprstuvxyz:"
-	spec += "611a:611acdefghjklnpqstuvxyz:"
-	spec += "630a:630adefghklmnoprstvxyz:"
-	spec += "648a:648avxyz:"
-	spec += "650a:650abcdezxvy:"
-	spec += "651a:651aexzvy:"
-	spec += "653a:654abevyz:"
-	spec += "654a:655abvxyz:"
-	spec += "655a:656akvxyz:"
-	spec += "656a:657avxyz:"
-	spec += "657a:658ab:"
-	spec += "658a:662abcdefgh:"
-	spec += "690a:690abcdevxyz"
-	return bib.MarcValuesTrim(spec)
-}
-
-func (bib Bib) BookplateCodes() []string {
-	values := []string{}
-	for _, item := range bib.Items {
-		arrayAppend(&values, item.BookplateCodes())
-	}
-	// TODO: Do we need this? It seems that the data has been
-	// consolidate in the item records.
-	// arrayAppend(&values, MarcValues("935a"))
 	return values
 }
