@@ -147,7 +147,6 @@ func (bib Bib) MarcValuesByField(fieldSpec string) [][]string {
 	// values for fields in the spec that have no values in the
 	// record (e.g. we might have a 880 for field 490, but no 490
 	// value in the record)
-	// TODO: add unit test for this case
 	for _, spec := range NewFieldSpecs(fieldSpec) {
 		for _, field := range bib.getFields("880") {
 			if field.IsVernacularForTag6(spec.MarcTag) {

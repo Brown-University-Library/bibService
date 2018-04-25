@@ -155,6 +155,25 @@ func TestValuesWithVernacular(t *testing.T) {
 	}
 }
 
+func TestValuesFreestandingVernacular(t *testing.T) {
+
+	// and their vernacular values
+	t6 := map[string]string{"tag": "6", "content": "700-04/$1"}
+	ta := map[string]string{"tag": "a", "content": "AAA"}
+	tb := map[string]string{"tag": "b", "content": "BBB"}
+	f880 := Field{MarcTag: "880"}
+	f880.Subfields = []map[string]string{t6, ta, tb}
+	fields := []Field{f880}
+	bib := Bib{VarFields: fields}
+
+	// Make sure fetching the 700 picks up vernacular values
+	// even though there is no 700 field in the record.
+	values := bib.MarcValues("700ab")
+	if !in(values, "AAA BBB") {
+		t.Errorf("Did not pick up freestanding vernacular values")
+	}
+}
+
 func TestRegionFacetWithParent(t *testing.T) {
 	z1 := map[string]string{"content": "usa", "tag": "z"}
 	z2 := map[string]string{"content": "ri", "tag": "z"}
