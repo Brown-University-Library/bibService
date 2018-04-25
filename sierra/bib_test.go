@@ -155,9 +155,77 @@ func TestValuesWithVernacular(t *testing.T) {
 	}
 }
 
-func TestValuesFreestandingVernacular(t *testing.T) {
+func TestTwoFields(t *testing.T) {
+	ta1 := map[string]string{"tag": "a", "content": "a1"}
+	field1 := Field{MarcTag: "100"}
+	field1.Subfields = []map[string]string{ta1}
 
-	// and their vernacular values
+	ta2 := map[string]string{"tag": "a", "content": "a2"}
+	field2 := Field{MarcTag: "100"}
+	field2.Subfields = []map[string]string{ta2}
+
+	fields := []Field{field1, field2}
+	bib := Bib{VarFields: fields}
+
+	// Two fields should result in two results
+	// (even if they are the same MARC field).
+	values := bib.MarcValuesByField("100abc")
+	if len(values) != 2 {
+		t.Errorf("Unexpected number of results: %d", len(values))
+	}
+
+	if !in(values[0], "a1") || !in(values[1], "a2") {
+		t.Errorf("Did not fetch the expected values: %#v", values)
+	}
+}
+
+func TestSubfieldsDifferentTag(t *testing.T) {
+	ta1 := map[string]string{"tag": "a", "content": "X a"}
+	tb1 := map[string]string{"tag": "b", "content": "X b"}
+	tc1 := map[string]string{"tag": "c", "content": "X c"}
+	field1 := Field{MarcTag: "100"}
+	field1.Subfields = []map[string]string{ta1, tb1, tc1}
+
+	ta2 := map[string]string{"tag": "a", "content": "Y a"}
+	tb2 := map[string]string{"tag": "b", "content": "Y b"}
+	field2 := Field{MarcTag: "100"}
+	field2.Subfields = []map[string]string{ta2, tb2}
+
+	fields := []Field{field1, field2}
+	bib := Bib{VarFields: fields}
+	values := bib.MarcValuesByField("100abc")
+
+	// Each tag is in its own array element for each field.
+	if !in(values[0], "X a") || !in(values[0], "X b") || !in(values[0], "X c") {
+		t.Errorf("Did not fetch the expected values: %#v", values)
+	}
+
+	if !in(values[1], "Y a") || !in(values[1], "Y b") {
+		t.Errorf("Did not fetch the expected values: %#v", values)
+	}
+}
+
+func TestSubfieldsSameTag(t *testing.T) {
+	t1 := map[string]string{"tag": "t", "content": "T1"}
+	t2 := map[string]string{"tag": "t", "content": "T2"}
+	t3 := map[string]string{"tag": "t", "content": "T3"}
+	tn := map[string]string{"tag": "n", "content": "N"}
+	t4 := map[string]string{"tag": "t", "content": "T4"}
+	field1 := Field{MarcTag: "550"}
+	field1.Subfields = []map[string]string{t1, t2, t3, tn, t4}
+
+	fields := []Field{field1}
+	bib := Bib{VarFields: fields}
+
+	// Makes sure subfield values are combined for different subfields
+	// (e.g. "T2 N") but kept separate for repeated the rest ("T1", "T2", "T4")
+	values := bib.MarcValuesByField("550tnx")
+	if !in(values[0], "T1") || !in(values[0], "T2") || !in(values[0], "T3 N") || !in(values[0], "T4") {
+		t.Errorf("Did not fetch the expected values: %#v", values)
+	}
+}
+
+func TestValuesFreestandingVernacular(t *testing.T) {
 	t6 := map[string]string{"tag": "6", "content": "700-04/$1"}
 	ta := map[string]string{"tag": "a", "content": "AAA"}
 	tb := map[string]string{"tag": "b", "content": "BBB"}
