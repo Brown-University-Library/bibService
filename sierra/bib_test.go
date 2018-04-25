@@ -206,6 +206,7 @@ func TestSubfieldsDifferentTag(t *testing.T) {
 }
 
 func TestSubfieldsSameTag(t *testing.T) {
+	// Sample record b8060047
 	t1 := map[string]string{"tag": "t", "content": "T1"}
 	t2 := map[string]string{"tag": "t", "content": "T2"}
 	t3 := map[string]string{"tag": "t", "content": "T3"}
