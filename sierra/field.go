@@ -21,6 +21,9 @@ func (f Field) Tags() []string {
 	return tags
 }
 
+// Returns true if the field indicates that there are vernacular
+// values associated with it. It also returns the MARC field
+// where the vernacular values are.
 func (f Field) HasVernacular() (bool, string) {
 	for _, sub := range f.Subfields {
 		if sub["tag"] == "6" {
@@ -30,6 +33,13 @@ func (f Field) HasVernacular() (bool, string) {
 	return false, ""
 }
 
+// Returns true if the field contains vernacular values for another
+// (target) field.
+//
+// A field is considered to have vernacular values for another field if
+// it has a subfield with tag "6" where the content is for the target.
+// The Target tyically comes in the form "NNN-nn" where "NNN" is the MARC
+// field and "nn" is a sequence value (e.g. "700-02")
 func (f Field) IsVernacularForTag6(target string) bool {
 	for _, sub := range f.Subfields {
 		if sub["tag"] == "6" {
@@ -41,7 +51,7 @@ func (f Field) IsVernacularForTag6(target string) bool {
 	return false
 }
 
-func (f Field) ValuesForForTag6(subfields []string) []string {
+func (f Field) ValuesForTag6(subfields []string) []string {
 	values := []string{}
 	for _, sub := range f.Subfields {
 		if in(subfields, sub["tag"]) {

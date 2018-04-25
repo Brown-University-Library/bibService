@@ -132,17 +132,27 @@ func TestValuesWithVernacular(t *testing.T) {
 
 	s4 := map[string]string{"tag": "6", "content": "700-05/$1"}
 	a4 := map[string]string{"tag": "a", "content": "CCC"}
+	z4 := map[string]string{"tag": "z", "content": "ZZZ"} // should not be picked up
 	f880_2 := Field{MarcTag: "880"}
-	f880_2.Subfields = []map[string]string{s4, a4}
+	f880_2.Subfields = []map[string]string{s4, a4, z4}
 
 	// A document with all the values
 	fields := []Field{f700_1, f700_2, f880_1, f880_2}
 	bib := Bib{VarFields: fields}
-	// values := bib.MarcValues("700ab")
-	spec, _ := NewFieldSpec("700abc")
-	t.Errorf("FIRST.: %#v", bib.VernacularValuesFor(bib.VarFields[0], spec))
-	t.Errorf("SECOND:%#v", bib.VernacularValuesFor(bib.VarFields[1], spec))
-	t.Errorf("ALL...:%#v", bib.MarcValues("700abc"))
+
+	// Make sure fetching the 700 picks up the associated 880 fields
+	values := bib.MarcValues("700ab")
+	if !in(values, "aaa bbb") || !in(values, "ccc") {
+		t.Errorf("700 field values not found")
+	}
+
+	if !in(values, "AAA BBB") || !in(values, "CCC") {
+		t.Errorf("880 field values not found")
+	}
+
+	if len(values) != 4 {
+		t.Errorf("Unexpected values found")
+	}
 }
 
 func TestRegionFacetWithParent(t *testing.T) {
@@ -284,43 +294,9 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 	f880 := Field{MarcTag: "880"}
 	f880.Subfields = []map[string]string{f8806, f880a, f880l}
 
-	/*
-
-	   getting
-	   {"title in english English", "titulo en español Spanish"}
-
-	   need to produce
-	   {"title in english", "English"}
-	   {"titulo en español", "Spanish"}
-
-
-	   expecting
-	   {"title in english", "title in english" }
-	   {"english", "title in english. english" }
-	   {"titulo en español", "titulo en español" }
-	   {"spanish", "titulo en español. spanish" }
-
-	*/
 	fields := []Field{f240, f880}
 	bib := Bib{VarFields: fields}
 	titles := bib.UniformTitles(true)
-	// log.Printf("-------------------")
-	// log.Printf("%#v", titles)
-	// log.Printf("-------------------")
-	// log.Printf("===================")
-	// for i, valuesForField := range bib.MarcValuesByField("240adfgklmnoprs") {
-	// 	query := ""
-	// 	for _, value := range valuesForField {
-	// 		display := value
-	// 		if query == "" {
-	// 			query = value
-	// 		} else {
-	// 			query = "(" + query + ") " + value
-	// 		}
-	// 		log.Printf("%d. %s / %s", i, display, query)
-	// 	}
-	// }
-	// log.Printf("===================")
 
 	if len(titles) != 2 {
 		t.Errorf("Invalid number of titles found (field 240): %d, %v", len(titles), titles)
