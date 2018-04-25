@@ -1,6 +1,7 @@
 package sierra
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 	"time"
@@ -85,87 +86,6 @@ func (bib Bib) VernacularValuesFor(field Field, spec FieldSpec) [][]string {
 	return values
 }
 
-// func (bib Bib) VernacularValuesFor(field Field, spec FieldSpec) []string {
-// 	values := []string{}
-//
-// 	// True if the field has subfield with tag 6
-// 	// target would be "880-04"
-// 	vern, target := field.HasVernacular()
-// 	if !vern {
-// 		return values
-// 	}
-//
-// 	tokens := strings.Split(target, "-")
-// 	marcTag := tokens[0]                    // 880
-// 	tag6 := field.MarcTag + "-" + tokens[1] // 700-04
-//
-// 	// Process the fields indicated in target (e.g. 880s)
-// 	for _, vernField := range bib.getFields(marcTag) {
-// 		// if this is the one that corresponds with our target
-// 		// e.g. 700-04
-// 		if vernField.IsVernacularForTag6(tag6) {
-// 			vernValues := vernField.ValuesForForTag6(spec.Subfields)
-// 			safeAppend(&values, strings.Join(vernValues, " "))
-// 		}
-// 	}
-// 	return values
-// }
-
-// func (bib Bib) VernacularValues(specsStr string) []string {
-// 	values := []string{}
-// 	f880s := bib.getFields("880")
-// 	for _, spec := range NewFieldSpecs(specsStr) {
-// 		vern := bib.vernacularValues(f880s, spec)
-// 		safeAppend(&values, strings.Join(vern, " "))
-// 		// arrayAppend(&values, vern)
-// 	}
-// 	return values
-// }
-//
-// func (bib Bib) VernacularValue(fieldSpec string) string {
-// 	values := bib.VernacularValues(fieldSpec)
-// 	if len(values) == 0 {
-// 		return ""
-// 	}
-// 	return strings.Join(values, " ")
-// }
-//
-// func (bib Bib) VernacularValueTrim(fieldSpec string) string {
-// 	values := bib.VernacularValues(fieldSpec)
-// 	if len(values) == 0 {
-// 		return ""
-// 	}
-// 	return trimPunct(strings.Join(values, " "))
-// }
-//
-// func (bib Bib) VernacularValuesTrim(specsStr string) []string {
-// 	values := []string{}
-// 	for _, value := range bib.VernacularValues(specsStr) {
-// 		trimValue := trimPunct(value)
-// 		safeAppend(&values, trimValue)
-// 	}
-// 	return values
-// }
-//
-// func (bib Bib) vernacularValues(f880s []Field, spec FieldSpec) []string {
-// 	values := []string{}
-// 	for _, f880 := range f880s {
-// 		vern := f880.VernacularValues(spec)
-// 		arrayAppend(&values, vern)
-// 		// if len(spec.Subfields) == 0 {
-// 		// 	vern := f880.VernacularValue(spec)
-// 		// 	safeAppend(&values, vern)
-// 		// } else {
-// 		// 	for _, subField := range spec.Subfields {
-// 		// 		subSpec, _ := NewFieldSpec(spec.MarcTag + subField)
-// 		// 		vern := f880.VernacularValue(subSpec)
-// 		// 		safeAppend(&values, vern)
-// 		// 	}
-// 		// }
-// 	}
-// 	return values
-// }
-
 func (bib Bib) MarcValuesByField(fieldSpec string) [][]string {
 	values := [][]string{}
 
@@ -217,49 +137,6 @@ func (bib Bib) MarcValues(fieldSpec string) []string {
 	}
 	return values
 }
-
-// func (bib Bib) MarcValuesOld(fieldSpec string) []string {
-// 	values := []string{}
-// 	f880s := bib.getFields("880")
-//
-// 	for _, spec := range NewFieldSpecs(fieldSpec) {
-// 		fields := bib.getFields(spec.MarcTag)
-// 		if len(fields) == 0 {
-// 			vernacular := bib.vernacularValues(f880s, spec)
-// 			arrayAppend(&values, vernacular)
-// 			continue
-// 		}
-//
-// 		if len(spec.Subfields) == 0 {
-// 			// Get the value directly
-// 			for _, field := range fields {
-// 				safeAppend(&values, field.Content)
-// 			}
-// 			continue
-// 		}
-//
-// 		// Process the subfields
-// 		for _, field := range fields {
-// 			subValues := field.getSubfieldsValues(spec.Subfields)
-// 			if len(spec.Subfields) == 1 {
-// 				// single subfields specified (060a)
-// 				// append each individual value
-// 				for _, subValue := range subValues {
-// 					safeAppend(&values, subValue)
-// 				}
-// 			} else {
-// 				// multi-subfields specified (e.g. 060abc)
-// 				// concatenate the values and then append them
-// 				strVal := strings.Join(subValues, " ")
-// 				safeAppend(&values, strVal)
-// 			}
-// 		}
-//
-// 		vernacular := bib.vernacularValues(f880s, spec)
-// 		arrayAppend(&values, vernacular)
-// 	}
-// 	return values
-// }
 
 func (bib Bib) MarcValuesTrim(fieldSpec string) []string {
 	values := []string{}
@@ -318,22 +195,20 @@ func (bib Bib) UniformTitles(newVersion bool) []UniformTitles {
 			title := UniformTitle{Display: display, Query: query}
 			titles.Title = append(titles.Title, title)
 		}
-		titlesArray = append(titlesArray, titles)
+		if len(titles.Title) > 0 {
+			titlesArray = append(titlesArray, titles)
+		}
 	}
-
-	NewUniformTitles(bib, spec)
 	return titlesArray
 }
 
 func (bib Bib) UniformTitlesDisplay(newVersion bool) string {
-	var spec string
-	if newVersion {
-		spec = "240adfgklmnoprs"
-	} else {
-		spec = "130adfgklmnoprst"
+	titles := bib.UniformTitles(newVersion)
+	bytes, err := json.Marshal(titles)
+	if err != nil {
+		return ""
 	}
-	titles, _ := NewUniformTitlesString(bib, spec)
-	return titles
+	return string(bytes)
 }
 
 func (bib Bib) Isbn() []string {
@@ -472,9 +347,11 @@ func (bib Bib) Languages() []string {
 		safeAppend(&values, f008_lang)
 	}
 
-	for _, value := range bib.MarcValues("041a:041d:041e:041j") {
-		language := languageName(value)
-		safeAppend(&values, language)
+	for _, valuesByField := range bib.MarcValuesByField("041a:041d:041e:041j") {
+		for _, value := range valuesByField {
+			language := languageName(value)
+			safeAppend(&values, language)
+		}
 	}
 	return values
 }

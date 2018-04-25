@@ -1,7 +1,6 @@
 package sierra
 
 import (
-	"log"
 	"regexp"
 	"testing"
 )
@@ -201,7 +200,7 @@ func TestTitleVernacularDisplay(t *testing.T) {
 func TestUniformTitleTwoValues(t *testing.T) {
 	// real sample https://search.library.brown.edu/catalog/b8060083
 	f130a := map[string]string{"content": "Neues Licht.", "tag": "a"}
-	f130l := map[string]string{"content": "English", "tag": "l"}
+	f130l := map[string]string{"content": "English.", "tag": "l"}
 	f130 := Field{MarcTag: "130"}
 	f130.Subfields = []map[string]string{f130a, f130l}
 	fields := []Field{f130}
@@ -221,7 +220,7 @@ func TestUniformTitleTwoValues(t *testing.T) {
 
 	// real sample https://search.library.brown.edu/catalog/b8060295
 	f240a := map[string]string{"content": "Poems.", "tag": "a"}
-	f240k := map[string]string{"content": "Selections", "tag": "k"}
+	f240k := map[string]string{"content": "Selections.", "tag": "k"}
 	f240 := Field{MarcTag: "240"}
 	f240.Subfields = []map[string]string{f240a, f240k}
 	fields = []Field{f240}
@@ -243,13 +242,13 @@ func TestUniformTitleVernacular(t *testing.T) {
 	// real sample: https://search.library.brown.edu/catalog/b8060012
 	// title in english
 	f2406 := map[string]string{"content": "880-02", "tag": "6"}
-	f240a := map[string]string{"content": "title in english", "tag": "a"}
+	f240a := map[string]string{"content": "title in english.", "tag": "a"}
 	f240 := Field{MarcTag: "240"}
 	f240.Subfields = []map[string]string{f240a, f2406}
 
 	// title in language
 	f8806 := map[string]string{"content": "240-02/$1", "tag": "6"}
-	f880a := map[string]string{"content": "titulo en español", "tag": "a"}
+	f880a := map[string]string{"content": "titulo en español.", "tag": "a"}
 	f880 := Field{MarcTag: "880"}
 	f880.Subfields = []map[string]string{f8806, f880a}
 
@@ -273,15 +272,15 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 	// real sample: https://search.library.brown.edu/catalog/b8060012
 	// title in english
 	f2406 := map[string]string{"content": "880-02", "tag": "6"}
-	f240a := map[string]string{"content": "title in english", "tag": "a"}
-	f240l := map[string]string{"content": "English", "tag": "l"}
+	f240a := map[string]string{"content": "title in english.", "tag": "a"}
+	f240l := map[string]string{"content": "English.", "tag": "l"}
 	f240 := Field{MarcTag: "240"}
 	f240.Subfields = []map[string]string{f240a, f240l, f2406}
 
 	// title in language
 	f8806 := map[string]string{"content": "240-02", "tag": "6"}
-	f880a := map[string]string{"content": "titulo en español", "tag": "a"}
-	f880l := map[string]string{"content": "Spanish", "tag": "l"}
+	f880a := map[string]string{"content": "titulo en español.", "tag": "a"}
+	f880l := map[string]string{"content": "Spanish.", "tag": "l"}
 	f880 := Field{MarcTag: "880"}
 	f880.Subfields = []map[string]string{f8806, f880a, f880l}
 
@@ -305,23 +304,23 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 	fields := []Field{f240, f880}
 	bib := Bib{VarFields: fields}
 	titles := bib.UniformTitles(true)
-	log.Printf("-------------------")
-	log.Printf("%#v", titles)
-	log.Printf("-------------------")
-	log.Printf("===================")
-	for i, valuesForField := range bib.MarcValuesByField("240adfgklmnoprs") {
-		query := ""
-		for _, value := range valuesForField {
-			display := value
-			if query == "" {
-				query = value
-			} else {
-				query = "(" + query + ") " + value
-			}
-			log.Printf("%d. %s / %s", i, display, query)
-		}
-	}
-	log.Printf("===================")
+	// log.Printf("-------------------")
+	// log.Printf("%#v", titles)
+	// log.Printf("-------------------")
+	// log.Printf("===================")
+	// for i, valuesForField := range bib.MarcValuesByField("240adfgklmnoprs") {
+	// 	query := ""
+	// 	for _, value := range valuesForField {
+	// 		display := value
+	// 		if query == "" {
+	// 			query = value
+	// 		} else {
+	// 			query = "(" + query + ") " + value
+	// 		}
+	// 		log.Printf("%d. %s / %s", i, display, query)
+	// 	}
+	// }
+	// log.Printf("===================")
 
 	if len(titles) != 2 {
 		t.Errorf("Invalid number of titles found (field 240): %d, %v", len(titles), titles)
@@ -336,7 +335,7 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 		}
 		t2 := titles[0].Title[1]
 		// TODO add "." 																			here->|
-		if t2.Display != "English." || t2.Query != "title in english. English." {
+		if t2.Display != "English." || t2.Query != "title in english.. English." {
 			t.Errorf("Invalid values in first title (2/2): %v", t2)
 		}
 	}
@@ -351,7 +350,7 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 			t.Errorf("%#v", t1.Query)
 		}
 		t2 := titles[1].Title[1]
-		if t2.Display != "Spanish." || t2.Query != "titulo en español. Spanish." {
+		if t2.Display != "Spanish." || t2.Query != "titulo en español.. Spanish." {
 			t.Errorf("Invalid values in second title (2/2): %v", t2)
 			t.Errorf("%#v", t2.Display)
 			t.Errorf("%#v", t2.Query)
