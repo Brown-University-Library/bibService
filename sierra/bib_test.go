@@ -84,7 +84,7 @@ func TestGetSubfieldValues(t *testing.T) {
 	field.Subfields = []map[string]string{lang1, lang2, lang3}
 
 	subfields := []string{"a"}
-	values := field.getSubfieldsValues(subfields)
+	values := field.getSubfieldsValues(subfields, true)
 	if len(values) != 3 {
 		t.Errorf("Incorrect number of values found: %#v", values)
 	}
@@ -143,11 +143,11 @@ func TestValuesWithVernacular(t *testing.T) {
 	// Make sure fetching the 700 picks up the associated 880 fields
 	values := bib.MarcValues("700ab")
 	if !in(values, "aaa bbb") || !in(values, "ccc") {
-		t.Errorf("700 field values not found")
+		t.Errorf("700 field values not found: %#v", values)
 	}
 
 	if !in(values, "AAA BBB") || !in(values, "CCC") {
-		t.Errorf("880 field values not found")
+		t.Errorf("880 field values not found: %#v", values)
 	}
 
 	if len(values) != 4 {
@@ -169,7 +169,7 @@ func TestTwoFields(t *testing.T) {
 
 	// Two fields should result in two results
 	// (even if they are the same MARC field).
-	values := bib.MarcValuesByField("100abc")
+	values := bib.MarcValuesByField("100abc", true)
 	if len(values) != 2 {
 		t.Errorf("Unexpected number of results: %d", len(values))
 	}
@@ -193,14 +193,13 @@ func TestSubfieldsDifferentTag(t *testing.T) {
 
 	fields := []Field{field1, field2}
 	bib := Bib{VarFields: fields}
-	values := bib.MarcValuesByField("100abc")
+	values := bib.MarcValuesByField("100abc", true)
 
-	// Each tag is in its own array element for each field.
-	if !in(values[0], "X a") || !in(values[0], "X b") || !in(values[0], "X c") {
+	if !in(values[0], "X a X b X c") {
 		t.Errorf("Did not fetch the expected values: %#v", values)
 	}
 
-	if !in(values[1], "Y a") || !in(values[1], "Y b") {
+	if !in(values[1], "Y a Y b") {
 		t.Errorf("Did not fetch the expected values: %#v", values)
 	}
 }
@@ -220,7 +219,7 @@ func TestSubfieldsSameTag(t *testing.T) {
 
 	// Makes sure subfield values are combined for different subfields
 	// (e.g. "T2 N") but kept separate for repeated the rest ("T1", "T2", "T4")
-	values := bib.MarcValuesByField("550tnx")
+	values := bib.MarcValuesByField("550tnx", true)
 	if !in(values[0], "T1") || !in(values[0], "T2") || !in(values[0], "T3 N") || !in(values[0], "T4") {
 		t.Errorf("Did not fetch the expected values: %#v", values)
 	}
@@ -297,8 +296,8 @@ func TestTitleVernacularDisplay(t *testing.T) {
 
 func TestUniformTitleTwoValues(t *testing.T) {
 	// real sample https://search.library.brown.edu/catalog/b8060083
-	f130a := map[string]string{"content": "Neues Licht.", "tag": "a"}
-	f130l := map[string]string{"content": "English.", "tag": "l"}
+	f130a := map[string]string{"tag": "a", "content": "Neues Licht."}
+	f130l := map[string]string{"tag": "l", "content": "English."}
 	f130 := Field{MarcTag: "130"}
 	f130.Subfields = []map[string]string{f130a, f130l}
 	fields := []Field{f130}
@@ -366,6 +365,24 @@ func TestUniformTitleVernacular(t *testing.T) {
 	}
 }
 
+func TestPublishedDisplay(t *testing.T) {
+	// Sample record b8060074
+	s1 := map[string]string{"tag": "a", "content": "new haven"}
+	s2 := map[string]string{"tag": "b", "content": "yale"}
+	s3 := map[string]string{"tag": "a", "content": "london"}
+	s4 := map[string]string{"tag": "b", "content": "humphrey"}
+	s5 := map[string]string{"tag": "b", "content": "oxford"}
+	s6 := map[string]string{"tag": "c", "content": "1942"}
+	field := Field{MarcTag: "260"}
+	field.Subfields = []map[string]string{s1, s2, s3, s4, s5, s6}
+	fields := []Field{field}
+	bib := Bib{VarFields: fields}
+	values := bib.PublishedDisplay()
+	if !in(values, "new haven") || !in(values, "london") {
+		t.Errorf("Incorrect values found: %#v", values)
+	}
+}
+
 func TestUniformTitleVernacularMany(t *testing.T) {
 	// real sample: https://search.library.brown.edu/catalog/b8060012
 	// title in english
@@ -398,8 +415,7 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 			t.Errorf("Invalid values in first title (1/2): %#v", t1)
 		}
 		t2 := titles[0].Title[1]
-		// TODO add "." 																			here->|
-		if t2.Display != "English." || t2.Query != "title in english.. English." {
+		if t2.Display != "English." || t2.Query != "title in english. English." {
 			t.Errorf("Invalid values in first title (2/2): %v", t2)
 		}
 	}
@@ -414,7 +430,7 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 			t.Errorf("%#v", t1.Query)
 		}
 		t2 := titles[1].Title[1]
-		if t2.Display != "Spanish." || t2.Query != "titulo en español.. Spanish." {
+		if t2.Display != "Spanish." || t2.Query != "titulo en español. Spanish." {
 			t.Errorf("Invalid values in second title (2/2): %v", t2)
 			t.Errorf("%#v", t2.Display)
 			t.Errorf("%#v", t2.Query)

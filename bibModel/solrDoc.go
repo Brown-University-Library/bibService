@@ -93,7 +93,7 @@ func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 	doc.AuthorT = bib.AuthorsT()
 	doc.AuthorAddlT = bib.AuthorsAddlT()
 
-	doc.PublishedDisplay = bib.MarcValuesTrim("260a")
+	doc.PublishedDisplay = bib.PublishedDisplay()
 	doc.PublishedVernDisplay = []string{bib.PublishedVernacularDisplay()}
 	doc.PhysicalDisplay = bib.MarcValues("300abcefg:530abcd")
 	doc.AbstractDisplay = []string{bib.AbstractDisplay()}

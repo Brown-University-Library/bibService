@@ -5,6 +5,7 @@ import (
 	"math"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 func arrayToPages(values []string, pageSize int) [][]string {
@@ -59,6 +60,13 @@ func arrayAppend(values *[]string, newValues []string) {
 	for _, newValue := range newValues {
 		safeAppend(values, newValue)
 	}
+}
+
+func addPeriod(value string) string {
+	if value == "" || strings.HasSuffix(value, ".") || strings.HasSuffix(value, ")") {
+		return value
+	}
+	return value + "."
 }
 
 func trimPunct(str string) string {

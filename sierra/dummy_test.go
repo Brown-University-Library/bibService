@@ -51,9 +51,10 @@ func TestSubfieldParsing(t *testing.T) {
 	for _, value := range fieldValues {
 		tag := value.tag
 		content := value.content
+		tagAlreadyProcessed := in(processedTags, tag)
 
-		if in(processedTags, tag) {
-			// repeated tag, output whatever we've gathered so far...
+		if tagAlreadyProcessed {
+			// output whatever we've gathered so far...
 			if len(batchValues) > 0 {
 				output = append(output, strings.Join(batchValues, ""))
 			}
