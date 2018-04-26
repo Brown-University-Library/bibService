@@ -36,10 +36,11 @@ func pubYear008(f008 string, tolerance int) (int, bool) {
 			return (date2 + date1) / 2, true
 		}
 	}
+
 	var dateStr string
 	if dateType == "p" {
 		// use the oldest date
-		if dateStr1 <= dateStr2 {
+		if dateStr1 <= dateStr2 || toInt(dateStr2) == 0 {
 			dateStr = dateStr1
 		} else {
 			dateStr = dateStr2

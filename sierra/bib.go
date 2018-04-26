@@ -435,7 +435,8 @@ func (bib Bib) Subjects() []string {
 	spec += "657a:658ab:"
 	spec += "658a:662abcdefgh:"
 	spec += "690a:690abcdevxyz"
-	return bib.MarcValuesTrim(spec)
+	values := bib.MarcValuesByField(spec, true)
+	return valuesToArray(values, true)
 }
 
 func (bib Bib) BookplateCodes() []string {
@@ -450,7 +451,8 @@ func (bib Bib) BookplateCodes() []string {
 }
 
 func (bib Bib) Isbn() []string {
-	return bib.MarcValues("020a:020z")
+	values := bib.MarcValuesByField("020a:020z", true)
+	return valuesToArray(values, true)
 }
 
 func (bib Bib) PublishedDisplay() []string {
@@ -484,7 +486,8 @@ func (bib Bib) IsDissertaion() bool {
 }
 
 func (bib Bib) Issn() []string {
-	return bib.MarcValues("022a:022l:022y:773x:774x:776x")
+	values := bib.MarcValuesByField("022a:022l:022y:773x:774x:776x", true)
+	return valuesToArray(values, true)
 }
 
 func (bib Bib) PublicationYear() (int, bool) {
