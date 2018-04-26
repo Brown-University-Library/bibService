@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 var settings bibModel.Settings
@@ -21,6 +22,7 @@ func StartWebServer(settingsFile string) {
 
 	http.HandleFunc("/bibutils/solr/doc/", solrDoc)
 	http.HandleFunc("/bibutils/solr/deleteQuery/", solrDeleteQuery)
+	http.HandleFunc("/bibutils/solr/deleteIds/", solrDeleteIds)
 	http.HandleFunc("/bibutils/solr/delete/", solrDelete)
 	// http.HandleFunc("/bibutils/solr/sync/", solrSync)
 	http.HandleFunc("/bibutils/bib/updated/", bibUpdated)
@@ -125,18 +127,43 @@ func solrDoc(resp http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func solrDelete(resp http.ResponseWriter, req *http.Request) {
+func solrDeleteIds(resp http.ResponseWriter, req *http.Request) {
 	from := qsParam("from", req)
 	to := qsParam("to", req)
+	days, _ := strconv.Atoi(qsParam("days", req))
+	if days != 0 {
+		from, to = rangeFromDays(days)
+	}
 	log.Printf("Fetching Solr to delete (%s - %s)", from, to)
 	model := bibModel.New(settings)
 	body, err := model.GetSolrBibsToDelete(from, to)
 	renderJSON(resp, body, err, "bibDeleted")
 }
 
+func solrDelete(resp http.ResponseWriter, req *http.Request) {
+	if req.Method != "POST" {
+		renderJSON(resp, "", errors.New("Must use HTTP POST"), "solrDelete")
+		return
+	}
+	from := qsParam("from", req)
+	to := qsParam("to", req)
+	days, _ := strconv.Atoi(qsParam("days", req))
+	if days != 0 {
+		from, to = rangeFromDays(days)
+	}
+	log.Printf("Deleting from Solr (%s - %s)", from, to)
+	model := bibModel.New(settings)
+	err := model.Delete(from, to)
+	renderJSON(resp, "OK", err, "solrDelete")
+}
+
 func solrDeleteQuery(resp http.ResponseWriter, req *http.Request) {
 	from := qsParam("from", req)
 	to := qsParam("to", req)
+	days, _ := strconv.Atoi(qsParam("days", req))
+	if days != 0 {
+		from, to = rangeFromDays(days)
+	}
 	log.Printf("Fetching Solr to delete (%s - %s)", from, to)
 	model := bibModel.New(settings)
 	body, err := model.GetSolrDeleteQuery(from, to)
@@ -203,6 +230,7 @@ func marcUpdated(resp http.ResponseWriter, req *http.Request) {
 func renderJSON(resp http.ResponseWriter, data interface{}, errFetch error, info string) {
 	if errFetch != nil {
 		log.Printf("ERROR (%s): %s", info, errFetch)
+		// Tweak this, sometimes we want to provide more information to the client.
 		fmt.Fprint(resp, "Error retrieving information")
 		return
 	}

@@ -3,7 +3,9 @@ package web
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"time"
 )
 
 func prettyJSON(jsonBytes []byte) string {
@@ -13,6 +15,15 @@ func prettyJSON(jsonBytes []byte) string {
 		return string(jsonBytes)
 	}
 	return string(buffer.Bytes())
+}
+
+func rangeFromDays(days int) (string, string) {
+	dayDuration := 24 * time.Hour
+	toDate := time.Now()
+	fromDate := toDate.Add(time.Duration(-days) * dayDuration)
+	from := fmt.Sprintf("%s", fromDate.String()[0:10])
+	to := fmt.Sprintf("%s", toDate.String()[0:10])
+	return from, to
 }
 
 func qsParam(name string, req *http.Request) string {

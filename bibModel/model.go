@@ -4,6 +4,7 @@ import (
 	"bibService/sierra"
 	"errors"
 	"fmt"
+	"github.com/hectorcorrea/solr"
 	"log"
 	"strconv"
 	"strings"
@@ -45,6 +46,7 @@ type JosiahItems struct {
 type BibModel struct {
 	settings Settings
 	api      sierra.Sierra
+	solrUrl  string
 }
 
 type Range struct {
@@ -56,6 +58,7 @@ func New(settings Settings) BibModel {
 	model := BibModel{settings: settings}
 	model.api = sierra.NewSierra(model.settings.SierraUrl, model.settings.KeySecret, model.settings.SessionFile)
 	model.api.Verbose = settings.Verbose
+	model.solrUrl = settings.SolrUrl
 	return model
 }
 
@@ -120,6 +123,10 @@ func (model BibModel) GetBibsDeleted(fromDate, toDate string) (sierra.Bibs, erro
 func (model BibModel) GetSolrBibsToDelete(fromDate, toDate string) ([]string, error) {
 	sierraBibs, err := model.GetBibsDeleted(fromDate, toDate)
 	if err != nil {
+		if err.Error() == "Status code 404" {
+			// nothing to delete, no big deal
+			err = nil
+		}
 		return []string{}, err
 	}
 
@@ -128,6 +135,22 @@ func (model BibModel) GetSolrBibsToDelete(fromDate, toDate string) ([]string, er
 		bibs = append(bibs, "b"+bib.Id)
 	}
 	return bibs, nil
+}
+
+func (model BibModel) Delete(fromDate, toDate string) error {
+	bibs, err := model.GetSolrBibsToDelete(fromDate, toDate)
+	if err != nil {
+		return err
+	}
+
+	if len(bibs) == 0 {
+		log.Printf("Nothing to delete")
+		return nil
+	}
+
+	log.Printf("Submitting %d IDs for delete to Solr", len(bibs))
+	solrClient := solr.New(model.solrUrl, true)
+	return solrClient.Delete(bibs)
 }
 
 func (model BibModel) GetSolrDeleteQuery(fromDate, toDate string) (string, error) {
@@ -152,13 +175,10 @@ func (model BibModel) bibsDeletedPaginated(fromDate, toDate string, page int) (s
 	}
 
 	if fromDate == "" && toDate == "" {
-		// This gives a very large result set.
-		// Maybe we shouldn't support it.
-		params["deleted"] = "true"
+		return sierra.Bibs{}, errors.New("No date range was received")
 	} else {
 		params["deletedDate"] = dateRange(fromDate, toDate)
 	}
-
 	return model.api.Get(params, false)
 }
 
