@@ -11,7 +11,7 @@ title_t 	|
 "一九五〇年代の安部公房における共同体の問題"]
 
 b8060367 351
-title_t 	| 
+title_t 	|
 [
 "ことばの市民性形成の将来的展望",
 "レパートリー,ことばの教育と市民性形成",
@@ -22,7 +22,33 @@ title_t 	|
 "循環する個人と社会",
 "日本語教師は市民となりうるか",
 "生態的なことばの市民性形成とスペーシャル。レパートリー",
-"社会的責任と市民性"] | []
+"社会的責任と市民性"] |
 
-		b8060406 387
-			author_addl_t 	| ["Bancroft Library Press.", "Edwards, Peter (Printer),", "Ferlinghetti, Lawrence,", "Gong, Sharon,", "Harris Collection of American Poetry and Plays (Brown University). Poetry, 1951-1975.", "Koch, Peter Rutledge,", "Koch, Peter Rutledge.", "Kox, Christopher,", "Sarinana-Lampson, Stephen,"] | ["Bancroft Library Press", "Edwards, Peter (Printer),", "Ferlinghetti, Lawrence,", "Gong, Sharon,", "Harris Collection of American Poetry and Plays (Brown University). Poetry, 1951-1975.", "Koch, Peter Rutledge", "Koch, Peter Rutledge,", "Kox, Christopher,", "Sarinana-Lampson, Stephen,"]
+[]			<<<<=== WHAT????
+
+
+b8060406 387
+author_addl_t 	|
+[
+"Bancroft Library Press.",
+"Edwards, Peter (Printer),",
+"Ferlinghetti, Lawrence,",
+"Gong, Sharon,",
+"Harris Collection of American Poetry and Plays (Brown University). Poetry, 1951-1975.",
+"Koch, Peter Rutledge,",
+"Koch, Peter Rutledge.",
+"Kox, Christopher,",
+"Sarinana-Lampson, Stephen,"
+]
+|
+[
+"Bancroft Library Press", 			<<<<===== different
+"Edwards, Peter (Printer),",
+"Ferlinghetti, Lawrence,",
+"Gong, Sharon,",
+"Harris Collection of American Poetry and Plays (Brown University). Poetry, 1951-1975.",
+"Koch, Peter Rutledge",					<<<<===== different
+"Koch, Peter Rutledge,",
+"Kox, Christopher,",
+"Sarinana-Lampson, Stephen,"
+]
