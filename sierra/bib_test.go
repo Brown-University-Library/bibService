@@ -84,7 +84,7 @@ func TestGetSubfieldValues(t *testing.T) {
 	field.Subfields = []map[string]string{lang1, lang2, lang3}
 
 	subfields := []string{"a"}
-	values := field.getSubfieldsValues(subfields, true)
+	values := field.Values(subfields, true)
 	if len(values) != 3 {
 		t.Errorf("Incorrect number of values found: %#v", values)
 	}
@@ -435,5 +435,49 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 			t.Errorf("%#v", t2.Display)
 			t.Errorf("%#v", t2.Query)
 		}
+	}
+}
+
+func TestTitleSeries(t *testing.T) {
+	// real sample: https://search.library.brown.edu/catalog/b8060352
+
+	// field 490
+	f4906 := map[string]string{"tag": "6", "content": "880-04"}
+	f490a := map[string]string{"tag": "a", "content": "Rekishi bunka raiburarī ;"}
+	f490v := map[string]string{"tag": "v", "content": "451"}
+	f490 := Field{MarcTag: "490"}
+	f490.Subfields = []map[string]string{f4906, f490a, f490v}
+
+	// vernacular for 490
+	f8806 := map[string]string{"tag": "6", "content": "490-04/$1"}
+	f880a := map[string]string{"tag": "a", "content": "歴史文化ライブラリー ;"}
+	f880v := map[string]string{"tag": "v", "content": "451"}
+	f880 := Field{MarcTag: "880"}
+	f880.Subfields = []map[string]string{f8806, f880a, f880v}
+
+	// field 830
+	f8306 := map[string]string{"tag": "6", "content": "880-05/$1"}
+	f830a := map[string]string{"tag": "a", "content": "Rekishi bunka raiburarī ;"}
+	f830v := map[string]string{"tag": "v", "content": "451"}
+	f830 := Field{MarcTag: "830"}
+	f830.Subfields = []map[string]string{f8306, f830a, f830v}
+
+	// vernacular for 830
+	f8806x := map[string]string{"tag": "6", "content": "830-05/$1"}
+	f880ax := map[string]string{"tag": "a", "content": "歴史文化ライブラリー ;"}
+	f880vx := map[string]string{"tag": "v", "content": "451"}
+	f880x := Field{MarcTag: "880"}
+	f880x.Subfields = []map[string]string{f8806x, f880ax, f880vx}
+
+	fields := []Field{f490, f830, f880, f880x}
+	bib := Bib{VarFields: fields}
+
+	specsStr := "490a:830adv"
+	values := bib.MarcValuesByField(specsStr, true)
+	if values[0][0] != "Rekishi bunka raiburarī ;" ||
+		values[1][0] != "歴史文化ライブラリー ;" ||
+		values[2][0] != "Rekishi bunka raiburarī ; 451" ||
+		values[3][0] != "歴史文化ライブラリー ; 451" {
+		t.Errorf("Unexpected values were found: %#v")
 	}
 }

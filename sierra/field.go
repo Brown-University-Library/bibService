@@ -40,7 +40,7 @@ func (f Field) HasVernacular() (bool, string) {
 // it has a subfield with tag "6" where the content is for the target.
 // The Target tyically comes in the form "NNN-nn" where "NNN" is the MARC
 // field and "nn" is a sequence value (e.g. "700-02")
-func (f Field) IsVernacularForTag6(target string) bool {
+func (f Field) IsVernacularFor(target string) bool {
 	for _, sub := range f.Subfields {
 		if sub["tag"] == "6" {
 			if strings.HasPrefix(sub["content"], target) {
@@ -51,24 +51,14 @@ func (f Field) IsVernacularForTag6(target string) bool {
 	return false
 }
 
-func (f Field) ValuesForTag6(subfields []string) []string {
-	values := []string{}
-	for _, sub := range f.Subfields {
-		if in(subfields, sub["tag"]) {
-			safeAppend(&values, sub["content"])
-		}
-	}
-	return values
-}
-
-func (f Field) getSubfieldsValues(tagsWanted []string, join bool) []string {
+func (f Field) Values(tagsWanted []string, join bool) []string {
 	if join {
-		return f.getSubfieldsValuesJoin(tagsWanted)
+		return f.valuesJoin(tagsWanted)
 	}
-	return f.getSubfieldsValuesNoJoin(tagsWanted)
+	return f.valuesNoJoin(tagsWanted)
 }
 
-func (f Field) getSubfieldsValuesNoJoin(subfields []string) []string {
+func (f Field) valuesNoJoin(subfields []string) []string {
 	values := []string{}
 	// We walk through the subfields in the Field because it is important
 	// to preserve the order of the values returned according to the order
@@ -102,7 +92,7 @@ func (f Field) getSubfieldsValuesNoJoin(subfields []string) []string {
 //      "A2"           // single tag
 //      "A3 C3"        // combined two tags
 //
-func (f Field) getSubfieldsValuesJoin(tagsWanted []string) []string {
+func (f Field) valuesJoin(tagsWanted []string) []string {
 	output := []string{}
 	processedTags := []string{}
 	batchValues := []string{}

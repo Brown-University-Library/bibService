@@ -79,8 +79,6 @@ func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 	doc.TitleVernDisplay = []string{bib.TitleVernacularDisplay()}
 	doc.TitleSeriesT = bib.TitleSeries()
 
-	seriesSpec := "400flnptv:410flnptv:411fklnptv:440ap:490a:800abcdflnpqt:810tflnp:811tfklpsv:830adfklmnoprstv"
-	doc.TitleSeriesT = bib.MarcValuesTrim(seriesSpec)
 	doc.TitleSort = []string{bib.SortableTitle()}
 	doc.UniformTitlesDisplay = []string{bib.UniformTitlesDisplay(false)}
 	doc.NewUniformTitleAuthorDisplay = []string{bib.UniformTitlesDisplay(true)}
@@ -99,7 +97,8 @@ func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 	doc.AbstractDisplay = []string{bib.AbstractDisplay()}
 	doc.BuildingFacet = bib.BuildingFacets()
 	doc.LocationCodeT = bib.LocationCodes()
-	doc.TopicFacet = bib.MarcValuesTrim("650a:690a")
+
+	doc.TopicFacet = bib.TopicFacet()
 	doc.SubjectsT = bib.Subjects()
 	doc.CallNumbers = bib.CallNumbers()
 	doc.RegionFacet = bib.RegionFacet()
