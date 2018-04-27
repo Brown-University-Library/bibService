@@ -289,6 +289,7 @@ func (bib Bib) UniformTitles(newVersion bool) []UniformTitles {
 		titles := UniformTitles{}
 		query := ""
 		for _, value := range valuesForField {
+			// TODO: revisit this. Is it OK to periods to vernacular values?
 			display := addPeriod(value)
 			if query == "" {
 				query = display
@@ -328,6 +329,7 @@ func (bib Bib) TitleT() []string {
 	specsStr += "240adfklmnoprs:242abnp:246abnp:247abnp:505t:"
 	specsStr += "700fklmtnoprsv:710fklmorstv:711fklpt:730adfklmnoprstv:740ap"
 	values := bib.MarcValuesByField(specsStr, true)
+	log.Printf("TitleT values: %#v", values)
 	titles := valuesToArray(values, true, false)
 	return titles
 }
@@ -387,8 +389,8 @@ func (bib Bib) SortableTitle() string {
 }
 
 func (bib Bib) CallNumbers() []string {
-	values := bib.MarcValuesByField("050ab:090ab:091ab:092ab:096ab:099ab", false)
-	return valuesToArray(values, true, false)
+	values := bib.MarcValuesByField("050ab:090ab:091ab:092ab:096ab:099ab", true)
+	return valuesToArray(values, true, true)
 }
 
 func (bib Bib) TopicFacet() []string {
@@ -494,17 +496,18 @@ func (bib Bib) OclcNum() []string {
 	// RegEx based on Traject's marc21.rb
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	re := regexp.MustCompile("\\s*(ocm|ocn|on|\\(OCoLC\\))(\\d+)")
-	values := []string{}
-	for _, value := range bib.MarcValues("001:035a:035z") {
+	values := bib.MarcValuesByField("001:035a:035z", false)
+	nums := []string{}
+	for _, value := range valuesToArray(values, false, false) {
 		if strings.HasPrefix(value, "ssj") {
 			// TODO: Ask Jeanette about these values
 			// eg. b4643178, b4643180
 		} else {
 			num := strings.TrimSpace(re.ReplaceAllString(value, "$2"))
-			safeAppend(&values, num)
+			safeAppend(&nums, num)
 		}
 	}
-	return values
+	return nums
 }
 
 func (bib Bib) UpdatedDate() string {
@@ -592,6 +595,8 @@ func (bib Bib) RegionFacetZFields() []string {
 		"654z", "655z", "656z", "690z", "651z", "691z",
 	}
 
+	// TODO: rewrite this using bib.MarcValuesByField()
+	//
 	// Notice that we don't use bib.MarcValues() here because
 	// bib.MarcValues() returns the data without a relationship
 	// to the field where each value was found. In this case
