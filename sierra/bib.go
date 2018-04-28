@@ -91,15 +91,11 @@ func (bib Bib) MarcValue(specsStr string, trim bool) string {
 
 func (bib Bib) MarcValuesByField(specsStr string, join bool) [][]string {
 	values := [][]string{}
-	marcProcessed := []string{}
-
-	for _, spec := range NewFieldSpecs(specsStr) {
+	vernProcessed := []string{}
+	specs := NewFieldSpecs(specsStr)
+	for _, spec := range specs {
 
 		fields := bib.getFields(spec.MarcTag)
-		if len(fields) > 0 {
-			safeAppend(&marcProcessed, spec.MarcTag)
-		}
-
 		if len(spec.Subfields) == 0 {
 			// Get the value directly
 			for _, field := range fields {
@@ -131,26 +127,27 @@ func (bib Bib) MarcValuesByField(specsStr string, join bool) [][]string {
 				}
 			}
 			if len(fieldValues) > 0 {
+				vernProcessed = append(vernProcessed, field.MarcTag)
 				values = append(values, fieldValues)
 			}
 		}
 	}
 
-	// Process the 880s field again this time to gather vernacular
+	// Process the 880 fields again this time to gather vernacular
 	// values for fields in the spec that have no values in the
-	// record (e.g. we might have a 880 for field 490, but no 490
-	// value in the record)
-	for _, spec := range NewFieldSpecs(specsStr) {
-		for _, field := range bib.getFields("880") {
-			if field.IsVernacularFor(spec.MarcTag) {
-				if !in(marcProcessed, spec.MarcTag) {
-					fieldValues := []string{}
-					for _, vernValue := range field.Values(spec.Subfields, join) {
-						safeAppend(&fieldValues, vernValue)
-					}
-					if len(fieldValues) > 0 {
-						values = append(values, fieldValues)
-					}
+	// record (e.g. we might have an 880 for field 505, but no 505
+	// value in the record, or an 880 for field 490a but no 409a
+	// on the record)
+	f880s := bib.getFields("880")
+	for _, spec := range specs {
+		for _, f880 := range f880s {
+			if f880.IsVernacularFor(spec.MarcTag) && !in(vernProcessed, spec.MarcTag) {
+				fieldValues := []string{}
+				for _, vernValue := range f880.Values(spec.Subfields, join) {
+					safeAppend(&fieldValues, vernValue)
+				}
+				if len(fieldValues) > 0 {
+					values = append(values, fieldValues)
 				}
 			}
 		}
@@ -329,7 +326,6 @@ func (bib Bib) TitleT() []string {
 	specsStr += "240adfklmnoprs:242abnp:246abnp:247abnp:505t:"
 	specsStr += "700fklmtnoprsv:710fklmorstv:711fklpt:730adfklmnoprstv:740ap"
 	values := bib.MarcValuesByField(specsStr, true)
-	log.Printf("TitleT values: %#v", values)
 	titles := valuesToArray(values, true, false)
 	return titles
 }

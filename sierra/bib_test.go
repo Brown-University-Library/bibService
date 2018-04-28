@@ -151,7 +151,7 @@ func TestValuesWithVernacular(t *testing.T) {
 	}
 
 	if len(values) != 4 {
-		t.Errorf("Unexpected values found")
+		t.Errorf("Unexpected number of values found: %#v", values)
 	}
 }
 
