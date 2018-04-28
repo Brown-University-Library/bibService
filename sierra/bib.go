@@ -84,11 +84,12 @@ func (bib Bib) VernacularValuesFor(field Field, spec FieldSpec, join bool) [][]s
 	return values
 }
 
-func (bib Bib) MarcValue(specsStr string, trim bool) string {
-	values := bib.MarcValuesByField(specsStr, true)
-	return valuesToString(values, trim)
-}
-
+// `specsStr` is something in the form "nnna" where "nnnbc" is the tag of the
+// field and "abc" represents the subfields. For example: "100ac" means
+// field "100" subfields "a" and "c". Multiple fields can be indicated
+// separated by colons, for example: "100ac:210f".
+// When `join` is true the different values from the subfields are
+// joined as a string for each field.
 func (bib Bib) MarcValuesByField(specsStr string, join bool) [][]string {
 	values := [][]string{}
 	vernProcessed := []string{}
@@ -156,13 +157,14 @@ func (bib Bib) MarcValuesByField(specsStr string, join bool) [][]string {
 	return values
 }
 
-// fieldSpec is something in the form "nnna" where "nnn" is the tag of the
-// field and "a" represents the subfields. For example: "100ac" means
-// field "100" subfields "a" and "c". Multiple fields can be indicated
-// separated by colons, for example: "100ac:210f"
-func (bib Bib) MarcValues(fieldSpec string) []string {
+func (bib Bib) MarcValue(specsStr string, trim bool) string {
+	values := bib.MarcValuesByField(specsStr, true)
+	return valuesToString(values, trim)
+}
+
+func (bib Bib) MarcValues(specStr string) []string {
 	values := []string{}
-	for _, valuesForField := range bib.MarcValuesByField(fieldSpec, true) {
+	for _, valuesForField := range bib.MarcValuesByField(specStr, true) {
 		valuesStr := strings.Join(valuesForField, " ")
 		values = append(values, valuesStr)
 	}
@@ -523,6 +525,13 @@ func (bib Bib) IsOnline() bool {
 
 	for _, value := range bib.MarcValues("338a") {
 		if value == "online resource" {
+			return true
+		}
+	}
+
+	// Using this instead of the 998 logic below
+	for _, value := range bib.MarcValues("300a") {
+		if strings.Contains(value, "online resource") {
 			return true
 		}
 	}
