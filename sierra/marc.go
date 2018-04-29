@@ -32,10 +32,10 @@ func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec,
 	marcTag := tokens[0]                    // "880"
 	tag6 := field.MarcTag + "-" + tokens[1] // "700-04"
 
-	// Process the fields indicated in target (e.g. 880s)
+	// Process the fields indicated in target (e.g. 880s)...
 	for _, vernField := range allFields.getFields(marcTag) {
-		// if this is the one that corresponds with our target
-		// e.g. 700-04
+		// ...is this the one that corresponds with the tag 6
+		// value that we calculated (e.g. 700-04)
 		if vernField.IsVernacularFor(tag6) {
 			vernValues := vernField.Values(spec.Subfields, join)
 			values = append(values, vernValues)
@@ -44,12 +44,12 @@ func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec,
 	return values
 }
 
-func (allFields MarcFields) VernacularValuesByField(specsStr string, join bool) [][]string {
+func (allFields MarcFields) VernacularValuesByField(specsStr string) [][]string {
 	values := [][]string{}
 	for _, spec := range NewFieldSpecs(specsStr) {
 		for _, field := range allFields {
 			if field.MarcTag == spec.MarcTag {
-				for _, vernValues := range allFields.vernacularValuesFor(field, spec, join) {
+				for _, vernValues := range allFields.vernacularValuesFor(field, spec, false) {
 					values = append(values, vernValues)
 				}
 			}

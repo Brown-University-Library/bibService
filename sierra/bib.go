@@ -87,7 +87,7 @@ func (bib Bib) AuthorDisplay() string {
 }
 
 func (bib Bib) AuthorVernacularDisplay() string {
-	vernAuthors := bib.VarFields.VernacularValuesByField("100abcdq:110abcd:111abcd", false)
+	vernAuthors := bib.VarFields.VernacularValuesByField("100abcdq:110abcd:111abcd")
 	return valuesToString(vernAuthors, true)
 }
 
@@ -168,7 +168,7 @@ func (bib Bib) TitleSeries() []string {
 }
 
 func (bib Bib) TitleVernacularDisplay() string {
-	vernTitles := bib.VarFields.VernacularValuesByField("245apbfgkn", false)
+	vernTitles := bib.VarFields.VernacularValuesByField("245apbfgkn")
 	return valuesToString(vernTitles, true)
 }
 
@@ -272,7 +272,7 @@ func (bib Bib) PublishedDisplay() []string {
 }
 
 func (bib Bib) PublishedVernacularDisplay() string {
-	vernPub := bib.VarFields.VernacularValuesByField("260a", false)
+	vernPub := bib.VarFields.VernacularValuesByField("260a")
 	return valuesToString(vernPub, false)
 }
 
@@ -321,7 +321,7 @@ func (bib Bib) OclcNum() []string {
 	// RegEx based on Traject's marc21.rb
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	re := regexp.MustCompile("\\s*(ocm|ocn|on|\\(OCoLC\\))(\\d+)")
-	values := bib.VarFields.MarcValuesByField("001:035a:035z", false)
+	values := bib.VarFields.MarcValuesByField("001:035a:035z", true)
 	nums := []string{}
 	for _, value := range valuesToArray(values, false, false) {
 		if strings.HasPrefix(value, "ssj") {
