@@ -65,9 +65,9 @@ func TestLanguage(t *testing.T) {
 	lang2 := map[string]string{"content": "fre", "tag": "a"}
 	lang3 := map[string]string{"content": "spa", "tag": "a"}
 
-	field := Field{MarcTag: "041"}
+	field := MarcField{MarcTag: "041"}
 	field.Subfields = []map[string]string{lang1, lang2, lang3}
-	fields := []Field{field}
+	fields := MarcFields{field}
 	bib := Bib{VarFields: fields}
 	values := bib.Languages()
 	if !in(values, "English") || !in(values, "Spanish") || !in(values, "French") {
@@ -80,7 +80,7 @@ func TestGetSubfieldValues(t *testing.T) {
 	lang2 := map[string]string{"content": "fre", "tag": "a"}
 	lang3 := map[string]string{"content": "spa", "tag": "a"}
 
-	field := Field{MarcTag: "041"}
+	field := MarcField{MarcTag: "041"}
 	field.Subfields = []map[string]string{lang1, lang2, lang3}
 
 	subfields := []string{"a"}
@@ -110,145 +110,12 @@ func TestOclcNum(t *testing.T) {
 	}
 }
 
-func TestValuesWithVernacular(t *testing.T) {
-	// Two author values
-	s1 := map[string]string{"tag": "6", "content": "880-04"}
-	a1 := map[string]string{"tag": "a", "content": "aaa"}
-	b1 := map[string]string{"tag": "b", "content": "bbb"}
-	f700_1 := Field{MarcTag: "700"}
-	f700_1.Subfields = []map[string]string{s1, a1, b1}
-
-	s2 := map[string]string{"tag": "6", "content": "880-05"}
-	a2 := map[string]string{"tag": "a", "content": "ccc"}
-	f700_2 := Field{MarcTag: "700"}
-	f700_2.Subfields = []map[string]string{s2, a2}
-
-	// and their vernacular values
-	s3 := map[string]string{"tag": "6", "content": "700-04/$1"}
-	a3 := map[string]string{"tag": "a", "content": "AAA"}
-	b3 := map[string]string{"tag": "b", "content": "BBB"}
-	f880_1 := Field{MarcTag: "880"}
-	f880_1.Subfields = []map[string]string{s3, a3, b3}
-
-	s4 := map[string]string{"tag": "6", "content": "700-05/$1"}
-	a4 := map[string]string{"tag": "a", "content": "CCC"}
-	z4 := map[string]string{"tag": "z", "content": "ZZZ"} // should not be picked up
-	f880_2 := Field{MarcTag: "880"}
-	f880_2.Subfields = []map[string]string{s4, a4, z4}
-
-	// A document with all the values
-	fields := []Field{f700_1, f700_2, f880_1, f880_2}
-	bib := Bib{VarFields: fields}
-
-	// Make sure fetching the 700 picks up the associated 880 fields
-	values := bib.MarcValues("700ab", true)
-	if !in(values, "aaa bbb") || !in(values, "ccc") {
-		t.Errorf("700 field values not found: %#v", values)
-	}
-
-	if !in(values, "AAA BBB") || !in(values, "CCC") {
-		t.Errorf("880 field values not found: %#v", values)
-	}
-
-	if len(values) != 4 {
-		t.Errorf("Unexpected number of values found: %#v", values)
-	}
-}
-
-func TestTwoFields(t *testing.T) {
-	ta1 := map[string]string{"tag": "a", "content": "a1"}
-	field1 := Field{MarcTag: "100"}
-	field1.Subfields = []map[string]string{ta1}
-
-	ta2 := map[string]string{"tag": "a", "content": "a2"}
-	field2 := Field{MarcTag: "100"}
-	field2.Subfields = []map[string]string{ta2}
-
-	fields := []Field{field1, field2}
-	bib := Bib{VarFields: fields}
-
-	// Two fields should result in two results
-	// (even if they are the same MARC field).
-	values := bib.MarcValuesByField("100abc", true)
-	if len(values) != 2 {
-		t.Errorf("Unexpected number of results: %d", len(values))
-	}
-
-	if !in(values[0], "a1") || !in(values[1], "a2") {
-		t.Errorf("Did not fetch the expected values: %#v", values)
-	}
-}
-
-func TestSubfieldsDifferentTag(t *testing.T) {
-	ta1 := map[string]string{"tag": "a", "content": "X a"}
-	tb1 := map[string]string{"tag": "b", "content": "X b"}
-	tc1 := map[string]string{"tag": "c", "content": "X c"}
-	field1 := Field{MarcTag: "100"}
-	field1.Subfields = []map[string]string{ta1, tb1, tc1}
-
-	ta2 := map[string]string{"tag": "a", "content": "Y a"}
-	tb2 := map[string]string{"tag": "b", "content": "Y b"}
-	field2 := Field{MarcTag: "100"}
-	field2.Subfields = []map[string]string{ta2, tb2}
-
-	fields := []Field{field1, field2}
-	bib := Bib{VarFields: fields}
-	values := bib.MarcValuesByField("100abc", true)
-
-	if !in(values[0], "X a X b X c") {
-		t.Errorf("Did not fetch the expected values: %#v", values)
-	}
-
-	if !in(values[1], "Y a Y b") {
-		t.Errorf("Did not fetch the expected values: %#v", values)
-	}
-}
-
-func TestSubfieldsSameTag(t *testing.T) {
-	// Sample record b8060047
-	t1 := map[string]string{"tag": "t", "content": "T1"}
-	t2 := map[string]string{"tag": "t", "content": "T2"}
-	t3 := map[string]string{"tag": "t", "content": "T3"}
-	tn := map[string]string{"tag": "n", "content": "N"}
-	t4 := map[string]string{"tag": "t", "content": "T4"}
-	field1 := Field{MarcTag: "550"}
-	field1.Subfields = []map[string]string{t1, t2, t3, tn, t4}
-
-	fields := []Field{field1}
-	bib := Bib{VarFields: fields}
-
-	// Makes sure subfield values are combined for different subfields
-	// (e.g. "T2 N") but kept separate for repeated the rest ("T1", "T2", "T4")
-	values := bib.MarcValuesByField("550tnx", true)
-	if !in(values[0], "T1") || !in(values[0], "T2") || !in(values[0], "T3 N") || !in(values[0], "T4") {
-		t.Errorf("Did not fetch the expected values: %#v", values)
-	}
-}
-
-func TestValuesFreestandingVernacular(t *testing.T) {
-	t6 := map[string]string{"tag": "6", "content": "700-04/$1"}
-	ta := map[string]string{"tag": "a", "content": "AAA"}
-	tb := map[string]string{"tag": "b", "content": "BBB"}
-	f880 := Field{MarcTag: "880"}
-	f880.Subfields = []map[string]string{t6, ta, tb}
-	fields := []Field{f880}
-	bib := Bib{VarFields: fields}
-
-	// Make sure fetching the 700 picks up vernacular values
-	// even though there is no 700 field in the record.
-	values := bib.MarcValues("700ab", true)
-	if !in(values, "AAA BBB") {
-		t.Errorf("Did not pick up freestanding vernacular values")
-	}
-}
-
 func TestRegionFacetWithParent(t *testing.T) {
 	z1 := map[string]string{"content": "usa", "tag": "z"}
 	z2 := map[string]string{"content": "ri", "tag": "z"}
-
-	field := Field{MarcTag: "650"}
+	field := MarcField{MarcTag: "650"}
 	field.Subfields = []map[string]string{z1, z2}
-	fields := []Field{field}
+	fields := MarcFields{field}
 	bib := Bib{VarFields: fields}
 	facets := bib.RegionFacet()
 	if !in(facets, "usa") || !in(facets, "ri (usa)") {
@@ -260,9 +127,9 @@ func TestRegionFacet(t *testing.T) {
 	z1 := map[string]string{"content": "usa", "tag": "z"}
 	z2 := map[string]string{"content": "ri", "tag": "z"}
 	z3 := map[string]string{"content": "zz", "tag": "z"}
-	field := Field{MarcTag: "650"}
+	field := MarcField{MarcTag: "650"}
 	field.Subfields = []map[string]string{z1, z2, z3}
-	fields := []Field{field}
+	fields := MarcFields{field}
 	bib := Bib{VarFields: fields}
 	facets := bib.RegionFacet()
 	if !in(facets, "usa") || !in(facets, "ri") || !in(facets, "zz") {
@@ -275,7 +142,7 @@ func TestTitleVernacularDisplay(t *testing.T) {
 	// title in english
 	f2456 := map[string]string{"content": "880-03", "tag": "6"}
 	f245a := map[string]string{"content": "whatever", "tag": "a"}
-	f245 := Field{MarcTag: "245"}
+	f245 := MarcField{MarcTag: "245"}
 	f245.Subfields = []map[string]string{f245a, f2456}
 
 	// title in language
@@ -283,10 +150,10 @@ func TestTitleVernacularDisplay(t *testing.T) {
 	f880a := map[string]string{"content": "titulo en español:", "tag": "a"}
 	f880b := map[string]string{"content": "bb", "tag": "b"}
 	f880c := map[string]string{"content": "cc", "tag": "c"}
-	f880 := Field{MarcTag: "880"}
+	f880 := MarcField{MarcTag: "880"}
 	f880.Subfields = []map[string]string{f8806, f880a, f880b, f880c}
 
-	fields := []Field{f245, f880}
+	fields := MarcFields{f245, f880}
 	bib := Bib{VarFields: fields}
 	title := bib.TitleVernacularDisplay()
 	if title != "titulo en español: bb" {
@@ -298,9 +165,9 @@ func TestUniformTitleTwoValues(t *testing.T) {
 	// real sample https://search.library.brown.edu/catalog/b8060083
 	f130a := map[string]string{"tag": "a", "content": "Neues Licht."}
 	f130l := map[string]string{"tag": "l", "content": "English."}
-	f130 := Field{MarcTag: "130"}
+	f130 := MarcField{MarcTag: "130"}
 	f130.Subfields = []map[string]string{f130a, f130l}
-	fields := []Field{f130}
+	fields := MarcFields{f130}
 	bib := Bib{VarFields: fields}
 	titles := bib.UniformTitles(false)
 	if len(titles) != 1 {
@@ -318,9 +185,9 @@ func TestUniformTitleTwoValues(t *testing.T) {
 	// real sample https://search.library.brown.edu/catalog/b8060295
 	f240a := map[string]string{"content": "Poems.", "tag": "a"}
 	f240k := map[string]string{"content": "Selections.", "tag": "k"}
-	f240 := Field{MarcTag: "240"}
+	f240 := MarcField{MarcTag: "240"}
 	f240.Subfields = []map[string]string{f240a, f240k}
-	fields = []Field{f240}
+	fields = MarcFields{f240}
 	bib = Bib{VarFields: fields}
 	titles = bib.UniformTitles(true)
 	if len(titles) != 1 {
@@ -340,16 +207,16 @@ func TestUniformTitleVernacular(t *testing.T) {
 	// title in english
 	f2406 := map[string]string{"content": "880-02", "tag": "6"}
 	f240a := map[string]string{"content": "title in english.", "tag": "a"}
-	f240 := Field{MarcTag: "240"}
+	f240 := MarcField{MarcTag: "240"}
 	f240.Subfields = []map[string]string{f240a, f2406}
 
 	// title in language
 	f8806 := map[string]string{"content": "240-02/$1", "tag": "6"}
 	f880a := map[string]string{"content": "titulo en español.", "tag": "a"}
-	f880 := Field{MarcTag: "880"}
+	f880 := MarcField{MarcTag: "880"}
 	f880.Subfields = []map[string]string{f8806, f880a}
 
-	fields := []Field{f240, f880}
+	fields := MarcFields{f240, f880}
 	bib := Bib{VarFields: fields}
 	titles := bib.UniformTitles(true)
 	if len(titles) != 2 {
@@ -373,9 +240,9 @@ func TestPublishedDisplay(t *testing.T) {
 	s4 := map[string]string{"tag": "b", "content": "humphrey"}
 	s5 := map[string]string{"tag": "b", "content": "oxford"}
 	s6 := map[string]string{"tag": "c", "content": "1942"}
-	field := Field{MarcTag: "260"}
+	field := MarcField{MarcTag: "260"}
 	field.Subfields = []map[string]string{s1, s2, s3, s4, s5, s6}
-	fields := []Field{field}
+	fields := MarcFields{field}
 	bib := Bib{VarFields: fields}
 	values := bib.PublishedDisplay()
 	if !in(values, "new haven") || !in(values, "london") {
@@ -389,17 +256,17 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 	f2406 := map[string]string{"content": "880-02", "tag": "6"}
 	f240a := map[string]string{"content": "title in english.", "tag": "a"}
 	f240l := map[string]string{"content": "English.", "tag": "l"}
-	f240 := Field{MarcTag: "240"}
+	f240 := MarcField{MarcTag: "240"}
 	f240.Subfields = []map[string]string{f240a, f240l, f2406}
 
 	// title in language
 	f8806 := map[string]string{"content": "240-02", "tag": "6"}
 	f880a := map[string]string{"content": "titulo en español.", "tag": "a"}
 	f880l := map[string]string{"content": "Spanish.", "tag": "l"}
-	f880 := Field{MarcTag: "880"}
+	f880 := MarcField{MarcTag: "880"}
 	f880.Subfields = []map[string]string{f8806, f880a, f880l}
 
-	fields := []Field{f240, f880}
+	fields := MarcFields{f240, f880}
 	bib := Bib{VarFields: fields}
 	titles := bib.UniformTitles(true)
 
@@ -435,49 +302,5 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 			t.Errorf("%#v", t2.Display)
 			t.Errorf("%#v", t2.Query)
 		}
-	}
-}
-
-func TestTitleSeries(t *testing.T) {
-	// real sample: https://search.library.brown.edu/catalog/b8060352
-
-	// field 490
-	f4906 := map[string]string{"tag": "6", "content": "880-04"}
-	f490a := map[string]string{"tag": "a", "content": "Rekishi bunka raiburarī ;"}
-	f490v := map[string]string{"tag": "v", "content": "451"}
-	f490 := Field{MarcTag: "490"}
-	f490.Subfields = []map[string]string{f4906, f490a, f490v}
-
-	// vernacular for 490
-	f8806 := map[string]string{"tag": "6", "content": "490-04/$1"}
-	f880a := map[string]string{"tag": "a", "content": "歴史文化ライブラリー ;"}
-	f880v := map[string]string{"tag": "v", "content": "451"}
-	f880 := Field{MarcTag: "880"}
-	f880.Subfields = []map[string]string{f8806, f880a, f880v}
-
-	// field 830
-	f8306 := map[string]string{"tag": "6", "content": "880-05/$1"}
-	f830a := map[string]string{"tag": "a", "content": "Rekishi bunka raiburarī ;"}
-	f830v := map[string]string{"tag": "v", "content": "451"}
-	f830 := Field{MarcTag: "830"}
-	f830.Subfields = []map[string]string{f8306, f830a, f830v}
-
-	// vernacular for 830
-	f8806x := map[string]string{"tag": "6", "content": "830-05/$1"}
-	f880ax := map[string]string{"tag": "a", "content": "歴史文化ライブラリー ;"}
-	f880vx := map[string]string{"tag": "v", "content": "451"}
-	f880x := Field{MarcTag: "880"}
-	f880x.Subfields = []map[string]string{f8806x, f880ax, f880vx}
-
-	fields := []Field{f490, f830, f880, f880x}
-	bib := Bib{VarFields: fields}
-
-	specsStr := "490a:830adv"
-	values := bib.MarcValuesByField(specsStr, true)
-	if values[0][0] != "Rekishi bunka raiburarī ;" ||
-		values[1][0] != "歴史文化ライブラリー ;" ||
-		values[2][0] != "Rekishi bunka raiburarī ; 451" ||
-		values[3][0] != "歴史文化ライブラリー ; 451" {
-		t.Errorf("Unexpected values were found: %#v")
 	}
 }

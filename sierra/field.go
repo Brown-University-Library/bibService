@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-type Field struct {
+type MarcField struct {
 	FieldTag  string              `json:"fieldTag"`
 	MarcTag   string              `json:"marcTag"`
 	Ind1      string              `json:"ind1"`
@@ -13,7 +13,7 @@ type Field struct {
 	Content   string              `json:"content"`
 }
 
-func (f Field) Tags() []string {
+func (f MarcField) Tags() []string {
 	tags := []string{}
 	for _, sub := range f.Subfields {
 		safeAppend(&tags, sub["tag"])
@@ -24,7 +24,7 @@ func (f Field) Tags() []string {
 // Returns true if the field indicates that there are vernacular
 // values associated with it. It also returns the MARC field
 // where the vernacular values are.
-func (f Field) HasVernacular() (bool, string) {
+func (f MarcField) HasVernacular() (bool, string) {
 	for _, sub := range f.Subfields {
 		if sub["tag"] == "6" {
 			return true, sub["content"]
@@ -40,7 +40,7 @@ func (f Field) HasVernacular() (bool, string) {
 // it has a subfield with tag "6" where the content is for the target.
 // The Target tyically comes in the form "NNN-nn" where "NNN" is the MARC
 // field and "nn" is a sequence value (e.g. "700-02")
-func (f Field) IsVernacularFor(target string) bool {
+func (f MarcField) IsVernacularFor(target string) bool {
 	for _, sub := range f.Subfields {
 		if sub["tag"] == "6" {
 			if strings.HasPrefix(sub["content"], target) {
@@ -51,14 +51,14 @@ func (f Field) IsVernacularFor(target string) bool {
 	return false
 }
 
-func (f Field) Values(tagsWanted []string, join bool) []string {
+func (f MarcField) Values(tagsWanted []string, join bool) []string {
 	if join {
 		return f.valuesJoin(tagsWanted)
 	}
 	return f.valuesNoJoin(tagsWanted)
 }
 
-func (f Field) valuesNoJoin(subfields []string) []string {
+func (f MarcField) valuesNoJoin(subfields []string) []string {
 	values := []string{}
 	// We walk through the subfields in the Field because it is important
 	// to preserve the order of the values returned according to the order
@@ -92,7 +92,7 @@ func (f Field) valuesNoJoin(subfields []string) []string {
 //      "A2"           // single tag
 //      "A3 C3"        // combined two tags
 //
-func (f Field) valuesJoin(tagsWanted []string) []string {
+func (f MarcField) valuesJoin(tagsWanted []string) []string {
 	output := []string{}
 	processedTags := []string{}
 	batchValues := []string{}

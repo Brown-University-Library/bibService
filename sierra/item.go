@@ -13,7 +13,7 @@ type Item struct {
 	Location    map[string]string `json:"location"`
 	Status      map[string]string `json:"status"`
 	Barcode     string            `json:"barcode"`
-	Fields      []Field           `json:"varFields"`
+	Fields      []MarcField       `json:"varFields"`
 }
 
 func (i Item) IsForBib(bib string) bool {
