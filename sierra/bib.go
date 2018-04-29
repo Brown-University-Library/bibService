@@ -421,7 +421,7 @@ func (bib Bib) RegionFacetZFields() []string {
 	values := []string{}
 	zFieldSpecs := "600z:610z:611z:630z:648z:650z:"
 	zFieldSpecs += "654z:655z:656z:690z:651z:691z"
-	for _, fieldValues := range bib.VarFields.MarcValuesByField(zFieldSpecs, false) {
+	for _, fieldValues := range bib.VarFields.MarcValuesByField(zFieldSpecs, true) {
 		if len(fieldValues) == 2 {
 			// Asumme the first one is the parent region of the second one
 			// e.g. v[0] := "USA", v[1] := "Rhode Island (USA)"

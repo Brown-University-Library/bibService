@@ -49,7 +49,7 @@ func (allFields MarcFields) VernacularValuesByField(specsStr string) [][]string 
 	for _, spec := range NewFieldSpecs(specsStr) {
 		for _, field := range allFields {
 			if field.MarcTag == spec.MarcTag {
-				for _, vernValues := range allFields.vernacularValuesFor(field, spec, false) {
+				for _, vernValues := range allFields.vernacularValuesFor(field, spec, true) {
 					values = append(values, vernValues)
 				}
 			}
