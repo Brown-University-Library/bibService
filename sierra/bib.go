@@ -157,18 +157,14 @@ func (bib Bib) MarcValuesByField(specsStr string, join bool) [][]string {
 	return values
 }
 
-func (bib Bib) MarcValue(specsStr string, trim bool) string {
-	values := bib.MarcValuesByField(specsStr, true)
+func (bib Bib) MarcValue(specsStr string, join bool, trim bool) string {
+	values := bib.MarcValuesByField(specsStr, join)
 	return valuesToString(values, trim)
 }
 
-func (bib Bib) MarcValues(specStr string) []string {
-	values := []string{}
-	for _, valuesForField := range bib.MarcValuesByField(specStr, true) {
-		valuesStr := strings.Join(valuesForField, " ")
-		values = append(values, valuesStr)
-	}
-	return values
+func (bib Bib) MarcValues(specStr string, join bool) []string {
+	values := bib.MarcValuesByField(specStr, join)
+	return valuesToArray(values, join, false)
 }
 
 func (bib Bib) getFields(marcTag string) []Field {
@@ -252,7 +248,7 @@ func (bib Bib) AuthorFacet() []string {
 }
 
 func (bib Bib) AuthorDisplay() string {
-	authors := bib.MarcValues("100abcdq:110abcd:111abcd")
+	authors := bib.MarcValues("100abcdq:110abcd:111abcd", true)
 	if len(authors) > 0 {
 		return trimPunct(authors[0])
 	}
@@ -265,7 +261,7 @@ func (bib Bib) AuthorVernacularDisplay() string {
 }
 
 func (bib Bib) AbstractDisplay() string {
-	values := bib.MarcValues("520a")
+	values := bib.MarcValues("520a", true)
 	if len(values) > 0 {
 		return values[0]
 	}
@@ -369,7 +365,7 @@ func (bib Bib) SortableTitle() string {
 	// Logic stolen from
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	// TODO do we need the field k logic here?
-	titles := bib.MarcValues("245ab")
+	titles := bib.MarcValues("245ab", true)
 	if len(titles) == 0 {
 		return ""
 	}
@@ -471,7 +467,7 @@ func (bib Bib) PublicationYear() (int, bool) {
 	rangeEnd := time.Now().Year()
 	tolerance := 15
 
-	f008 := bib.MarcValue("008", true)
+	f008 := bib.MarcValue("008", true, true)
 	year, ok := pubYear008(f008, tolerance)
 	if !ok {
 		year, ok = bib.pubYear260()
@@ -484,7 +480,7 @@ func (bib Bib) PublicationYear() (int, bool) {
 }
 
 func (bib Bib) pubYear260() (int, bool) {
-	f260c := bib.MarcValue("260c", true)
+	f260c := bib.MarcValue("260c", true, true)
 	re := regexp.MustCompile("(\\d{4})")
 	year := re.FindString(f260c)
 	return toIntTry(year)
@@ -523,14 +519,14 @@ func (bib Bib) IsOnline() bool {
 		}
 	}
 
-	for _, value := range bib.MarcValues("338a") {
+	for _, value := range bib.MarcValues("338a", true) {
 		if value == "online resource" {
 			return true
 		}
 	}
 
 	// Using this instead of the 998 logic below
-	for _, value := range bib.MarcValues("300a") {
+	for _, value := range bib.MarcValues("300a", true) {
 		if strings.Contains(value, "online resource") {
 			return true
 		}
@@ -538,7 +534,7 @@ func (bib Bib) IsOnline() bool {
 
 	// It seems that field 998 does not come in the API and
 	// therfore this code does nothing for now.
-	for _, value := range bib.MarcValues("998a") {
+	for _, value := range bib.MarcValues("998a", true) {
 		if value == "es001" {
 			return true
 		}
@@ -553,7 +549,7 @@ func (bib Bib) Format() string {
 
 func (bib Bib) Languages() []string {
 	values := []string{}
-	f008 := bib.MarcValue("008", false)
+	f008 := bib.MarcValue("008", true, false)
 	f008_lang := ""
 	if len(f008) > 38 {
 		f008_lang = languageName(f008[35:38])
@@ -573,7 +569,7 @@ func (bib Bib) RegionFacet() []string {
 	// Stolen from Traject's marc_geo_facet
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	values := []string{}
-	for _, value := range bib.MarcValues("043a") {
+	for _, value := range bib.MarcValues("043a", true) {
 		code := trimPunct(value)
 		code = strings.TrimRight(code, "-")
 		name := regionName(code)
@@ -581,7 +577,7 @@ func (bib Bib) RegionFacet() []string {
 	}
 
 	aFieldSpec := "651a:691a"
-	for _, value := range bib.MarcValues(aFieldSpec) {
+	for _, value := range bib.MarcValues(aFieldSpec, true) {
 		trimVal := trimPunct(value)
 		safeAppend(&values, trimVal)
 	}

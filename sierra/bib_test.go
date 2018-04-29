@@ -141,7 +141,7 @@ func TestValuesWithVernacular(t *testing.T) {
 	bib := Bib{VarFields: fields}
 
 	// Make sure fetching the 700 picks up the associated 880 fields
-	values := bib.MarcValues("700ab")
+	values := bib.MarcValues("700ab", true)
 	if !in(values, "aaa bbb") || !in(values, "ccc") {
 		t.Errorf("700 field values not found: %#v", values)
 	}
@@ -236,7 +236,7 @@ func TestValuesFreestandingVernacular(t *testing.T) {
 
 	// Make sure fetching the 700 picks up vernacular values
 	// even though there is no 700 field in the record.
-	values := bib.MarcValues("700ab")
+	values := bib.MarcValues("700ab", true)
 	if !in(values, "AAA BBB") {
 		t.Errorf("Did not pick up freestanding vernacular values")
 	}
