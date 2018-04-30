@@ -95,3 +95,39 @@ func trimPunct(str string) string {
 
 	return cleanStr
 }
+
+func valuesToArray(values [][]string, trim bool, join bool) []string {
+	array := []string{}
+	for _, fieldValues := range values {
+		if join {
+			// join all the values for the field as a single element in
+			// the returning array
+			value := strings.Join(fieldValues, " ")
+			if trim {
+				value = trimPunct(value)
+			}
+			safeAppend(&array, value)
+		} else {
+			// preserve each individual value (regardless of their field)
+			// as a single element in the returning arrray
+			for _, value := range fieldValues {
+				if trim {
+					value = trimPunct(value)
+				}
+				safeAppend(&array, value)
+			}
+		}
+	}
+	return array
+}
+
+func valuesToString(values [][]string, trim bool) string {
+	rowValues := []string{}
+	for _, fieldValues := range values {
+		safeAppend(&rowValues, strings.Join(fieldValues, " "))
+	}
+	if trim {
+		return trimPunct(strings.Join(rowValues, " "))
+	}
+	return strings.Join(rowValues, " ")
+}

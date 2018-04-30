@@ -4,46 +4,40 @@ import (
 	"testing"
 )
 
-func TestValuesWithVernacular(t *testing.T) {
-	// Two author values
-	s1 := map[string]string{"tag": "6", "content": "880-04"}
-	a1 := map[string]string{"tag": "a", "content": "aaa"}
-	b1 := map[string]string{"tag": "b", "content": "bbb"}
-	f700_1 := MarcField{MarcTag: "700"}
-	f700_1.Subfields = []map[string]string{s1, a1, b1}
+//
+// BASIC TESTS
+//
+func TestMarcValuesJoin(t *testing.T) {
+	a1 := map[string]string{"tag": "a", "content": "A1"}
+	b1 := map[string]string{"tag": "b", "content": "B1"}
+	f1 := MarcField{MarcTag: "520"}
+	f1.Subfields = []map[string]string{a1, b1}
 
-	s2 := map[string]string{"tag": "6", "content": "880-05"}
-	a2 := map[string]string{"tag": "a", "content": "ccc"}
-	f700_2 := MarcField{MarcTag: "700"}
-	f700_2.Subfields = []map[string]string{s2, a2}
+	a2 := map[string]string{"tag": "a", "content": "A2"}
+	f2 := MarcField{MarcTag: "520"}
+	f2.Subfields = []map[string]string{a2}
 
-	// and their vernacular values
-	s3 := map[string]string{"tag": "6", "content": "700-04/$1"}
-	a3 := map[string]string{"tag": "a", "content": "AAA"}
-	b3 := map[string]string{"tag": "b", "content": "BBB"}
-	f880_1 := MarcField{MarcTag: "880"}
-	f880_1.Subfields = []map[string]string{s3, a3, b3}
+	a3 := map[string]string{"tag": "a", "content": "A3"}
+	b3 := map[string]string{"tag": "b", "content": "B3"}
+	f3 := MarcField{MarcTag: "520"}
+	f3.Subfields = []map[string]string{a3, b3}
 
-	s4 := map[string]string{"tag": "6", "content": "700-05/$1"}
-	a4 := map[string]string{"tag": "a", "content": "CCC"}
-	z4 := map[string]string{"tag": "z", "content": "ZZZ"} // should not be picked up
-	f880_2 := MarcField{MarcTag: "880"}
-	f880_2.Subfields = []map[string]string{s4, a4, z4}
+	fields := MarcFields{f1, f2, f3}
 
-	fields := MarcFields{f700_1, f700_2, f880_1, f880_2}
-
-	// Make sure fetching the 700 picks up the associated 880 fields
-	values := fields.MarcValues("700ab", true)
-	if !in(values, "aaa bbb") || !in(values, "ccc") {
-		t.Errorf("700 field values not found: %#v", values)
+	joinedValues := fields.MarcValuesByField("520ab", true)
+	if len(joinedValues) != 3 ||
+		joinedValues[0][0] != "A1 B1" ||
+		joinedValues[1][0] != "A2" ||
+		joinedValues[2][0] != "A3 B3" {
+		t.Errorf("Unexpected joinedValues: %#v", joinedValues)
 	}
 
-	if !in(values, "AAA BBB") || !in(values, "CCC") {
-		t.Errorf("880 field values not found: %#v", values)
-	}
-
-	if len(values) != 4 {
-		t.Errorf("Unexpected number of values found: %#v", values)
+	values := fields.MarcValuesByField("520ab", false)
+	if len(values) != 3 ||
+		values[0][0] != "A1" || values[0][1] != "B1" ||
+		values[1][0] != "A2" ||
+		values[2][0] != "A3" || values[2][1] != "B3" {
+		t.Errorf("Unexpected values: %#v", values)
 	}
 }
 
@@ -114,7 +108,53 @@ func TestSubfieldsSameTag(t *testing.T) {
 	}
 }
 
-func TestValuesFreestandingVernacular(t *testing.T) {
+//
+// VERNACULAR
+//
+func TestVernacular(t *testing.T) {
+	// Two author values
+	s1 := map[string]string{"tag": "6", "content": "880-04"}
+	a1 := map[string]string{"tag": "a", "content": "aaa"}
+	b1 := map[string]string{"tag": "b", "content": "bbb"}
+	f700_1 := MarcField{MarcTag: "700"}
+	f700_1.Subfields = []map[string]string{s1, a1, b1}
+
+	s2 := map[string]string{"tag": "6", "content": "880-05"}
+	a2 := map[string]string{"tag": "a", "content": "ccc"}
+	f700_2 := MarcField{MarcTag: "700"}
+	f700_2.Subfields = []map[string]string{s2, a2}
+
+	// and their vernacular values
+	s3 := map[string]string{"tag": "6", "content": "700-04/$1"}
+	a3 := map[string]string{"tag": "a", "content": "AAA"}
+	b3 := map[string]string{"tag": "b", "content": "BBB"}
+	f880_1 := MarcField{MarcTag: "880"}
+	f880_1.Subfields = []map[string]string{s3, a3, b3}
+
+	s4 := map[string]string{"tag": "6", "content": "700-05/$1"}
+	a4 := map[string]string{"tag": "a", "content": "CCC"}
+	z4 := map[string]string{"tag": "z", "content": "ZZZ"} // should not be picked up
+	f880_2 := MarcField{MarcTag: "880"}
+	f880_2.Subfields = []map[string]string{s4, a4, z4}
+
+	fields := MarcFields{f700_1, f700_2, f880_1, f880_2}
+
+	// Make sure fetching the 700 picks up the associated 880 fields
+	values := fields.MarcValues("700ab", true)
+	if !in(values, "aaa bbb") || !in(values, "ccc") {
+		t.Errorf("700 field values not found: %#v", values)
+	}
+
+	if !in(values, "AAA BBB") || !in(values, "CCC") {
+		t.Errorf("880 field values not found: %#v", values)
+	}
+
+	if len(values) != 4 {
+		t.Errorf("Unexpected number of values found: %#v", values)
+	}
+}
+
+func TestVernacularFreestanding(t *testing.T) {
 	t6 := map[string]string{"tag": "6", "content": "700-04/$1"}
 	ta := map[string]string{"tag": "a", "content": "AAA"}
 	tb := map[string]string{"tag": "b", "content": "BBB"}
@@ -163,6 +203,12 @@ func TestTitleSeries(t *testing.T) {
 
 	fields := MarcFields{f490, f830, f880, f880x}
 
+	// Make sure it picks up the correct set of subfields for each field:
+	//
+	// 	values[0] => 490a
+	// 	values[1] => 880a for 490a
+	// 	values[2] => 830av
+	// 	values[3] => 880av for 830av
 	specsStr := "490a:830adv"
 	values := fields.MarcValuesByField(specsStr, true)
 	if values[0][0] != "Rekishi bunka raiburarī ;" ||

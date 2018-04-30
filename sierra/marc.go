@@ -7,63 +7,51 @@ import (
 
 type MarcFields []MarcField
 
-// TODO: should this return MarcFields?
-func (allFields MarcFields) getFields(marcTag string) []MarcField {
-	fields := []MarcField{}
-	for _, field := range allFields {
-		if field.MarcTag == marcTag {
-			fields = append(fields, field)
-		}
-	}
-	return fields
+// MarcValue returns a string with the values for the fields (and subfields)
+// indicated in `specsStr`. When `trim` is true punctuation is trimmed from
+// each of the values before adding them to the resulting string.
+//
+// See MarcValuesByField() for more information.
+func (allFields MarcFields) MarcValue(specsStr string, trim bool) string {
+	values := allFields.MarcValuesByField(specsStr, true)
+	return valuesToString(values, trim)
 }
 
-func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec, join bool) [][]string {
-	values := [][]string{}
-
-	// True if the field has subfield with tag 6
-	// target would be "880-04"
-	vern, target := field.HasVernacular()
-	if !vern {
-		return values
-	}
-
-	tokens := strings.Split(target, "-")    // ["880", "04"]
-	marcTag := tokens[0]                    // "880"
-	tag6 := field.MarcTag + "-" + tokens[1] // "700-04"
-
-	// Process the fields indicated in target (e.g. 880s)...
-	for _, vernField := range allFields.getFields(marcTag) {
-		// ...is this the one that corresponds with the tag 6
-		// value that we calculated (e.g. 700-04)
-		if vernField.IsVernacularFor(tag6) {
-			vernValues := vernField.Values(spec.Subfields, join)
-			values = append(values, vernValues)
-		}
-	}
-	return values
+// MarcValues returns an array of strings with the values for the fields
+// (and subfields) indicated in `specsStr`. When `trim` is true punctuation is
+// trimmed from each of the values in the resulting array (e.g. trailing commas)
+//
+// See MarcValuesByField() for more information.
+func (allFields MarcFields) MarcValues(specsStr string, trim bool) []string {
+	values := allFields.MarcValuesByField(specsStr, true)
+	return valuesToArray(values, trim, false)
 }
 
-func (allFields MarcFields) VernacularValuesByField(specsStr string) [][]string {
-	values := [][]string{}
-	for _, spec := range NewFieldSpecs(specsStr) {
-		for _, field := range allFields {
-			if field.MarcTag == spec.MarcTag {
-				for _, vernValues := range allFields.vernacularValuesFor(field, spec, true) {
-					values = append(values, vernValues)
-				}
-			}
-		}
-	}
-	return values
-}
-
-// `specsStr` is something in the form "nnna" where "nnnbc" is the tag of the
+// MarcValuesByField returns an array of string arrays with the values for
+// the fields and subfields indicated in `specsStr`. The result includes
+// one row for each field where data was found.
+//
+// `specsStr` is something in the form "nnnabc" where "nnn" is the tag of the
 // field and "abc" represents the subfields. For example: "100ac" means
 // field "100" subfields "a" and "c". Multiple fields can be indicated
 // separated by colons, for example: "100ac:210f".
-// When `join` is true the different values from the subfields are
-// joined as a string for each field.
+//
+// `join` controls how each of the rows is constructed. When `join` is true
+// values for the *same field and different subfield* will be concatenated
+// together whereas values for the same *field and subfield* will not.
+// For example when given the spec "520ab" and the following data:
+//
+//		520 a "A1"
+//		    b "B1"
+//		520 a "A2"
+//		    a "A3"
+//		    b "B3"
+//
+// When "join = true" it gives [0]["A1 B1"], [1]["A2"] [2]["A3 B3"]
+// notice "A1 B1" and "A3 B3" where concatenated but not "A2".
+//
+// When "join = false" it gives [0]["A1", "B1"], [2]["A2"], [3]["A3", "B3"]
+// notice that none of the subfields are concatenated.
 func (allFields MarcFields) MarcValuesByField(specsStr string, join bool) [][]string {
 	values := [][]string{}
 	vernProcessed := []string{}
@@ -131,50 +119,55 @@ func (allFields MarcFields) MarcValuesByField(specsStr string, join bool) [][]st
 	return values
 }
 
-func (allFields MarcFields) MarcValue(specsStr string, trim bool) string {
-	values := allFields.MarcValuesByField(specsStr, true)
-	return valuesToString(values, trim)
-}
-
-func (allFields MarcFields) MarcValues(specStr string, trim bool) []string {
-	values := allFields.MarcValuesByField(specStr, true)
-	return valuesToArray(values, trim, false)
-}
-
-func valuesToArray(values [][]string, trim bool, join bool) []string {
-	array := []string{}
-	for _, fieldValues := range values {
-		if join {
-			// join all the values for the field as a single element in
-			// the returning array
-			value := strings.Join(fieldValues, " ")
-			if trim {
-				value = trimPunct(value)
-			}
-			safeAppend(&array, value)
-		} else {
-			// preserve each individual value (regardless of their field)
-			// as a single element in the returning arrray
-			for _, value := range fieldValues {
-				if trim {
-					value = trimPunct(value)
+func (allFields MarcFields) VernacularValuesByField(specsStr string) [][]string {
+	values := [][]string{}
+	for _, spec := range NewFieldSpecs(specsStr) {
+		for _, field := range allFields {
+			if field.MarcTag == spec.MarcTag {
+				for _, vernValues := range allFields.vernacularValuesFor(field, spec, true) {
+					values = append(values, vernValues)
 				}
-				safeAppend(&array, value)
 			}
 		}
 	}
-	return array
+	return values
 }
 
-func valuesToString(values [][]string, trim bool) string {
-	rowValues := []string{}
-	for _, fieldValues := range values {
-		safeAppend(&rowValues, strings.Join(fieldValues, " "))
+// TODO: should this return MarcFields?
+func (allFields MarcFields) getFields(marcTag string) []MarcField {
+	fields := []MarcField{}
+	for _, field := range allFields {
+		if field.MarcTag == marcTag {
+			fields = append(fields, field)
+		}
 	}
-	if trim {
-		return trimPunct(strings.Join(rowValues, " "))
+	return fields
+}
+
+func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec, join bool) [][]string {
+	values := [][]string{}
+
+	// True if the field has subfield with tag 6
+	// target would be "880-04"
+	vern, target := field.HasVernacular()
+	if !vern {
+		return values
 	}
-	return strings.Join(rowValues, " ")
+
+	tokens := strings.Split(target, "-")    // ["880", "04"]
+	marcTag := tokens[0]                    // "880"
+	tag6 := field.MarcTag + "-" + tokens[1] // "700-04"
+
+	// Process the fields indicated in target (e.g. 880s)...
+	for _, vernField := range allFields.getFields(marcTag) {
+		// ...is this the one that corresponds with the tag 6
+		// value that we calculated (e.g. 700-04)
+		if vernField.IsVernacularFor(tag6) {
+			vernValues := vernField.Values(spec.Subfields, join)
+			values = append(values, vernValues)
+		}
+	}
+	return values
 }
 
 func pubYear008(f008 string, tolerance int) (int, bool) {
