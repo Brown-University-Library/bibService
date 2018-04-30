@@ -131,14 +131,14 @@ func (allFields MarcFields) MarcValuesByField(specsStr string, join bool) [][]st
 	return values
 }
 
-func (allFields MarcFields) MarcValue(specsStr string, join bool, trim bool) string {
-	values := allFields.MarcValuesByField(specsStr, join)
+func (allFields MarcFields) MarcValue(specsStr string, trim bool) string {
+	values := allFields.MarcValuesByField(specsStr, true)
 	return valuesToString(values, trim)
 }
 
-func (allFields MarcFields) MarcValues(specStr string, join bool) []string {
-	values := allFields.MarcValuesByField(specStr, join)
-	return valuesToArray(values, join, false)
+func (allFields MarcFields) MarcValues(specStr string) []string {
+	values := allFields.MarcValuesByField(specStr, true)
+	return valuesToArray(values, true, false)
 }
 
 func valuesToArray(values [][]string, trim bool, join bool) []string {

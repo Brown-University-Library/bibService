@@ -93,7 +93,7 @@ func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 
 	doc.PublishedDisplay = bib.PublishedDisplay()
 	doc.PublishedVernDisplay = []string{bib.PublishedVernacularDisplay()}
-	doc.PhysicalDisplay = bib.VarFields.MarcValues("300abcefg:530abcd", true)
+	doc.PhysicalDisplay = bib.VarFields.MarcValues("300abcefg:530abcd")
 	doc.AbstractDisplay = []string{bib.AbstractDisplay()}
 	doc.BuildingFacet = bib.BuildingFacets()
 	doc.LocationCodeT = bib.LocationCodes()
@@ -103,8 +103,8 @@ func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 	doc.CallNumbers = bib.CallNumbers()
 	doc.RegionFacet = bib.RegionFacet()
 
-	doc.UrlFullTextDisplay = bib.VarFields.MarcValues("856u", false)
-	doc.UrlSupplDisplay = bib.VarFields.MarcValues("856z", false)
+	doc.UrlFullTextDisplay = bib.UrlDisplay("856u")
+	doc.UrlSupplDisplay = bib.UrlDisplay("856z")
 
 	doc.BookplateCodeFacet = bib.BookplateCodes()
 	doc.BookplateCodeSS = doc.BookplateCodeFacet

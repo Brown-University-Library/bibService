@@ -174,11 +174,11 @@ func TestUniformTitleTwoValues(t *testing.T) {
 		t.Errorf("Invalid number of titles found (field 130): %d, %v", len(titles), titles)
 	} else {
 		if titles[0].Title[0].Display != "Neues Licht." {
-			t.Errorf("Subfield a not found: %v", titles)
+			t.Errorf("Subfield a not found: %#v", titles)
 		}
 
 		if titles[0].Title[1].Display != "English." {
-			t.Errorf("Subfield l not found: %v", titles)
+			t.Errorf("Subfield l not found: %#v", titles)
 		}
 	}
 
