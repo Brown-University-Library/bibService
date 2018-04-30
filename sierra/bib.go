@@ -53,8 +53,7 @@ func (bib Bib) AuthorsAddlT() []string {
 }
 
 func (bib Bib) AuthorsT() []string {
-	authors := bib.VarFields.MarcValuesByField("100abcdq:110abcd:111abcdeq", true)
-	return valuesToArray(authors, true, true)
+	return bib.VarFields.MarcValues("100abcdq:110abcd:111abcdeq", true)
 }
 
 func (bib Bib) AuthorsAddlDisplay() []string {
@@ -74,14 +73,13 @@ func (bib Bib) AuthorFacet() []string {
 		}
 	}
 
-	values := bib.VarFields.MarcValuesByField(specStr, true)
-	return valuesToArray(values, true, true)
+	return bib.VarFields.MarcValues(specStr, true)
 }
 
 func (bib Bib) AuthorDisplay() string {
 	authors := bib.VarFields.MarcValues("100abcdq:110abcd:111abcd", true)
 	if len(authors) > 0 {
-		return trimPunct(authors[0])
+		return authors[0]
 	}
 	return ""
 }

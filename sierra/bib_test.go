@@ -1,62 +1,44 @@
 package sierra
 
 import (
-	"regexp"
 	"testing"
 )
 
-func TestFieldSpec(t *testing.T) {
-	// Simple spec: MARC field and no subfields
-	specs := NewFieldSpecs("100")
-	if len(specs) != 1 {
-		t.Errorf("Invalid number of specs detected")
+func TestAuthorsAddl(t *testing.T) {
+	a1 := map[string]string{"tag": "a", "content": "a1"}
+	b1 := map[string]string{"tag": "b", "content": "b1"}
+	f710_1 := MarcField{MarcTag: "710"}
+	f710_1.Subfields = []map[string]string{a1, b1}
+
+	a2 := map[string]string{"tag": "a", "content": "a2"}
+	b2 := map[string]string{"tag": "b", "content": "b2"}
+	b22 := map[string]string{"tag": "b", "content": "b22"}
+	f710_2 := MarcField{MarcTag: "710"}
+	f710_2.Subfields = []map[string]string{a2, b2, b22}
+
+	a3 := map[string]string{"tag": "a", "content": "a3"}
+	f710_3 := MarcField{MarcTag: "710"}
+	f710_3.Subfields = []map[string]string{a3}
+
+	fields := MarcFields{f710_1, f710_2, f710_3}
+	bib := Bib{VarFields: fields}
+
+	// Check authors additional display logic
+	addlDisplay := bib.AuthorsAddlDisplay()
+	if len(addlDisplay) != 3 {
+		t.Errorf("Unexpected number of values found: %d. Values: %#v", len(addlDisplay), addlDisplay)
+	}
+	if addlDisplay[0] != "a1 b1" || addlDisplay[1] != "a2 b2 b22" || addlDisplay[2] != "a3" {
+		t.Errorf("Unexpected values found: %#v", addlDisplay)
 	}
 
-	if specs[0].MarcTag != "100" || len(specs[0].Subfields) > 0 {
-		t.Errorf("Invalid spec detected: %v", specs[0])
+	// Check authors additional logic
+	authors := bib.AuthorsAddlT()
+	if len(authors) != 3 {
+		t.Errorf("Unexpected number of values found: %d. Values: %#v", len(authors), authors)
 	}
-
-	// Spec with a MARC field and subfields
-	specs = NewFieldSpecs("200ac")
-	if len(specs) != 1 {
-		t.Errorf("Invalid number of specs detected")
-	}
-
-	if specs[0].MarcTag != "200" || len(specs[0].Subfields) != 2 ||
-		specs[0].Subfields[0] != "a" || specs[0].Subfields[1] != "c" {
-		t.Errorf("Invalid spec detected: %v", specs[0])
-	}
-
-	// Multi-field spec
-	specs = NewFieldSpecs("300ac:456:567x")
-	if len(specs) != 3 {
-		t.Errorf("Invalid number of specs detected")
-	}
-}
-
-func TestTrimPunct(t *testing.T) {
-	if trimPunct("one hundred/ ") != "one hundred" {
-		t.Errorf("Failed to remove trailing slash")
-	}
-
-	if trimPunct("one.") != "one" {
-		t.Errorf("Failed to remove trailing period")
-	}
-
-	if trimPunct("ct.") != "ct." {
-		t.Errorf("Removed trailing period")
-	}
-
-	if trimPunct("[hello") != "hello" {
-		t.Errorf("Failed to remove square bracket")
-	}
-
-	if trimPunct("[hello]") != "hello" {
-		t.Errorf("Failed to remove square brackets")
-	}
-
-	if trimPunct("[hello [world]]") != "[hello [world]]" {
-		t.Errorf("Removed square brackets")
+	if authors[0] != "a1 b1" || authors[1] != "a2 b2 b22" || authors[2] != "a3" {
+		t.Errorf("Unexpected values found: %#v", authors)
 	}
 }
 
@@ -75,38 +57,28 @@ func TestLanguage(t *testing.T) {
 	}
 }
 
-func TestGetSubfieldValues(t *testing.T) {
-	lang1 := map[string]string{"content": "eng", "tag": "a"}
-	lang2 := map[string]string{"content": "fre", "tag": "a"}
-	lang3 := map[string]string{"content": "spa", "tag": "a"}
-
-	field := MarcField{MarcTag: "041"}
-	field.Subfields = []map[string]string{lang1, lang2, lang3}
-
-	subfields := []string{"a"}
-	values := field.Values(subfields, true)
-	if len(values) != 3 {
-		t.Errorf("Incorrect number of values found: %#v", values)
-	}
-
-	if !in(values, "eng") || !in(values, "fre") || !in(values, "spa") {
-		t.Errorf("Expected value not found: %#v", values)
-	}
-}
-
 func TestOclcNum(t *testing.T) {
-	re := regexp.MustCompile("\\s*(ocn|\\(OCoLC\\))(\\d+)")
 
-	test1 := "ocn987070476"
-	value1 := re.ReplaceAllString(test1, "$2")
-	if value1 != "987070476" {
-		t.Errorf("Failed to detect ocn prefix: %s", value1)
-	}
+	f001 := MarcField{MarcTag: "001", Content: "ocn987070476"}
 
-	test2 := " (OCoLC)987070476"
-	value2 := re.ReplaceAllString(test2, "$2")
-	if value2 != "987070476" {
-		t.Errorf("Failed to detect (OCoLC) prefix: %s", value2)
+	a1 := map[string]string{"tag": "a", "content": "ocn987070400"}
+	f035_1 := MarcField{MarcTag: "035"}
+	f035_1.Subfields = []map[string]string{a1}
+
+	a2 := map[string]string{"tag": "a", "content": "ocm987070400"}
+	f035_2 := MarcField{MarcTag: "035"}
+	f035_2.Subfields = []map[string]string{a2}
+
+	z := map[string]string{"tag": "z", "content": "ocn987070499"}
+	f035_3 := MarcField{MarcTag: "035"}
+	f035_3.Subfields = []map[string]string{z}
+
+	fields := MarcFields{f001, f035_1, f035_2, f035_3}
+	bib := Bib{VarFields: fields}
+
+	nums := bib.OclcNum()
+	if len(nums) != 3 || nums[0] != "987070476" || nums[1] != "987070400" || nums[2] != "987070499" {
+		t.Errorf("Unexpected values: %#v", nums)
 	}
 }
 
