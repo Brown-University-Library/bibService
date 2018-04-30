@@ -136,9 +136,9 @@ func (allFields MarcFields) MarcValue(specsStr string, trim bool) string {
 	return valuesToString(values, trim)
 }
 
-func (allFields MarcFields) MarcValues(specStr string) []string {
+func (allFields MarcFields) MarcValues(specStr string, trim bool) []string {
 	values := allFields.MarcValuesByField(specStr, true)
-	return valuesToArray(values, true, false)
+	return valuesToArray(values, trim, false)
 }
 
 func valuesToArray(values [][]string, trim bool, join bool) []string {

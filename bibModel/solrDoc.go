@@ -93,7 +93,7 @@ func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 
 	doc.PublishedDisplay = bib.PublishedDisplay()
 	doc.PublishedVernDisplay = []string{bib.PublishedVernacularDisplay()}
-	doc.PhysicalDisplay = bib.VarFields.MarcValues("300abcefg:530abcd")
+	doc.PhysicalDisplay = bib.VarFields.MarcValues("300abcefg:530abcd", true)
 	doc.AbstractDisplay = []string{bib.AbstractDisplay()}
 	doc.BuildingFacet = bib.BuildingFacets()
 	doc.LocationCodeT = bib.LocationCodes()

@@ -79,7 +79,7 @@ func (bib Bib) AuthorFacet() []string {
 }
 
 func (bib Bib) AuthorDisplay() string {
-	authors := bib.VarFields.MarcValues("100abcdq:110abcd:111abcd")
+	authors := bib.VarFields.MarcValues("100abcdq:110abcd:111abcd", true)
 	if len(authors) > 0 {
 		return trimPunct(authors[0])
 	}
@@ -92,7 +92,7 @@ func (bib Bib) AuthorVernacularDisplay() string {
 }
 
 func (bib Bib) AbstractDisplay() string {
-	values := bib.VarFields.MarcValues("520a")
+	values := bib.VarFields.MarcValues("520a", true)
 	if len(values) > 0 {
 		return values[0]
 	}
@@ -196,7 +196,7 @@ func (bib Bib) SortableTitle() string {
 	// Logic stolen from
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	// TODO do we need the field k logic here?
-	titles := bib.VarFields.MarcValues("245ab")
+	titles := bib.VarFields.MarcValues("245ab", true)
 	if len(titles) == 0 {
 		return ""
 	}
@@ -350,14 +350,14 @@ func (bib Bib) IsOnline() bool {
 		}
 	}
 
-	for _, value := range bib.VarFields.MarcValues("338a") {
+	for _, value := range bib.VarFields.MarcValues("338a", true) {
 		if value == "online resource" {
 			return true
 		}
 	}
 
 	// Using this instead of the 998 logic below
-	for _, value := range bib.VarFields.MarcValues("300a") {
+	for _, value := range bib.VarFields.MarcValues("300a", true) {
 		if strings.Contains(value, "online resource") {
 			return true
 		}
@@ -365,7 +365,7 @@ func (bib Bib) IsOnline() bool {
 
 	// It seems that field 998 does not come in the API and
 	// therfore this code does nothing for now.
-	for _, value := range bib.VarFields.MarcValues("998a") {
+	for _, value := range bib.VarFields.MarcValues("998a", true) {
 		if value == "es001" {
 			return true
 		}
@@ -405,15 +405,14 @@ func (bib Bib) RegionFacet() []string {
 	// Stolen from Traject's marc_geo_facet
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	values := []string{}
-	for _, value := range bib.VarFields.MarcValues("043a") {
+	for _, value := range bib.VarFields.MarcValues("043a", true) {
 		code := trimPunct(value)
 		code = strings.TrimRight(code, "-")
 		name := regionName(code)
 		safeAppend(&values, name)
 	}
 
-	aFieldSpec := "651a:691a"
-	for _, value := range bib.VarFields.MarcValues(aFieldSpec) {
+	for _, value := range bib.VarFields.MarcValues("651a:691a", true) {
 		trimVal := trimPunct(value)
 		safeAppend(&values, trimVal)
 	}
