@@ -52,10 +52,11 @@ func (f MarcField) IsVernacularFor(target string) bool {
 }
 
 func (f MarcField) Values(tagsWanted []string, join bool) []string {
-	if join {
-		return f.valuesJoin(tagsWanted)
+	values := f.valuesNoJoin(tagsWanted)
+	if len(tagsWanted) > 1 && join {
+		return []string{strings.Join(values, " ")}
 	}
-	return f.valuesNoJoin(tagsWanted)
+	return values
 }
 
 func (f MarcField) valuesNoJoin(subfields []string) []string {
@@ -73,54 +74,57 @@ func (f MarcField) valuesNoJoin(subfields []string) []string {
 	return values
 }
 
-// Gets the values in a Field and outputs the tags requested.
-// The logic to group the output is a bit complex because it combines
-// the values for different tags into a single value. For example,
-// if we want tags "abc" from a field with the following information:
+// This is not needed -- just go by the number of subfields to decide if
+// we can join. That's what Traject does too.
 //
-//    tag   content
-//    ---   -------
-//    a      A1
-//    b      B1
-//    a      A2
-//    a      A3
-//    c      C3
+// // Gets the values in a Field and outputs the tags requested.
+// // The logic to group the output is a bit complex because it combines
+// // the values for different tags into a single value. For example,
+// // if we want tags "abc" from a field with the following information:
+// //
+// //    tag   content
+// //    ---   -------
+// //    a      A1
+// //    b      B1
+// //    a      A2
+// //    a      A3
+// //    c      C3
+// //
+// // it will output:
+// //
+// //      "A1 B1"        // combined two tags
+// //      "A2"           // single tag
+// //      "A3 C3"        // combined two tags
+// //
+// func (f MarcField) valuesJoin(tagsWanted []string) []string {
+// 	output := []string{}
+// 	processedTags := []string{}
+// 	batchValues := []string{}
+// 	for _, subfield := range f.Subfields {
+// 		tag := subfield["tag"]
+// 		content := subfield["content"]
+// 		tagAlreadyProcessed := in(processedTags, tag)
+// 		if tagAlreadyProcessed {
+// 			// output whatever we've gathered so far...
+// 			if len(batchValues) > 0 {
+// 				output = append(output, strings.Join(batchValues, " "))
+// 			}
 //
-// it will output:
+// 			// start a new batch...
+// 			processedTags = []string{}
+// 			batchValues = []string{}
+// 		}
 //
-//      "A1 B1"        // combined two tags
-//      "A2"           // single tag
-//      "A3 C3"        // combined two tags
+// 		if in(tagsWanted, tag) && content != "" {
+// 			// add value to the batch
+// 			batchValues = append(batchValues, content)
+// 		}
+// 		processedTags = append(processedTags, tag)
+// 	}
 //
-func (f MarcField) valuesJoin(tagsWanted []string) []string {
-	output := []string{}
-	processedTags := []string{}
-	batchValues := []string{}
-	for _, subfield := range f.Subfields {
-		tag := subfield["tag"]
-		content := subfield["content"]
-		tagAlreadyProcessed := in(processedTags, tag)
-		if tagAlreadyProcessed {
-			// output whatever we've gathered so far...
-			if len(batchValues) > 0 {
-				output = append(output, strings.Join(batchValues, " "))
-			}
-
-			// start a new batch...
-			processedTags = []string{}
-			batchValues = []string{}
-		}
-
-		if in(tagsWanted, tag) && content != "" {
-			// add value to the batch
-			batchValues = append(batchValues, content)
-		}
-		processedTags = append(processedTags, tag)
-	}
-
-	if len(batchValues) > 0 {
-		// output the last batch
-		output = append(output, strings.Join(batchValues, " "))
-	}
-	return output
-}
+// 	if len(batchValues) > 0 {
+// 		// output the last batch
+// 		output = append(output, strings.Join(batchValues, " "))
+// 	}
+// 	return output
+// }

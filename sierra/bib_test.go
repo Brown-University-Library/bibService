@@ -127,6 +127,18 @@ func TestTitleT(t *testing.T) {
 	if titles[0] != "a1. p1. p2" {
 		t.Errorf("Unexpected titles found: %#v", titles)
 	}
+
+	t1 := map[string]string{"tag": "t", "content": "t1 /"}
+	t2 := map[string]string{"tag": "t", "content": "t2 /"}
+	t3 := map[string]string{"tag": "t", "content": "t3 /"}
+	field = MarcField{MarcTag: "505"}
+	field.Subfields = []map[string]string{t1, t2, t3}
+	fields = MarcFields{field}
+	bib = Bib{VarFields: fields}
+	titles = bib.TitleT()
+	if titles[0] != "t1" || titles[1] != "t2" || titles[2] != "t3" {
+		t.Errorf("Unexpected titles found: %#v", titles)
+	}
 }
 
 func TestRegionFacet(t *testing.T) {

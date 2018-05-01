@@ -64,7 +64,7 @@ func TestTwoFields(t *testing.T) {
 	}
 }
 
-func TestSubfieldsDifferentTag(t *testing.T) {
+func TestFieldValuesJoined(t *testing.T) {
 	ta1 := map[string]string{"tag": "a", "content": "X a"}
 	tb1 := map[string]string{"tag": "b", "content": "X b"}
 	tc1 := map[string]string{"tag": "c", "content": "X c"}
@@ -79,6 +79,8 @@ func TestSubfieldsDifferentTag(t *testing.T) {
 	fields := MarcFields{field1, field2}
 	values := fields.MarcValuesByField("100abc", true)
 
+	// Joins the values per-field when the spec has multiple
+	// subfields (e.g. "abc")
 	if !in(values[0], "X a X b X c") {
 		t.Errorf("Did not fetch the expected values: %#v", values)
 	}
@@ -88,22 +90,25 @@ func TestSubfieldsDifferentTag(t *testing.T) {
 	}
 }
 
-func TestSubfieldsSameTag(t *testing.T) {
+func TestFieldValuesNotJoined(t *testing.T) {
 	// Sample record b8060047
 	t1 := map[string]string{"tag": "t", "content": "T1"}
+	f1 := MarcField{MarcTag: "505"}
+	f1.Subfields = []map[string]string{t1}
+
 	t2 := map[string]string{"tag": "t", "content": "T2"}
+	f2 := MarcField{MarcTag: "505"}
+	f2.Subfields = []map[string]string{t2}
+
 	t3 := map[string]string{"tag": "t", "content": "T3"}
-	tn := map[string]string{"tag": "n", "content": "N"}
-	t4 := map[string]string{"tag": "t", "content": "T4"}
-	field1 := MarcField{MarcTag: "550"}
-	field1.Subfields = []map[string]string{t1, t2, t3, tn, t4}
+	f3 := MarcField{MarcTag: "505"}
+	f3.Subfields = []map[string]string{t3}
+	fields := MarcFields{f1, f2, f3}
 
-	fields := MarcFields{field1}
-
-	// Makes sure subfield values are combined for different subfields
-	// (e.g. "T3 N") but kept separate for repeated the rest ("T1", "T2", "T4")
-	values := fields.MarcValuesByField("550tnx", true)
-	if !in(values[0], "T1") || !in(values[0], "T2") || !in(values[0], "T3 N") || !in(values[0], "T4") {
+	// Does not join the values per-field when the spec has a single
+	// subfield (e.g. "t")
+	values := fields.MarcValuesByField("505t", true)
+	if values[0][0] != "T1" || values[1][0] != "T2" || values[2][0] != "T3" {
 		t.Errorf("Did not fetch the expected values: %#v", values)
 	}
 }

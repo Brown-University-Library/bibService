@@ -178,7 +178,7 @@ func (bib Bib) TitleT() []string {
 	specsStr += "240adfklmnoprs:242abnp:246abnp:247abnp:505t:"
 	specsStr += "700fklmtnoprsv:710fklmorstv:711fklpt:730adfklmnoprstv:740ap"
 	values := bib.VarFields.MarcValuesByField(specsStr, true)
-	titles := valuesToArray(values, true, true)
+	titles := valuesToArray(values, true, false)
 	return titles
 }
 
@@ -265,8 +265,8 @@ func (bib Bib) Subjects() []string {
 	spec += "657a:658ab:"
 	spec += "658a:662abcdefgh:"
 	spec += "690a:690abcdevxyz"
-	values := bib.VarFields.MarcValuesByField(spec, true)
-	return valuesToArray(values, true, true)
+	subjects := bib.VarFields.MarcValuesByField(spec, true)
+	return valuesToArray(subjects, true, false)
 }
 
 func (bib Bib) BookplateCodes() []string {
