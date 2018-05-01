@@ -14,7 +14,7 @@ func TestFormats(t *testing.T) {
 	}
 
 	for key, value := range tests {
-		if formatCode(key, "") != value {
+		if formatCode(key) != value {
 			t.Errorf("Incorrect format for: %s", key)
 		}
 	}

@@ -50,7 +50,7 @@ func init() {
 	}
 }
 
-func formatCode(leader string, fixed string) string {
+func formatCode(leader string) string {
 	// Leader = "00000nas a2200445 i 4500"
 	//					 0123456789-123456789-123
 	var recType, level string
@@ -60,7 +60,15 @@ func formatCode(leader string, fixed string) string {
 	}
 
 	if recType == "m" {
-		return "CF"
+		return "CF" //computer file
+	}
+
+	if recType == "t" || recType == "p" {
+		return "BAM" // archival material
+	}
+
+	if recType == "r" {
+		return "B3D" // 3D object
 	}
 
 	if isMusicFormat(recType, level) {
@@ -87,6 +95,10 @@ func formatCode(leader string, fixed string) string {
 		return "BK"
 	}
 
+	if isMixedMaterial(recType, level) {
+		return "MX"
+	}
+
 	if isBookFormat(recType, level) {
 		return "BK"
 	}
@@ -103,6 +115,12 @@ func isMap(recType, level string) bool {
 func isMusicFormat(recType, level string) bool {
 	types := []string{"c", "d", "i", "j"}
 	levels := []string{"a", "b", "c", "d", "i", "m", "s"}
+	return in(types, recType) && in(levels, level)
+}
+
+func isMixedMaterial(recType, level string) bool {
+	types := []string{"b", "p"}
+	levels := []string{"a", "b", "c", "d", "m", "s"}
 	return in(types, recType) && in(levels, level)
 }
 

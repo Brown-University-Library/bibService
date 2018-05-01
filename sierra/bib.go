@@ -415,14 +415,8 @@ func (bib Bib) FormatCode() string {
 		return "BTD"
 	}
 
-	f008 := bib.VarFields.MarcValue("008", false)
-	fixed := ""
-	if len(f008) >= 22 {
-		fixed = f008[21:22]
-	}
-
 	leader := bib.VarFields.Leader()
-	code := formatCode(leader, fixed)
+	code := formatCode(leader)
 	if code == "VM" {
 		for _, value := range bib.VarFields.MarcValues("007", false) {
 			if strings.Contains(value, "v") || strings.Contains(value, "m") {
