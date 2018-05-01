@@ -143,10 +143,8 @@ func (allFields MarcFields) VernacularValuesByField(specsStr string) [][]string 
 }
 
 func (allFields MarcFields) Leader() string {
-	// TODO: test this
-	// Do we need to calculate the prefix?
 	for _, field := range allFields {
-		if field.MarcTag != "_" {
+		if field.FieldTag == "_" {
 			return field.Content
 		}
 	}
@@ -237,6 +235,8 @@ func pubYear008(f008 string, tolerance int) (int, bool) {
 		date2 := toInt(strings.Replace(dateStr2, "u", "9", -1))
 		if (date2 > date1) && ((date2 - date1) <= tolerance) {
 			return (date2 + date1) / 2, true
+		} else {
+			return 0, false
 		}
 	}
 

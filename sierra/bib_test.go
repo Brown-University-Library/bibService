@@ -322,3 +322,15 @@ func TestUniformTitleVernacularMany(t *testing.T) {
 		}
 	}
 }
+
+func TestFormatCode(t *testing.T) {
+	// Video format depends on MARC 007
+	leader := MarcField{FieldTag: "_", Content: "00000ngm 2200000Ia 4500"}
+	f007 := MarcField{MarcTag: "007", Content: "vf mbahos"}
+	fields := MarcFields{leader, f007}
+	bib := Bib{VarFields: fields}
+	code := bib.FormatCode()
+	if code != "BV" {
+		t.Errorf("Failed to detect a video: %#v", code)
+	}
+}

@@ -406,8 +406,40 @@ func (bib Bib) IsOnline() bool {
 }
 
 func (bib Bib) Format() string {
-	// TODO: Do we need the Traject logic for this or is this value enough?
-	return formatName(bib.MaterialType["value"])
+	return formatName(bib.FormatCode())
+}
+
+func (bib Bib) FormatCode() string {
+	// Logic from bul_format.rb
+	if bib.IsDissertation() {
+		return "BTD"
+	}
+
+	f008 := bib.VarFields.MarcValue("008", false)
+	fixed := ""
+	if len(f008) >= 22 {
+		fixed = f008[21:22]
+	}
+
+	leader := bib.VarFields.Leader()
+	code := formatCode(leader, fixed)
+	if code == "VM" {
+		for _, value := range bib.VarFields.MarcValues("007", false) {
+			if strings.Contains(value, "v") || strings.Contains(value, "m") {
+				return "BV" // video
+			}
+		}
+	}
+	return code
+}
+
+func (bib Bib) IsDissertation() bool {
+	for _, value := range bib.VarFields.MarcValues("502ac", false) {
+		if strings.HasPrefix(strings.ToLower(value), "brown univ") {
+			return true
+		}
+	}
+	return false
 }
 
 func (bib Bib) Languages() []string {
