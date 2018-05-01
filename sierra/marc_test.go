@@ -248,4 +248,10 @@ func TestPubYear008X(t *testing.T) {
 	if ok {
 		t.Errorf("Failed on %s (%v, %v)", test3, ok, year)
 	}
+
+	test4 := "061108q19501980nyuar ss 0 0eng ccas a "
+	_, ok = pubYear008(test4, 15)
+	if ok {
+		t.Errorf("Should have returned false on questionable date %s (%v, %v)", test4)
+	}
 }
