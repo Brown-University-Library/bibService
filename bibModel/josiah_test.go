@@ -9,7 +9,7 @@ import (
 
 func TestX(t *testing.T) {
 
-	bytes, err := ioutil.ReadFile("b1318777.json")
+	bytes, err := ioutil.ReadFile("b1318777_test.json")
 	if err != nil {
 		t.Errorf("Error reading test file: %s", err)
 	}
