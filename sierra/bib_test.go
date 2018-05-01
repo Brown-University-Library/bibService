@@ -4,6 +4,26 @@ import (
 	"testing"
 )
 
+func TestAuthors(t *testing.T) {
+	a1 := map[string]string{"tag": "a", "content": "a1."}
+	b1 := map[string]string{"tag": "b", "content": "b1."}
+	b2 := map[string]string{"tag": "b", "content": "b2."}
+	b3 := map[string]string{"tag": "b", "content": "b3,"}
+	f110 := MarcField{MarcTag: "110"}
+	f110.Subfields = []map[string]string{a1, b1, b2, b3}
+	fields := MarcFields{f110}
+	bib := Bib{VarFields: fields}
+	authors := bib.AuthorsT()
+	if authors[0] != "a1. b1. b2. b3" {
+		t.Errorf("Unexpected values found: %#v", authors)
+	}
+
+	display := bib.AuthorDisplay()
+	if display != "a1. b1. b2. b3" {
+		t.Errorf("Unexpected values found: %#v", authors)
+	}
+}
+
 func TestAuthorsAddl(t *testing.T) {
 	a1 := map[string]string{"tag": "a", "content": "a1"}
 	b1 := map[string]string{"tag": "b", "content": "b1"}
@@ -92,6 +112,20 @@ func TestRegionFacetWithParent(t *testing.T) {
 	facets := bib.RegionFacet()
 	if !in(facets, "usa") || !in(facets, "ri (usa)") {
 		t.Errorf("Failed to detect parent region: %#v", facets)
+	}
+}
+
+func TestTitleT(t *testing.T) {
+	a1 := map[string]string{"tag": "a", "content": "a1."}
+	p1 := map[string]string{"tag": "p", "content": "p1."}
+	p2 := map[string]string{"tag": "p", "content": "p2"}
+	field := MarcField{MarcTag: "130"}
+	field.Subfields = []map[string]string{a1, p1, p2}
+	fields := MarcFields{field}
+	bib := Bib{VarFields: fields}
+	titles := bib.TitleT()
+	if titles[0] != "a1. p1. p2" {
+		t.Errorf("Unexpected titles found: %#v", titles)
 	}
 }
 
