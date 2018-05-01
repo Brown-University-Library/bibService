@@ -101,7 +101,7 @@ func TestSubfieldsSameTag(t *testing.T) {
 	fields := MarcFields{field1}
 
 	// Makes sure subfield values are combined for different subfields
-	// (e.g. "T2 N") but kept separate for repeated the rest ("T1", "T2", "T4")
+	// (e.g. "T3 N") but kept separate for repeated the rest ("T1", "T2", "T4")
 	values := fields.MarcValuesByField("550tnx", true)
 	if !in(values[0], "T1") || !in(values[0], "T2") || !in(values[0], "T3 N") || !in(values[0], "T4") {
 		t.Errorf("Did not fetch the expected values: %#v", values)
@@ -161,6 +161,11 @@ func TestVernacularFreestanding(t *testing.T) {
 	f880 := MarcField{MarcTag: "880"}
 	f880.Subfields = []map[string]string{t6, ta, tb}
 	fields := MarcFields{f880}
+
+	vern := fields.VernacularValuesByField("700ab")
+	if vern[0][0] != "AAA BBB" {
+		t.Errorf("Did not pick up freestanding vernacular values")
+	}
 
 	// Make sure fetching the 700 picks up vernacular values
 	// even though there is no 700 field in the record.

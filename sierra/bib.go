@@ -32,6 +32,7 @@ type Bib struct {
 	NormAuthor      string            `json:"normAuthor,omitempty"`
 	VarFields       MarcFields        `json:"varFields,omitempty"`
 	Items           []Item            // does not come on the Sierra response
+	hasMarc         string            // does not come on the Sierra response
 }
 
 func (b Bib) log(show bool, msg string) {
@@ -44,6 +45,17 @@ func (b Bib) Bib() string {
 	return "b" + b.Id
 }
 
+func (bib Bib) HasMarc() bool {
+	if bib.hasMarc == "" {
+		if bib.VarFields.hasMarc() {
+			bib.hasMarc = "Y"
+		} else {
+			bib.hasMarc = "N"
+		}
+	}
+	return bib.hasMarc == "Y"
+}
+
 /*
  * Author functions
  */
@@ -53,6 +65,10 @@ func (bib Bib) AuthorsAddlT() []string {
 }
 
 func (bib Bib) AuthorsT() []string {
+	if !bib.HasMarc() {
+		value := trimPunct(bib.VarFields.getFieldTagContent("a"))
+		return []string{value}
+	}
 	return bib.VarFields.MarcValues("100abcdq:110abcd:111abcdeq", true)
 }
 
@@ -77,6 +93,10 @@ func (bib Bib) AuthorFacet() []string {
 }
 
 func (bib Bib) AuthorDisplay() string {
+	if !bib.HasMarc() {
+		return trimPunct(bib.VarFields.getFieldTagContent("a"))
+	}
+
 	authors := bib.VarFields.MarcValues("100abcdq:110abcd:111abcd", true)
 	if len(authors) > 0 {
 		return authors[0]
@@ -140,6 +160,9 @@ func (bib Bib) UniformTitlesDisplay(newVersion bool) string {
 }
 
 func (bib Bib) TitleDisplay() string {
+	if !bib.HasMarc() {
+		return trimPunct(bib.VarFields.getFieldTagContent("t"))
+	}
 	values := bib.VarFields.MarcValuesByField("245apbfgkn", true)
 	titles := valuesToArray(values, true, true)
 	if len(titles) > 0 {
@@ -170,27 +193,11 @@ func (bib Bib) TitleVernacularDisplay() string {
 	return valuesToString(vernTitles, true)
 }
 
-/*
- * Others
- */
-func (bib Bib) LocationCodes() []string {
-	values := []string{}
-	for _, item := range bib.Items {
-		safeAppend(&values, item.Location["code"])
-	}
-	return values
-}
-
-func (bib Bib) BuildingFacets() []string {
-	values := []string{}
-	for _, item := range bib.Items {
-		name := item.BuildingName()
-		safeAppend(&values, name)
-	}
-	return values
-}
-
 func (bib Bib) SortableTitle() string {
+	if !bib.HasMarc() {
+		return trimPunct(bib.VarFields.getFieldTagContent("t"))
+	}
+
 	// Logic stolen from
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	// TODO do we need the field k logic here?
@@ -209,6 +216,26 @@ func (bib Bib) SortableTitle() string {
 		}
 	}
 	return trimPunct(sortTitle)
+}
+
+/*
+ * Others
+ */
+func (bib Bib) LocationCodes() []string {
+	values := []string{}
+	for _, item := range bib.Items {
+		safeAppend(&values, item.Location["code"])
+	}
+	return values
+}
+
+func (bib Bib) BuildingFacets() []string {
+	values := []string{}
+	for _, item := range bib.Items {
+		name := item.BuildingName()
+		safeAppend(&values, name)
+	}
+	return values
 }
 
 func (bib Bib) CallNumbers() []string {
@@ -257,6 +284,11 @@ func (bib Bib) Isbn() []string {
 }
 
 func (bib Bib) PublishedDisplay() []string {
+	if !bib.HasMarc() {
+		value := trimPunct(bib.VarFields.getFieldTagContent("p"))
+		return []string{value}
+	}
+
 	// More than one "a" subfield can exists on the same 260
 	// therefore we can get a single field with multiple values.
 	// Here we break each value on its own.

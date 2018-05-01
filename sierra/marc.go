@@ -120,17 +120,55 @@ func (allFields MarcFields) MarcValuesByField(specsStr string, join bool) [][]st
 }
 
 func (allFields MarcFields) VernacularValuesByField(specsStr string) [][]string {
+	// Notice that we loop through the 880 fields rather than checking if
+	// each of the indicated fields have vernacular values because sometimes
+	// the actual field does not point to the 880 but the 880 always points
+	//to the original field.
 	values := [][]string{}
+	f880s := allFields.getFields("880")
 	for _, spec := range NewFieldSpecs(specsStr) {
-		for _, field := range allFields {
-			if field.MarcTag == spec.MarcTag {
-				for _, vernValues := range allFields.vernacularValuesFor(field, spec, true) {
+		for _, f880 := range f880s {
+			if f880.IsVernacularFor(spec.MarcTag) {
+				vernValues := []string{}
+				for _, value := range f880.Values(spec.Subfields, true) {
+					safeAppend(&vernValues, value)
+				}
+				if len(vernValues) > 0 {
 					values = append(values, vernValues)
 				}
 			}
 		}
 	}
 	return values
+}
+
+func (allFields MarcFields) Leader() string {
+	// TODO: test this
+	// Do we need to calculate the prefix?
+	for _, field := range allFields {
+		if field.MarcTag != "_" {
+			return field.Content
+		}
+	}
+	return ""
+}
+
+func (allFields MarcFields) hasMarc() bool {
+	for _, field := range allFields {
+		if field.MarcTag != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func (allFields MarcFields) getFieldTagContent(fieldTag string) string {
+	for _, field := range allFields {
+		if field.FieldTag == fieldTag {
+			return field.Content
+		}
+	}
+	return ""
 }
 
 // TODO: should this return MarcFields?

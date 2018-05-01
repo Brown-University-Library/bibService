@@ -83,10 +83,10 @@ func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 	doc.UniformTitlesDisplay = []string{bib.UniformTitlesDisplay(false)}
 	doc.NewUniformTitleAuthorDisplay = []string{bib.UniformTitlesDisplay(true)}
 	// doc.UniformRelatedWorksDisplay = ""
+
 	doc.AuthorDisplay = []string{bib.AuthorDisplay()}
 	doc.AuthorVernDisplay = []string{bib.AuthorVernacularDisplay()}
 	doc.AuthorFacet = bib.AuthorFacet()
-
 	doc.AuthorAddlDisplay = bib.AuthorsAddlDisplay()
 	doc.AuthorT = bib.AuthorsT()
 	doc.AuthorAddlT = bib.AuthorsAddlT()
