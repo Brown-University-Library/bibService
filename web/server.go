@@ -20,17 +20,26 @@ func StartWebServer(settingsFile string) {
 		log.Fatal(err)
 	}
 
+	// Solr
 	http.HandleFunc("/bibutils/solr/doc/", solrDoc)
 	http.HandleFunc("/bibutils/solr/deleteQuery/", solrDeleteQuery)
 	http.HandleFunc("/bibutils/solr/deleteIds/", solrDeleteIds)
 	http.HandleFunc("/bibutils/solr/delete/", solrDelete)
-	// http.HandleFunc("/bibutils/solr/sync/", solrSync)
+	http.HandleFunc("/bibutils/solr/docFromFile/", solrDocFromFile)
+	// http.HandleFunc("/bibutils/solr/docsFromFiles/", solrDocsFromFiles)
+
+	// Bib and Item level operation
 	http.HandleFunc("/bibutils/bib/updated/", bibUpdated)
 	http.HandleFunc("/bibutils/bib/deleted/", bibDeleted)
 	http.HandleFunc("/bibutils/bib/", bibController)
+	http.HandleFunc("/bibutils/item/", itemController)
+	// http.HandleFunc("/bibutils/bibs/FromFiles/", bibsFromFiles)
+
+	// MARC operations
 	http.HandleFunc("/bibutils/marc/updated/", marcUpdated)
 	http.HandleFunc("/bibutils/marc/", marcController)
-	http.HandleFunc("/bibutils/item/", itemController)
+
+	// Misc
 	http.HandleFunc("/status", status)
 	http.HandleFunc("/", home)
 	log.Printf("Listening for requests at: http://%s", settings.ServerAddress)
@@ -125,6 +134,21 @@ func solrDoc(resp http.ResponseWriter, req *http.Request) {
 	} else {
 		renderJSON(resp, "", errors.New("no bibs returned"), "solrDoc")
 	}
+}
+
+func solrDocFromFile(resp http.ResponseWriter, req *http.Request) {
+	bib := qsParam("bib", req)
+	if bib == "" {
+		err := errors.New("No bib parameter was received")
+		renderJSON(resp, nil, err, "solrDocFromFile")
+		return
+	}
+	log.Printf("Generating SolrDoc from file for BIB: %s", bib)
+	model := bibModel.New(settings)
+	path := "/Users/hectorcorrea/dev/src/bibService/data/" // Make this a parameter
+	fileName := path + bib + ".json"
+	doc, err := model.SolrDocFromFile(fileName)
+	renderJSON(resp, doc, err, "solrDocFromFile")
 }
 
 func solrDeleteIds(resp http.ResponseWriter, req *http.Request) {
