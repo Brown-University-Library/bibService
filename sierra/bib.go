@@ -447,8 +447,8 @@ func (bib Bib) Languages() []string {
 
 	for _, valuesByField := range bib.VarFields.MarcValuesByField("041a:041d:041e:041j", true) {
 		for _, value := range valuesByField {
-			language := languageName(value)
-			safeAppend(&values, language)
+			langs := languageNames(value)
+			arrayAppend(&values, langs)
 		}
 	}
 	return values

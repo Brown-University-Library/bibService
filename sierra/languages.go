@@ -496,3 +496,16 @@ func init() {
 func languageName(code string) string {
 	return languages[code]
 }
+
+func languageNames(codes string) []string {
+	// Assume codes are strung together 3-characters at a time
+	// e.g. "engchi"
+	langs := []string{}
+	numCodes := len(codes) / 3 // rounds down
+	for i := 0; i < numCodes; i++ {
+		x := i * 3
+		code := codes[x:(x + 3)]
+		safeAppend(&langs, languages[code])
+	}
+	return langs
+}
