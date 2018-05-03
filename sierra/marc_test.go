@@ -207,16 +207,17 @@ func TestVernacularIncompleteLinking(t *testing.T) {
 
 	fields := MarcFields{f700, f880a, f880b, f880c}
 
-	// Make sure the original value (700) is detected separated from the vernacular (880s)
-	// Should the vernacular values come as individual fields,
-	// i.e. should len(all) == 4 instead of 2?
+	// Make sure the original value (700) is detected separated
+	// from the vernacular (880s). Each of the 880s should come
+	// as an independent field, hence len(all) == 4.
 	all := fields.MarcValuesByField("700abcd", true)
-	if len(all) != 2 || len(all[0]) != 1 || len(all[1]) != 3 {
+	if len(all) != 4 {
 		t.Errorf("Invalid values detected: %#v", all)
 	}
 
-	// Make sure all three vernacular values are picked up even if their linking is
-	// incomplete (notice how one of the matches "700-01" but not ther other two)
+	// Make sure all three vernacular values are picked up even if
+	// their linking is incomplete (notice how one of them matches
+	// "700-01" but not the other two only partially match "700")
 	vern := fields.VernacularValuesByField("700abcd")
 	if len(vern) != 3 {
 		t.Errorf("Invalid vernacular values detected: %#v", vern)

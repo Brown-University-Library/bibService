@@ -83,15 +83,12 @@ func (allFields MarcFields) MarcValuesByField(specsStr string, join bool) [][]st
 
 		// Gather the vernacular values for the fields
 		for _, field := range fields {
-			fieldValues := []string{}
-			for _, vernValues := range allFields.vernacularValuesFor(field, spec, join) {
-				for _, vernValue := range vernValues {
-					safeAppend(&fieldValues, vernValue)
-				}
-			}
-			if len(fieldValues) > 0 {
+			vernValues := allFields.vernacularValuesFor(field, spec, join)
+			if len(vernValues) > 0 {
 				vernProcessed = append(vernProcessed, field.MarcTag)
-				values = append(values, fieldValues)
+				for _, fieldValues := range vernValues {
+					values = append(values, fieldValues)
+				}
 			}
 		}
 	}
@@ -141,7 +138,7 @@ func (allFields MarcFields) VernacularValuesByField(specsStr string) [][]string 
 	// Notice that we loop through the 880 fields rather than checking if
 	// each of the indicated fields have vernacular values because sometimes
 	// the actual field does not point to the 880 but the 880 always points
-	//to the original field.
+	// to the original field.
 	values := [][]string{}
 	f880s := allFields.getFields("880")
 	for _, spec := range NewFieldSpecs(specsStr) {
