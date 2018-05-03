@@ -13,26 +13,27 @@ import (
 // Notice that Bib records in Sierra don't include "item" data but this
 // struct can accomodate them.
 type Bib struct {
-	Id              string            `json:"id"`
-	UpdatedDateTime string            `json:"updatedDate,omitempty"`
-	CreatedDate     string            `json:"createdDate,omitempty"`
-	DeletedDate     string            `json:"deletedDate,omitempty"`
-	Deleted         bool              `json:"deleted,omitempty"`
-	Suppressed      bool              `json:"suppressed,omitempty"`
-	Available       bool              `json:"available,omitempty"`
-	Lang            map[string]string `json:"lang,omitempty"`
-	Title           string            `json:"title,omitempty"`
-	Author          string            `json:"author,omitempty"`
-	MaterialType    map[string]string `json:"materialType,omitempty"`
-	BibLevel        map[string]string `json:"bibLevel,omitempty"`
-	PublishYear     int               `json:"publishYear,omitempty"`
-	CatalogDate     string            `json:"catalogDate,omitempty"`
-	Country         map[string]string `json:"country,omitempty"`
-	NormTitle       string            `json:"normTitle,omitempty"`
-	NormAuthor      string            `json:"normAuthor,omitempty"`
-	VarFields       MarcFields        `json:"varFields,omitempty"`
-	Items           []Item            // does not come on the Sierra response
-	hasMarc         string            // does not come on the Sierra response
+	Id              string              `json:"id"`
+	UpdatedDateTime string              `json:"updatedDate,omitempty"`
+	CreatedDate     string              `json:"createdDate,omitempty"`
+	DeletedDate     string              `json:"deletedDate,omitempty"`
+	Deleted         bool                `json:"deleted,omitempty"`
+	Suppressed      bool                `json:"suppressed,omitempty"`
+	Available       bool                `json:"available,omitempty"`
+	Lang            map[string]string   `json:"lang,omitempty"`
+	Title           string              `json:"title,omitempty"`
+	Author          string              `json:"author,omitempty"`
+	MaterialType    map[string]string   `json:"materialType,omitempty"`
+	BibLevel        map[string]string   `json:"bibLevel,omitempty"`
+	PublishYear     int                 `json:"publishYear,omitempty"`
+	CatalogDate     string              `json:"catalogDate,omitempty"`
+	Country         map[string]string   `json:"country,omitempty"`
+	NormTitle       string              `json:"normTitle,omitempty"`
+	NormAuthor      string              `json:"normAuthor,omitempty"`
+	Locations       []map[string]string `json:"locations,omitempty"`
+	VarFields       MarcFields          `json:"varFields,omitempty"`
+	Items           []Item              // does not come on the Sierra response
+	hasMarc         string              // does not come on the Sierra response
 }
 
 func (b Bib) log(show bool, msg string) {
@@ -203,12 +204,15 @@ func (bib Bib) SortableTitle() string {
 	// Logic stolen from
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	// TODO do we need the field k logic here?
-	titles := bib.VarFields.MarcValues("245ab", true)
-	if len(titles) == 0 {
+
+	// Use MarcValuesByField because we don't want to trim the value prematurely.
+	// We trim at the end _after_ processing ind2.
+	titles := bib.VarFields.MarcValuesByField("245ab", true)
+	if len(titles) == 0 || len(titles[0]) == 0 {
 		return ""
 	}
 
-	sortTitle := titles[0]
+	sortTitle := titles[0][0]
 	fields := bib.VarFields.getFields("245")
 	if len(fields) > 0 {
 		ind2 := toInt(fields[0].Ind2)
@@ -270,13 +274,15 @@ func (bib Bib) Subjects() []string {
 }
 
 func (bib Bib) BookplateCodes() []string {
+	// The items inside the bib record have information about the text and URL for
+	// bookplates in their own 856uz. We sort of had this informastion before at
+	// the bib level in 996uz but it was not linked to each item.
+	// Example: b6177452.
 	values := []string{}
 	for _, item := range bib.Items {
 		arrayAppend(&values, item.BookplateCodes())
 	}
-	// TODO: Do we need this? It seems that the data has been
-	// consolidate in the item records.
-	// arrayAppend(&values, MarcValues("935a"))
+	arrayAppend(&values, bib.VarFields.MarcValues("935a", true))
 	return values
 }
 
@@ -395,13 +401,20 @@ func (bib Bib) IsOnline() bool {
 		}
 	}
 
-	// It seems that field 998 does not come in the API and
-	// therfore this code does nothing for now.
-	for _, value := range bib.VarFields.MarcValues("998a", true) {
-		if value == "es001" {
+	// We don't get the MARC 998a field, but the Location has the equivalent value
+	for _, location := range bib.Locations {
+		if location["code"] == "es001" {
 			return true
 		}
 	}
+
+	// // It seems that field 998 does not come in the API and
+	// // therfore this code does nothing for now.
+	// for _, value := range bib.VarFields.MarcValues("998a", true) {
+	// 	if value == "es001" {
+	// 		return true
+	// 	}
+	// }
 	return false
 }
 
@@ -429,7 +442,7 @@ func (bib Bib) FormatCode() string {
 
 func (bib Bib) IsDissertation() bool {
 	for _, value := range bib.VarFields.MarcValues("502ac", false) {
-		if strings.HasPrefix(strings.ToLower(value), "brown univ") {
+		if strings.Contains(strings.ToLower(value), "brown univ") {
 			return true
 		}
 	}

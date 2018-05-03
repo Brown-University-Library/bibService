@@ -190,7 +190,11 @@ func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec,
 		return values
 	}
 
-	tokens := strings.Split(target, "-")    // ["880", "04"]
+	tokens := strings.Split(target, "-") // ["880", "04"]
+	if len(tokens) < 2 {
+		// bail out, we've got a value that we cannot parse
+		return values
+	}
 	marcTag := tokens[0]                    // "880"
 	tag6 := field.MarcTag + "-" + tokens[1] // "700-04"
 
