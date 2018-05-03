@@ -198,7 +198,7 @@ func (bib Bib) TitleVernacularDisplay() string {
 
 func (bib Bib) SortableTitle() string {
 	if !bib.HasMarc() {
-		return trimPunct(bib.VarFields.getFieldTagContent("t"))
+		return strings.TrimSpace(trimPunct(bib.VarFields.getFieldTagContent("t")))
 	}
 
 	// Logic stolen from
@@ -221,7 +221,7 @@ func (bib Bib) SortableTitle() string {
 			sortTitle = sortTitle[ind2:len(sortTitle)]
 		}
 	}
-	return trimPunct(sortTitle)
+	return strings.TrimSpace(trimPunct(sortTitle))
 }
 
 /*
@@ -336,7 +336,7 @@ func (bib Bib) PublicationYear() (int, bool) {
 	rangeEnd := time.Now().Year()
 	tolerance := 15
 
-	f008 := bib.VarFields.MarcValue("008", true)
+	f008 := bib.VarFields.ControlValue("008")
 	year, ok := pubYear008(f008, tolerance)
 	if !ok {
 		year, ok = bib.pubYear260()
@@ -356,21 +356,28 @@ func (bib Bib) pubYear260() (int, bool) {
 }
 
 func (bib Bib) OclcNum() []string {
+	nums := []string{}
+
+	f001 := bib.VarFields.ControlValue("001")
+	safeAppend(&nums, cleanOclcNum(f001))
+
+	values := bib.VarFields.MarcValuesByField("035a:035z", true)
+	for _, value := range valuesToArray(values, false, false) {
+		safeAppend(&nums, cleanOclcNum(value))
+	}
+	return nums
+}
+
+func cleanOclcNum(value string) string {
 	// RegEx based on Traject's marc21.rb
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	re := regexp.MustCompile("\\s*(ocm|ocn|on|\\(OCoLC\\))(\\d+)")
-	values := bib.VarFields.MarcValuesByField("001:035a:035z", true)
-	nums := []string{}
-	for _, value := range valuesToArray(values, false, false) {
-		if strings.HasPrefix(value, "ssj") {
-			// TODO: Ask Jeanette about these values
-			// eg. b4643178, b4643180
-		} else {
-			num := strings.TrimSpace(re.ReplaceAllString(value, "$2"))
-			safeAppend(&nums, num)
-		}
+	if strings.HasPrefix(value, "ssj") {
+		// TODO: Ask Jeanette about these values
+		// eg. b4643178, b4643180
+		return ""
 	}
-	return nums
+	return strings.TrimSpace(re.ReplaceAllString(value, "$2"))
 }
 
 func (bib Bib) UpdatedDate() string {
@@ -431,7 +438,7 @@ func (bib Bib) FormatCode() string {
 	leader := bib.VarFields.Leader()
 	code := formatCode(leader)
 	if code == "VM" {
-		for _, value := range bib.VarFields.MarcValues("007", false) {
+		for _, value := range bib.VarFields.ControlValues("007") {
 			if strings.Contains(value, "v") || strings.Contains(value, "m") {
 				return "BV" // video
 			}
@@ -451,7 +458,7 @@ func (bib Bib) IsDissertation() bool {
 
 func (bib Bib) Languages() []string {
 	values := []string{}
-	f008 := bib.VarFields.MarcValue("008", false)
+	f008 := bib.VarFields.ControlValue("008")
 	f008_lang := ""
 	if len(f008) > 38 {
 		f008_lang = languageName(f008[35:38])

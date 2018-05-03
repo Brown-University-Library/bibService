@@ -51,8 +51,12 @@ func in(values []string, searchedFor string) bool {
 }
 
 func safeAppend(values *[]string, value string) {
-	if value != "" && !in(*values, value) {
-		*values = append(*values, value)
+	if value == "" {
+		return
+	}
+	trimedValue := strings.TrimSpace(value)
+	if !in(*values, trimedValue) {
+		*values = append(*values, trimedValue)
 	}
 }
 

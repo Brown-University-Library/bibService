@@ -119,6 +119,24 @@ func (allFields MarcFields) MarcValuesByField(specsStr string, join bool) [][]st
 	return values
 }
 
+// Returns the value as-is. No trimming of spaces or punctuation.
+// This is very important for control fields.
+func (allFields MarcFields) ControlValue(marcTag string) string {
+	values := allFields.ControlValues(marcTag)
+	return strings.Join(values, " ")
+}
+
+// Returns the values as-is. No trimming of spaces or punctuation.
+// This is very important for control fields.
+func (allFields MarcFields) ControlValues(marcTag string) []string {
+	// TODO should I validate the marcTag is >= "001" && <= "009"
+	values := []string{}
+	for _, field := range allFields.getFields(marcTag) {
+		values = append(values, field.Content)
+	}
+	return values
+}
+
 func (allFields MarcFields) VernacularValuesByField(specsStr string) [][]string {
 	// Notice that we loop through the 880 fields rather than checking if
 	// each of the indicated fields have vernacular values because sometimes

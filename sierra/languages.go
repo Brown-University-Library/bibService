@@ -489,6 +489,7 @@ func init() {
 		"zen": "Zenaga",
 		"zha": "Zhuang",
 		"znd": "Zande",
+		"zul": "Zulu",
 		"zun": "Zuni",
 	}
 }
