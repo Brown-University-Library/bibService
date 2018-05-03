@@ -180,6 +180,49 @@ func TestVernacularFreestanding(t *testing.T) {
 	}
 }
 
+func TestVernacularIncompleteLinking(t *testing.T) {
+	x1 := map[string]string{"tag": "6", "content": "880-01"}
+	x2 := map[string]string{"tag": "a", "content": "XXX"}
+	x3 := map[string]string{"tag": "d", "content": "xxx"}
+	f700 := MarcField{MarcTag: "700"}
+	f700.Subfields = []map[string]string{x1, x2, x3}
+
+	a1 := map[string]string{"tag": "6", "content": "700-00/$1"}
+	a2 := map[string]string{"tag": "a", "content": "AAA"}
+	a3 := map[string]string{"tag": "d", "content": "aaa"}
+	f880a := MarcField{MarcTag: "880"}
+	f880a.Subfields = []map[string]string{a1, a2, a3}
+
+	b1 := map[string]string{"tag": "6", "content": "700-00/$1"}
+	b2 := map[string]string{"tag": "a", "content": "BBB"}
+	b3 := map[string]string{"tag": "d", "content": "bbb"}
+	f880b := MarcField{MarcTag: "880"}
+	f880b.Subfields = []map[string]string{b1, b2, b3}
+
+	c1 := map[string]string{"tag": "6", "content": "700-01/$1"}
+	c2 := map[string]string{"tag": "a", "content": "CCC"}
+	c3 := map[string]string{"tag": "d", "content": "ccc"}
+	f880c := MarcField{MarcTag: "880"}
+	f880c.Subfields = []map[string]string{c1, c2, c3}
+
+	fields := MarcFields{f700, f880a, f880b, f880c}
+
+	// Make sure the original value (700) is detected separated from the vernacular (880s)
+	// Should the vernacular values come as individual fields,
+	// i.e. should len(all) == 4 instead of 2?
+	all := fields.MarcValuesByField("700abcd", true)
+	if len(all) != 2 || len(all[0]) != 1 || len(all[1]) != 3 {
+		t.Errorf("Invalid values detected: %#v", all)
+	}
+
+	// Make sure all three vernacular values are picked up even if their linking is
+	// incomplete (notice how one of the matches "700-01" but not ther other two)
+	vern := fields.VernacularValuesByField("700abcd")
+	if len(vern) != 3 {
+		t.Errorf("Invalid vernacular values detected: %#v", vern)
+	}
+}
+
 func TestTitleSeries(t *testing.T) {
 	// real sample: https://search.library.brown.edu/catalog/b8060352
 

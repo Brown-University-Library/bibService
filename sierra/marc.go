@@ -201,8 +201,8 @@ func (allFields MarcFields) getFields(marcTag string) []MarcField {
 func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec, join bool) [][]string {
 	values := [][]string{}
 
-	// True if the field has subfield with tag 6
-	// target would be "880-04"
+	// True if the field (say "700") has subfield with tag 6.
+	// Target would be "880-04"
 	vern, target := field.HasVernacular()
 	if !vern {
 		return values
@@ -213,8 +213,8 @@ func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec,
 		// bail out, we've got a value that we cannot parse
 		return values
 	}
-	marcTag := tokens[0]                    // "880"
-	tag6 := field.MarcTag + "-" + tokens[1] // "700-04"
+	marcTag := tokens[0]  // "880"
+	tag6 := field.MarcTag // "700" (we ignore the "-04" since it's not always used in the referenced "880".)
 
 	// Process the fields indicated in target (e.g. 880s)...
 	for _, vernField := range allFields.getFields(marcTag) {
