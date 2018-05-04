@@ -61,8 +61,9 @@ func (bib Bib) HasMarc() bool {
  * Author functions
  */
 func (bib Bib) AuthorsAddlT() []string {
-	authors := bib.VarFields.MarcValuesByField("700aqbcd:710abcd:711aqbcde:810abc:811aqdce", true)
-	return valuesToArray(authors, false, true)
+	values := bib.VarFields.MarcValuesByField("700aqbcd:710abcd:711aqbcde:810abc:811aqdce", true)
+	authors := valuesToArray(values, false, true)
+	return dedupArray(authors)
 }
 
 func (bib Bib) AuthorsT() []string {
@@ -70,13 +71,15 @@ func (bib Bib) AuthorsT() []string {
 		value := trimPunct(bib.VarFields.getFieldTagContent("a"))
 		return []string{value}
 	}
-	authors := bib.VarFields.MarcValuesByField("100abcdq:110abcd:111abcdeq", true)
-	return valuesToArray(authors, true, true)
+	values := bib.VarFields.MarcValuesByField("100abcdq:110abcd:111abcdeq", true)
+	authors := valuesToArray(values, true, true)
+	return dedupArray(authors)
 }
 
 func (bib Bib) AuthorsAddlDisplay() []string {
-	authors := bib.VarFields.MarcValuesByField("700abcd:710ab:711ab", true)
-	return valuesToArray(authors, true, true)
+	values := bib.VarFields.MarcValuesByField("700abcd:710ab:711ab", true)
+	authors := valuesToArray(values, true, true)
+	return dedupArray(authors)
 }
 
 func (bib Bib) AuthorFacet() []string {

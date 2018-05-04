@@ -145,7 +145,7 @@ func solrDocFromFile(resp http.ResponseWriter, req *http.Request) {
 	}
 	log.Printf("Generating SolrDoc from file for BIB: %s", bib)
 	model := bibModel.New(settings)
-	path := "/Users/hectorcorrea/dev/src/bibService/data/" // Make this a parameter
+	path := "/Users/hectorcorrea/dev/marc_files_json/" // Make this a parameter
 	fileName := path + bib + ".json"
 	doc, err := model.SolrDocFromFile(fileName)
 	renderJSON(resp, doc, err, "solrDocFromFile")

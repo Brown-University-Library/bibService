@@ -41,6 +41,15 @@ func toInt(str string) int {
 	return int(num)
 }
 
+func index(values []string, searchedFor string) int {
+	for i := 0; i < len(values); i++ {
+		if values[i] == searchedFor {
+			return i
+		}
+	}
+	return -1
+}
+
 func in(values []string, searchedFor string) bool {
 	for _, value := range values {
 		if value == searchedFor {
@@ -73,6 +82,16 @@ func addPeriod(value string) string {
 	return value + "."
 }
 
+func trimDot(str string) string {
+	if str == "" {
+		return str
+	}
+	if strings.HasSuffix(str, ".") {
+		return str[0:(len(str) - 1)]
+	}
+	return str
+}
+
 func trimPunct(str string) string {
 	if str == "" {
 		return str
@@ -98,6 +117,32 @@ func trimPunct(str string) string {
 	cleanStr = re3.ReplaceAllString(cleanStr, "$1")
 
 	return cleanStr
+}
+
+// This is a hack to try to achieve the same items that Traject is inserting
+// based on the MARC data. We might not need this in the future
+func dedupArray(original []string) []string {
+	dedup := []string{}
+	for _, value := range original {
+		trimVal := trimDot(value)
+		if trimVal == value {
+			// the value ("a") and the trimmed ("a") version of the value are the same
+			// add it to the array if it is not already there.
+			safeAppend(&dedup, value)
+		} else {
+			// the value ("a.") is different from the trimmed version ("a")
+			indexTrim := index(dedup, trimVal)
+			if indexTrim >= 0 {
+				// if the trimmed version ("a") is already in the array,
+				// replace it the not trimmed version ("a.")
+				dedup[indexTrim] = value
+			} else {
+				// add the not trimmed version to the array if it is not already there
+				safeAppend(&dedup, value)
+			}
+		}
+	}
+	return dedup
 }
 
 func valuesToArray(values [][]string, trim bool, join bool) []string {
