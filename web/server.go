@@ -22,18 +22,15 @@ func StartWebServer(settingsFile string) {
 
 	// Solr
 	http.HandleFunc("/bibutils/solr/doc/", solrDoc)
-	http.HandleFunc("/bibutils/solr/deleteQuery/", solrDeleteQuery)
-	http.HandleFunc("/bibutils/solr/deleteIds/", solrDeleteIds)
-	http.HandleFunc("/bibutils/solr/delete/", solrDelete)
 	http.HandleFunc("/bibutils/solr/docFromFile/", solrDocFromFile)
-	// http.HandleFunc("/bibutils/solr/docsFromFiles/", solrDocsFromFiles)
+	http.HandleFunc("/bibutils/solr/delete/", solrDelete)
 
 	// Bib and Item level operation
 	http.HandleFunc("/bibutils/bib/updated/", bibUpdated)
 	http.HandleFunc("/bibutils/bib/deleted/", bibDeleted)
+	http.HandleFunc("/bibutils/bib/suppressed/", bibSuppressed)
 	http.HandleFunc("/bibutils/bib/", bibController)
 	http.HandleFunc("/bibutils/item/", itemController)
-	// http.HandleFunc("/bibutils/bibs/FromFiles/", bibsFromFiles)
 
 	// MARC operations
 	http.HandleFunc("/bibutils/marc/updated/", marcUpdated)
@@ -111,10 +108,37 @@ func bibUpdated(resp http.ResponseWriter, req *http.Request) {
 func bibDeleted(resp http.ResponseWriter, req *http.Request) {
 	from := qsParam("from", req)
 	to := qsParam("to", req)
+	days, _ := strconv.Atoi(qsParam("days", req))
+	if days != 0 {
+		from, to = rangeFromDays(days)
+	}
+	if from == "" || to == "" {
+		err := errors.New("No from/to parameters were received")
+		renderJSON(resp, nil, err, "bibDeleted")
+		return
+	}
 	log.Printf("Fetching BIB deleted (%s - %s)", from, to)
 	model := bibModel.New(settings)
 	body, err := model.GetBibsDeleted(from, to)
 	renderJSON(resp, body, err, "bibDeleted")
+}
+
+func bibSuppressed(resp http.ResponseWriter, req *http.Request) {
+	from := qsParam("from", req)
+	to := qsParam("to", req)
+	days, _ := strconv.Atoi(qsParam("days", req))
+	if days != 0 {
+		from, to = rangeFromDays(days)
+	}
+	if from == "" || to == "" {
+		err := errors.New("No from/to parameters were received")
+		renderJSON(resp, nil, err, "bibSuppressed")
+		return
+	}
+	log.Printf("Fetching BIB suppressed (%s - %s)", from, to)
+	model := bibModel.New(settings)
+	body, err := model.GetBibsSuppressed(from, to)
+	renderJSON(resp, body, err, "bibSuppressed")
 }
 
 func solrDoc(resp http.ResponseWriter, req *http.Request) {
@@ -151,19 +175,6 @@ func solrDocFromFile(resp http.ResponseWriter, req *http.Request) {
 	renderJSON(resp, doc, err, "solrDocFromFile")
 }
 
-func solrDeleteIds(resp http.ResponseWriter, req *http.Request) {
-	from := qsParam("from", req)
-	to := qsParam("to", req)
-	days, _ := strconv.Atoi(qsParam("days", req))
-	if days != 0 {
-		from, to = rangeFromDays(days)
-	}
-	log.Printf("Fetching Solr to delete (%s - %s)", from, to)
-	model := bibModel.New(settings)
-	body, err := model.GetSolrBibsToDelete(from, to)
-	renderJSON(resp, body, err, "bibDeleted")
-}
-
 func solrDelete(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
 		renderJSON(resp, "", errors.New("Must use HTTP POST"), "solrDelete")
@@ -179,25 +190,6 @@ func solrDelete(resp http.ResponseWriter, req *http.Request) {
 	model := bibModel.New(settings)
 	err := model.Delete(from, to)
 	renderJSON(resp, "OK", err, "solrDelete")
-}
-
-func solrDeleteQuery(resp http.ResponseWriter, req *http.Request) {
-	from := qsParam("from", req)
-	to := qsParam("to", req)
-	days, _ := strconv.Atoi(qsParam("days", req))
-	if days != 0 {
-		from, to = rangeFromDays(days)
-	}
-	log.Printf("Fetching Solr to delete (%s - %s)", from, to)
-	model := bibModel.New(settings)
-	body, err := model.GetSolrDeleteQuery(from, to)
-	if err != nil {
-		log.Printf("ERROR (solrDeleteQuery): %s", err)
-		fmt.Fprint(resp, "Error fetching delete Solr query")
-		return
-	}
-	resp.Header().Add("Content-Type", "text/xml")
-	fmt.Fprint(resp, body)
 }
 
 func itemController(resp http.ResponseWriter, req *http.Request) {

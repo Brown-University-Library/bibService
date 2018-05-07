@@ -102,18 +102,17 @@ func (model BibModel) GetBibsUpdated(fromDate, toDate string, includeItems bool)
 	return bibs, nil
 }
 
-func (model BibModel) GetBibsDeleted(fromDate, toDate string) (sierra.Bibs, error) {
-	bibs := sierra.Bibs{}
+func (model BibModel) GetBibsSuppressed(fromDate, toDate string) ([]string, error) {
+	bibs := []string{}
 	pageNum := 0
 	for {
 		pageNum += 1
-		page, err := model.bibsDeletedPaginated(fromDate, toDate, pageNum)
+		page, err := model.bibsSuppressedPaginated(fromDate, toDate, pageNum)
 		if err != nil {
-			return sierra.Bibs{}, err
+			return bibs, err
 		}
-		bibs.Total += page.Total
 		for _, entry := range page.Entries {
-			bibs.Entries = append(bibs.Entries, entry)
+			bibs = append(bibs, entry.Bib())
 		}
 		if page.Total < pageSize {
 			break
@@ -122,41 +121,63 @@ func (model BibModel) GetBibsDeleted(fromDate, toDate string) (sierra.Bibs, erro
 	return bibs, nil
 }
 
-func (model BibModel) GetSolrBibsToDelete(fromDate, toDate string) ([]string, error) {
-	sierraBibs, err := model.GetBibsDeleted(fromDate, toDate)
-	if err != nil {
-		if err.Error() == "Status code 404" {
-			// nothing to delete, no big deal
-			err = nil
-		}
-		return []string{}, err
-	}
-
+func (model BibModel) GetBibsDeleted(fromDate, toDate string) ([]string, error) {
 	bibs := []string{}
-	for _, bib := range sierraBibs.Entries {
-		bibs = append(bibs, "b"+bib.Id)
+	pageNum := 0
+	for {
+		pageNum += 1
+		page, err := model.bibsDeletedPaginated(fromDate, toDate, pageNum)
+		if err != nil {
+			if err.Error() == "Status code 404" {
+				// nothing to delete, no big deal
+				return bibs, nil
+			}
+			return bibs, err
+		}
+		for _, entry := range page.Entries {
+			bibs = append(bibs, entry.Bib())
+		}
+		if page.Total < pageSize {
+			break
+		}
 	}
 	return bibs, nil
 }
 
+// Deletes from Solr the IDs of the records that have been deleted
+// in Sierra or that have been marked as Suppressed in Sierra.
 func (model BibModel) Delete(fromDate, toDate string) error {
-	bibs, err := model.GetSolrBibsToDelete(fromDate, toDate)
+	solrClient := solr.New(model.solrUrl, true)
+	deleted, err := model.GetBibsDeleted(fromDate, toDate)
 	if err != nil {
 		return err
 	}
 
-	if len(bibs) == 0 {
-		log.Printf("Nothing to delete")
-		return nil
+	if len(deleted) != 0 {
+		log.Printf("Submitting %d deleted IDs for delete to Solr", len(deleted))
+		err = solrClient.Delete(deleted)
+		if err != nil {
+			return err
+		}
 	}
 
-	log.Printf("Submitting %d IDs for delete to Solr", len(bibs))
-	solrClient := solr.New(model.solrUrl, true)
-	return solrClient.Delete(bibs)
+	suppressed, err := model.GetBibsSuppressed(fromDate, toDate)
+	if err != nil {
+		return err
+	}
+
+	if len(suppressed) != 0 {
+		log.Printf("Submitting %d suppressed IDs for delete to Solr ", len(suppressed))
+		err = solrClient.Delete(suppressed)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (model BibModel) GetSolrDeleteQuery(fromDate, toDate string) (string, error) {
-	bibs, err := model.GetSolrBibsToDelete(fromDate, toDate)
+	bibs, err := model.GetBibsDeleted(fromDate, toDate)
 	if len(bibs) == 0 || err != nil {
 		return "", err
 	}
@@ -213,6 +234,17 @@ func (model BibModel) bibsUpdatedPaginated(fromDate, toDate string, page int, in
 	return model.api.Get(params, includeItems)
 }
 
+func (model BibModel) bibsSuppressedPaginated(fromDate, toDate string, page int) (sierra.Bibs, error) {
+	offset := (page - 1) * pageSize
+	params := map[string]string{
+		"offset":      strconv.Itoa(offset),
+		"limit":       strconv.Itoa(pageSize),
+		"suppressed":  "true",
+		"updatedDate": dateRange(fromDate, toDate),
+	}
+	return model.api.GetBibs(params)
+}
+
 func (model BibModel) GetBibRaw(bib string) (string, error) {
 	id := idFromBib(bib)
 	if id == "" {
@@ -234,48 +266,7 @@ func (model BibModel) Marc(bib string) (string, error) {
 	return model.api.Marc(id)
 }
 
-// func bibRanges(bibs sierra.Bibs) []Range {
-// 	min, _ := strconv.Atoi(bibs.Entries[0].Id)
-// 	max := min
-// 	for _, bib := range bibs.Entries {
-// 		id, _ := strconv.Atoi(bib.Id)
-// 		if id < min {
-// 			min = id
-// 		}
-// 		if id > max {
-// 			max = id
-// 		}
-// 	}
-//
-// 	ranges := []Range{}
-// 	numBatches := 50
-// 	batchSize := len(bibs.Entries) / numBatches
-// 	if batchSize < 300 {
-// 		batchSize = 300
-// 	}
-// 	i := 0
-// 	for {
-// 		x := min + (batchSize * (i - 1))
-// 		y := x + batchSize - 1
-// 		if y > max {
-// 			y = max
-// 		}
-// 		r := Range{first: x, last: y}
-// 		ranges = append(ranges, r)
-// 		if y == max {
-// 			break
-// 		}
-// 		i += 1
-// 	}
-// 	return ranges
-// }
-
 func (model BibModel) GetMarcUpdated(fromDate, toDate string) (string, error) {
-	// bibs, err := model.GetBibsUpdated(fromDate, toDate, false)
-	// if err != nil {
-	// 	return "", err
-	// }
-
 	// Breaking by fixed size ranges is very inneficient.
 	// If bib 100 and 80000 are modified it will get a lot of
 	// records in between unnecessarily.
@@ -286,21 +277,6 @@ func (model BibModel) GetMarcUpdated(fromDate, toDate string) (string, error) {
 	//
 	// We could try to calculate batches to minimize the number
 	// of records per batch without requesting more than 100. Yikes.
-
-	// bibRanges(bibs)
-	// log.Printf("Ranges--")
-	// log.Printf("%#v", ranges)
-	// bigMarc := ""
-	// for _, bib := range bibs.Entries {
-	// 	marc, err := model.Marc(bib.Bib())
-	// 	if err != nil {
-	// 		log.Printf("%s", err)
-	// 		log.Printf("%#v", bib)
-	// 		// TODO: be more forgiving
-	// 		return "", err
-	// 	}
-	// 	bigMarc += marc
-	// }
 	return "bigMarc", errors.New("not implemented")
 }
 
