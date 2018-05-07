@@ -2,5 +2,7 @@
   "serverAddress": "localhost:9001",
   "sierraUrl": "https://your-iii-domain/iii/sierra-api/v5",
   "keySecret": "your-key:your-secret",
-  "sessionFile": "iii_session.json"
+  "sessionFile": "iii_session.json",
+  "verbose": true,
+  "solrUrl": "http://localhost:8081/solr/your-solr-core"
 }
