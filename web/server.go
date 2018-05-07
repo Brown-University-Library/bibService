@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 var settings bibModel.Settings
@@ -33,7 +34,6 @@ func StartWebServer(settingsFile string) {
 	http.HandleFunc("/bibutils/item/", itemController)
 
 	// MARC operations
-	http.HandleFunc("/bibutils/marc/updated/", marcUpdated)
 	http.HandleFunc("/bibutils/marc/", marcController)
 
 	// Misc
@@ -55,20 +55,32 @@ func home(resp http.ResponseWriter, req *http.Request) {
 
 	html := `<h1>bibService</h1>
 	<p>Service for BIB record utilities</p>
-	<p>Examples:</p>
+
+	<h2>BIB Record</h2>
 	<ul>
 		<li> <a href="/bibutils/bib/?bib=b8060910">BIB Record</a>
 		<li> <a href="/bibutils/bib/?bib=b8060910&raw=true">BIB Record (raw)</a>
-		<li> <a href="/bibutils/bib/updated/?from=2018-04-01&to=2018-04-09">BIB records updated</a>
-		<li> <a href="/bibutils/bib/deleted/?from=2018-04-01&to=2018-04-09">BIB records deleted</a>
-		<li> <a href="/bibutils/item/?bib=b8060910">Item level data (availability)</a>
-		<li> <a href="/bibutils/item/?bib=b8060910&raw=true">Item level data (availability) (raw)</a>
-		<li> <a href="/bibutils/marc/?bib=b8060910">MARC data for a BIB Record</a>
-		<li> <a href="/bibutils/solr/delete/?from=2018-04-01&to=2018-04-09">ID of records deleted</a>
-		<li> <a href="/bibutils/solr/deleteQuery/?from=2018-04-01&to=2018-04-09">Query to delete records from Solr</a>
+		<li> <a href="/bibutils/bib/updated/?from=2018-05-04&to=2018-05-07">BIB records updated</a>
+		<li> <a href="/bibutils/bib/deleted/?from=2018-05-04&to=2018-05-07">BIB records deleted (IDs only)</a>
+		<li> <a href="/bibutils/bib/suppressed/?from=2018-05-04&to=2018-05-07">BIB records suppressed (IDs only)</a>
 	</ul>
-	<p>Troubleshooting: /bibutils/status</p>
+
+	<h2>Item level</h2>
+	<ul>
+		<li> <a href="/bibutils/item/?bib=b8060910">Item level data (availability)</a>
+		<li> <a href="/bibutils/item/?bib=b8060910&raw=true">Item level data (availability - raw)</a>
+	</ul>
+
+	<h2>MARC</h2>
+	<ul>
+		<li> <a href="/bibutils/marc/?bib=b8060910">MARC data for a BIB Record</a>
+	</ul>
+
+	<p>Troubleshooting: <a href="/status">/status</a></p>
 	`
+	if settings.RootUrl != "" {
+		html = strings.Replace(html, "/bibutils/", settings.RootUrl, -1)
+	}
 	fmt.Fprint(resp, html)
 }
 
@@ -227,20 +239,6 @@ func marcController(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	fmt.Fprint(resp, marcData)
-}
-
-func marcUpdated(resp http.ResponseWriter, req *http.Request) {
-	from := qsParam("from", req)
-	to := qsParam("to", req)
-	if from == "" || to == "" {
-		err := errors.New("No from/to parameters were received")
-		renderJSON(resp, nil, err, "marcUpdated")
-		return
-	}
-	log.Printf("Fetching MARC updated (%s - %s)", from, to)
-	model := bibModel.New(settings)
-	body, err := model.GetMarcUpdated(from, to)
-	renderJSON(resp, body, err, "marcUpdated")
 }
 
 func renderJSON(resp http.ResponseWriter, data interface{}, errFetch error, info string) {

@@ -12,6 +12,7 @@ type Settings struct {
 	KeySecret     string `json:"keySecret"`
 	Verbose       bool   `json:"verbose"`
 	SolrUrl       string `json:"solrUrl"`
+	RootUrl       string `json:"rootUrl"`
 }
 
 func LoadSettings(filename string) (Settings, error) {

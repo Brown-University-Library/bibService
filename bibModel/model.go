@@ -266,20 +266,6 @@ func (model BibModel) Marc(bib string) (string, error) {
 	return model.api.Marc(id)
 }
 
-func (model BibModel) GetMarcUpdated(fromDate, toDate string) (string, error) {
-	// Breaking by fixed size ranges is very inneficient.
-	// If bib 100 and 80000 are modified it will get a lot of
-	// records in between unnecessarily.
-	//
-	// Getting individual records is not good either because
-	// we hit a rate limit on the III side after 100 requested
-	// files.
-	//
-	// We could try to calculate batches to minimize the number
-	// of records per batch without requesting more than 100. Yikes.
-	return "bigMarc", errors.New("not implemented")
-}
-
 func (model BibModel) ItemsRaw(bib string) (string, error) {
 	id := idFromBib(bib)
 	if id == "" {
