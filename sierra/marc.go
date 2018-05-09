@@ -36,10 +36,9 @@ func (allFields MarcFields) MarcValues(specsStr string, trim bool) []string {
 // field "100" subfields "a" and "c". Multiple fields can be indicated
 // separated by colons, for example: "100ac:210f".
 //
-// `join` controls how each of the rows is constructed. When `join` is true
-// values for the *same field and different subfield* will be concatenated
-// together whereas values for the same *field and subfield* will not.
-// For example when given the spec "520ab" and the following data:
+// `join` controls whether the subfield values for a given field will be
+// concatenated together. For example when given the spec "520ab" and the
+// following data:
 //
 //		520 a "A1"
 //		    b "B1"
@@ -47,10 +46,10 @@ func (allFields MarcFields) MarcValues(specsStr string, trim bool) []string {
 //		    a "A3"
 //		    b "B3"
 //
-// When "join = true" it gives [0]["A1 B1"], [1]["A2"] [2]["A3 B3"]
-// notice "A1 B1" and "A3 B3" where concatenated but not "A2".
+// When "join = true" it gives [0]["A1 B1"], [1]["A2 A3 B3"]
+// notice "A1 B1" and "A2 A3 B3" where concatenated.
 //
-// When "join = false" it gives [0]["A1", "B1"], [2]["A2"], [3]["A3", "B3"]
+// When "join = false" it gives [0]["A1", "B1"], [2]["A2", "A3", "B3"]
 // notice that none of the subfields are concatenated.
 func (allFields MarcFields) MarcValuesByField(specsStr string, join bool) [][]string {
 	values := [][]string{}

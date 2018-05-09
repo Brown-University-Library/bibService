@@ -124,6 +124,72 @@ func (bib Bib) AbstractDisplay() string {
 }
 
 /*
+ * Uniform Related Works
+ */
+func (bib Bib) UniformRelatedWorks() string {
+	works := []UniformRelatedWorks{}
+
+	for _, work := range bib.relatedWorksForField("730", "", "adfgklmnoprst") {
+		works = append(works, work)
+	}
+
+	// TODO use "abcdqu"
+	for _, work := range bib.relatedWorksForField("700", "abcd", "fklmnoprstv") {
+		works = append(works, work)
+	}
+
+	// TODO use "abcdgnu"
+	for _, work := range bib.relatedWorksForField("710", "abcdg", "fklmorstv") {
+		works = append(works, work)
+	}
+
+	// TODO use "abcdgnu"
+	for _, work := range bib.relatedWorksForField("711", "abcdg", "fklmorstv") {
+		works = append(works, work)
+	}
+
+	str, _ := toJSON(works)
+	// log.Printf("STR %s {", bib.Bib())
+	// log.Printf("%s", str)
+	// log.Printf("}")
+	return str
+}
+
+func (bib Bib) relatedWorksForField(marcTag, authorSubs, titleSubs string) []UniformRelatedWorks {
+	authorSubfields := stringToArray(authorSubs)
+	titleSubfields := stringToArray(titleSubs)
+	works := []UniformRelatedWorks{}
+	for _, field := range bib.VarFields.getFields(marcTag) {
+		authors := field.Values(authorSubfields, true)
+		author := ""
+		if len(authors) > 0 {
+			author = trimDot(trimPunct(authors[0]))
+		}
+		titles := field.Values(titleSubfields, false)
+		if len(titles) > 0 {
+			// TODO: Ask Jeanette why we don't process empty titles
+			// (but we process empty authors)
+			work := UniformRelatedWorks{Author: author}
+			query := ""
+			for i, t := range titles {
+				if i == 0 {
+					query = addPeriod(t)
+				} else {
+					query += " " + addPeriod(t)
+				}
+				title := UniformTitle{
+					Display: addPeriod(t),
+					Query:   query,
+				}
+				work.Titles = append(work.Titles, title)
+			}
+			works = append(works, work)
+		}
+	}
+	return works
+}
+
+/*
  * Title functions
  */
 func (bib Bib) UniformTitles(newVersion bool) []UniformTitles {

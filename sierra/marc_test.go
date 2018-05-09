@@ -41,6 +41,39 @@ func TestMarcValuesJoin(t *testing.T) {
 	}
 }
 
+func TestMarcValuesJoinDuplicateTag(t *testing.T) {
+	a1 := map[string]string{"tag": "a", "content": "A1"}
+	b1 := map[string]string{"tag": "b", "content": "B1"}
+	f1 := MarcField{MarcTag: "520"}
+	f1.Subfields = []map[string]string{a1, b1}
+
+	a20 := map[string]string{"tag": "a", "content": "A20"}
+	a21 := map[string]string{"tag": "a", "content": "A21"}
+	b20 := map[string]string{"tag": "b", "content": "B20"}
+	f2 := MarcField{MarcTag: "520"}
+	f2.Subfields = []map[string]string{a20, a21, b20}
+
+	fields := MarcFields{f1, f2}
+
+	// Tests joined values and makes sure the duplicate tag "a" in the second
+	// 520 is handled as expected.
+	joinedValues := fields.MarcValuesByField("520ab", true)
+	if len(joinedValues) != 2 ||
+		joinedValues[0][0] != "A1 B1" ||
+		joinedValues[1][0] != "A20 A21 B20" {
+		t.Errorf("Unexpected joinedValues: %#v", joinedValues)
+	}
+
+	// Tests not joined values and makes sure the duplicate tag "a" in the second
+	// 520 is handled as expected.
+	values := fields.MarcValuesByField("520ab", false)
+	if len(values) != 2 ||
+		values[0][0] != "A1" || values[0][1] != "B1" ||
+		values[1][0] != "A20" || values[1][1] != "A21" || values[1][2] != "B20" {
+		t.Errorf("Unexpected values: %#v", values)
+	}
+}
+
 func TestTwoFields(t *testing.T) {
 	ta1 := map[string]string{"tag": "a", "content": "a1"}
 	field1 := MarcField{MarcTag: "100"}

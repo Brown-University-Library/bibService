@@ -1,6 +1,7 @@
 package sierra
 
 import (
+	"encoding/json"
 	"log"
 	"math"
 	"regexp"
@@ -179,4 +180,20 @@ func valuesToString(values [][]string, trim bool) string {
 		return trimPunct(strings.Join(rowValues, " "))
 	}
 	return strings.Join(rowValues, " ")
+}
+
+func toJSON(data interface{}) (string, error) {
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func stringToArray(str string) []string {
+	array := []string{}
+	for _, c := range str {
+		array = append(array, string(c))
+	}
+	return array
 }
