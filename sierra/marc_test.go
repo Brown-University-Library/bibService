@@ -1,6 +1,7 @@
 package sierra
 
 import (
+	"log"
 	"testing"
 )
 
@@ -31,6 +32,14 @@ func TestMarcValuesJoin(t *testing.T) {
 		joinedValues[2][0] != "A3 B3" {
 		t.Errorf("Unexpected joinedValues: %#v", joinedValues)
 	}
+
+	log.Printf("== JOINED ==")
+	log.Printf("OLD: %#v", fields.MarcValuesByField("520ab", true))
+	log.Printf("NEW: %#v", fields.MarcValuesByFieldNew("520ab", true))
+
+	log.Printf("== NOT JOINED == ")
+	log.Printf("OLD: %#v", fields.MarcValuesByField("520ab", false))
+	log.Printf("NEW: %#v", fields.MarcValuesByFieldNew("520ab", false))
 
 	values := fields.MarcValuesByField("520ab", false)
 	if len(values) != 3 ||
@@ -182,6 +191,12 @@ func TestVernacular(t *testing.T) {
 	if !in(values, "aaa bbb") || !in(values, "ccc") {
 		t.Errorf("700 field values not found: %#v", values)
 	}
+
+	log.Printf("== {")
+	for i, fieldValues := range fields.MarcValuesByFieldNew("700ab", true) {
+		log.Printf("%d %#v", i, fieldValues)
+	}
+	log.Printf("} == ")
 
 	if !in(values, "AAA BBB") || !in(values, "CCC") {
 		t.Errorf("880 field values not found: %#v", values)

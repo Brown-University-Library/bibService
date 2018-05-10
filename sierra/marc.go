@@ -115,6 +115,60 @@ func (allFields MarcFields) MarcValuesByField(specsStr string, join bool) [][]st
 	return values
 }
 
+func (allFields MarcFields) MarcValuesByFieldNew(specsStr string, join bool) [][]MarcValue {
+	values := [][]MarcValue{}
+	vernProcessed := []string{}
+	specs := NewFieldSpecs(specsStr)
+	for _, spec := range specs {
+
+		fields := allFields.getFields(spec.MarcTag)
+		if len(spec.Subfields) == 0 {
+			// Get the value directly
+			for _, field := range fields {
+				if field.Content != "" {
+					value := MarcValue{MarcTag: spec.MarcTag, Value: field.Content}
+					values = append(values, []MarcValue{value})
+				}
+			}
+			continue
+		}
+
+		// Process the subfields
+		for _, field := range fields {
+			fieldValues := field.ValuesNew(spec.Subfields)
+			values = append(values, fieldValues)
+		}
+
+		// Gather the vernacular values for the fields
+		for _, field := range fields {
+			vernValues := allFields.vernacularValuesForNew(field, spec, join)
+			if len(vernValues) > 0 && !in(vernProcessed, field.MarcTag) {
+				vernProcessed = append(vernProcessed, field.MarcTag)
+				for _, fieldVernValues := range vernValues {
+					values = append(values, fieldVernValues)
+				}
+			}
+		}
+	}
+
+	// Process the 880 fields again this time to gather vernacular
+	// values for fields in the spec that have no values in the
+	// record (e.g. we might have an 880 for field 505, but no 505
+	// value in the record, or an 880 for field 490a but no 409a
+	// on the record)
+	f880s := allFields.getFields("880")
+	for _, spec := range specs {
+		for _, f880 := range f880s {
+			if f880.IsVernacularFor(spec.MarcTag) && !in(vernProcessed, spec.MarcTag) {
+				vernValues := f880.ValuesNew(spec.Subfields)
+				values = append(values, vernValues)
+			}
+		}
+	}
+
+	return values
+}
+
 // Returns the value as-is. No trimming of spaces or punctuation.
 // This is very important for control fields.
 func (allFields MarcFields) ControlValue(marcTag string) string {
@@ -218,6 +272,36 @@ func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec,
 		// value that we calculated (e.g. 700-04)
 		if vernField.IsVernacularFor(tag6) {
 			vernValues := vernField.Values(spec.Subfields, join)
+			values = append(values, vernValues)
+		}
+	}
+	return values
+}
+
+func (allFields MarcFields) vernacularValuesForNew(field MarcField, spec FieldSpec, join bool) [][]MarcValue {
+	values := [][]MarcValue{}
+
+	// True if the field (say "700") has subfield with tag 6.
+	// Target would be "880-04"
+	vern, target := field.HasVernacular()
+	if !vern {
+		return values
+	}
+
+	tokens := strings.Split(target, "-") // ["880", "04"]
+	if len(tokens) < 2 {
+		// bail out, we've got a value that we cannot parse
+		return values
+	}
+	marcTag := tokens[0]  // "880"
+	tag6 := field.MarcTag // "700" (we ignore the "-04" since it's not always used in the referenced "880".)
+
+	// Process the fields indicated in target (e.g. 880s)...
+	for _, vernField := range allFields.getFields(marcTag) {
+		// ...is this the one that corresponds with the tag 6
+		// value that we calculated (e.g. 700-04)
+		if vernField.IsVernacularFor(tag6) {
+			vernValues := vernField.ValuesNew(spec.Subfields)
 			values = append(values, vernValues)
 		}
 	}

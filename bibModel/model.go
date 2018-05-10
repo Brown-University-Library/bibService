@@ -5,16 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hectorcorrea/solr"
 	"io/ioutil"
 	"log"
 	"strconv"
 	"strings"
-)
 
-func x() {
-	log.Printf("dummy")
-}
+	"github.com/hectorcorrea/solr"
+)
 
 // 2000 seems to be the limit that Sierra imposes
 const pageSize = 1000

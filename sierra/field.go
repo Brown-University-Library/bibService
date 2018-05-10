@@ -4,6 +4,14 @@ import (
 	"strings"
 )
 
+type MarcValues []MarcValue
+
+type MarcValue struct {
+	MarcTag  string // e.g. 700
+	Subfield string // e.g. a
+	Value    string
+}
+
 type MarcField struct {
 	FieldTag  string              `json:"fieldTag"`
 	MarcTag   string              `json:"marcTag"`
@@ -11,6 +19,15 @@ type MarcField struct {
 	Ind2      string              `json:"ind2"`
 	Subfields []map[string]string `json:"subfields"`
 	Content   string              `json:"content"`
+}
+
+func (f MarcField) Add(subField string, value string) {
+	data := map[string]string{subField: value}
+	f.Subfields = append(f.Subfields, data)
+}
+
+func (f MarcField) Set(subFields []map[string]string) {
+	f.Subfields = subFields
 }
 
 func (f MarcField) Tags() []string {
@@ -55,6 +72,25 @@ func (f MarcField) Values(tagsWanted []string, join bool) []string {
 	values := f.valuesNoJoin(tagsWanted)
 	if len(tagsWanted) > 1 && join {
 		return []string{strings.Join(values, " ")}
+	}
+	return values
+}
+
+func (f MarcField) ValuesNew(subsWanted []string) []MarcValue {
+	values := []MarcValue{}
+	// We walk through the subfields in the Field because it is important
+	// to preserve the order of the values returned according to the order
+	// in which they are listed on the data, not on the spec.
+	for _, fieldSub := range f.Subfields {
+		for _, sub := range subsWanted {
+			if fieldSub["tag"] == sub {
+				content := fieldSub["content"]
+				if content != "" {
+					value := MarcValue{MarcTag: f.MarcTag, Subfield: sub, Value: content}
+					values = append(values, value)
+				}
+			}
+		}
 	}
 	return values
 }
