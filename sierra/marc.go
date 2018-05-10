@@ -115,8 +115,8 @@ func (allFields MarcFields) MarcValuesByField(specsStr string, join bool) [][]st
 	return values
 }
 
-func (allFields MarcFields) MarcValuesByFieldNew(specsStr string, join bool) [][]MarcValue {
-	values := [][]MarcValue{}
+func (allFields MarcFields) MarcValuesNew(specsStr string, join bool) []MarcField {
+	values := []MarcField{}
 	vernProcessed := []string{}
 	specs := NewFieldSpecs(specsStr)
 	for _, spec := range specs {
@@ -126,8 +126,8 @@ func (allFields MarcFields) MarcValuesByFieldNew(specsStr string, join bool) [][
 			// Get the value directly
 			for _, field := range fields {
 				if field.Content != "" {
-					value := MarcValue{MarcTag: spec.MarcTag, Value: field.Content}
-					values = append(values, []MarcValue{value})
+					value := MarcField{MarcTag: spec.MarcTag, Content: field.Content}
+					values = append(values, value)
 				}
 			}
 			continue
@@ -210,6 +210,26 @@ func (allFields MarcFields) VernacularValuesByField(specsStr string) [][]string 
 	return values
 }
 
+func (allFields MarcFields) VernacularValuesNew(specsStr string) []MarcField {
+	// Notice that we loop through the 880 fields rather than checking if
+	// each of the indicated fields have vernacular values because sometimes
+	// the actual field does not point to the 880 but the 880 always points
+	// to the original field.
+	values := []MarcField{}
+	f880s := allFields.getFields("880")
+	for _, spec := range NewFieldSpecs(specsStr) {
+		for _, f880 := range f880s {
+			if f880.IsVernacularFor(spec.MarcTag) {
+				vernValues := f880.ValuesNew(spec.Subfields)
+				// Should we test for an "empty" value?
+				// (i.e. none of the subfields has a value)
+				values = append(values, vernValues)
+			}
+		}
+	}
+	return values
+}
+
 func (allFields MarcFields) Leader() string {
 	for _, field := range allFields {
 		if field.FieldTag == "_" {
@@ -278,8 +298,8 @@ func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec,
 	return values
 }
 
-func (allFields MarcFields) vernacularValuesForNew(field MarcField, spec FieldSpec, join bool) [][]MarcValue {
-	values := [][]MarcValue{}
+func (allFields MarcFields) vernacularValuesForNew(field MarcField, spec FieldSpec, join bool) []MarcField {
+	values := []MarcField{}
 
 	// True if the field (say "700") has subfield with tag 6.
 	// Target would be "880-04"

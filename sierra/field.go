@@ -21,13 +21,33 @@ type MarcField struct {
 	Content   string              `json:"content"`
 }
 
-func (f MarcField) Add(subField string, value string) {
-	data := map[string]string{subField: value}
-	f.Subfields = append(f.Subfields, data)
+func (f MarcField) String() string {
+	return strings.Join(f.Strings(), " ")
 }
 
-func (f MarcField) Set(subFields []map[string]string) {
-	f.Subfields = subFields
+func (f MarcField) Strings() []string {
+	if f.Content != "" {
+		return []string{f.Content}
+	}
+	values := []string{}
+	for _, subfield := range f.Subfields {
+		values = append(values, subfield["content"])
+	}
+	return values
+}
+
+func (f MarcField) StringFor(tag string) string {
+	return strings.Join(f.StringsFor(tag), " ")
+}
+
+func (f MarcField) StringsFor(tag string) []string {
+	values := []string{}
+	for _, subfield := range f.Subfields {
+		if subfield["tag"] == tag {
+			values = append(values, subfield["content"])
+		}
+	}
+	return values
 }
 
 func (f MarcField) Tags() []string {
@@ -76,8 +96,8 @@ func (f MarcField) Values(tagsWanted []string, join bool) []string {
 	return values
 }
 
-func (f MarcField) ValuesNew(subsWanted []string) []MarcValue {
-	values := []MarcValue{}
+func (f MarcField) ValuesNew(subsWanted []string) MarcField {
+	newField := MarcField{MarcTag: f.MarcTag}
 	// We walk through the subfields in the Field because it is important
 	// to preserve the order of the values returned according to the order
 	// in which they are listed on the data, not on the spec.
@@ -86,13 +106,12 @@ func (f MarcField) ValuesNew(subsWanted []string) []MarcValue {
 			if fieldSub["tag"] == sub {
 				content := fieldSub["content"]
 				if content != "" {
-					value := MarcValue{MarcTag: f.MarcTag, Subfield: sub, Value: content}
-					values = append(values, value)
+					newField.Subfields = append(newField.Subfields, fieldSub)
 				}
 			}
 		}
 	}
-	return values
+	return newField
 }
 
 func (f MarcField) valuesNoJoin(subfields []string) []string {

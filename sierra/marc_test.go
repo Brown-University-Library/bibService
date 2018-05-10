@@ -1,7 +1,6 @@
 package sierra
 
 import (
-	"log"
 	"testing"
 )
 
@@ -25,28 +24,20 @@ func TestMarcValuesJoin(t *testing.T) {
 
 	fields := MarcFields{f1, f2, f3}
 
-	joinedValues := fields.MarcValuesByField("520ab", true)
-	if len(joinedValues) != 3 ||
-		joinedValues[0][0] != "A1 B1" ||
-		joinedValues[1][0] != "A2" ||
-		joinedValues[2][0] != "A3 B3" {
-		t.Errorf("Unexpected joinedValues: %#v", joinedValues)
+	values := fields.MarcValuesNew("520ab", true)
+	if len(values) != 3 ||
+		values[0].String() != "A1 B1" ||
+		values[1].String() != "A2" ||
+		values[2].String() != "A3 B3" {
+		t.Errorf("Unexpected values: %#v", values)
 	}
 
-	log.Printf("== JOINED ==")
-	log.Printf("OLD: %#v", fields.MarcValuesByField("520ab", true))
-	log.Printf("NEW: %#v", fields.MarcValuesByFieldNew("520ab", true))
-
-	log.Printf("== NOT JOINED == ")
-	log.Printf("OLD: %#v", fields.MarcValuesByField("520ab", false))
-	log.Printf("NEW: %#v", fields.MarcValuesByFieldNew("520ab", false))
-
-	values := fields.MarcValuesByField("520ab", false)
-	if len(values) != 3 ||
-		values[0][0] != "A1" || values[0][1] != "B1" ||
-		values[1][0] != "A2" ||
-		values[2][0] != "A3" || values[2][1] != "B3" {
-		t.Errorf("Unexpected values: %#v", values)
+	indValues := fields.MarcValuesNew("520ab", false)
+	if len(indValues) != 3 ||
+		indValues[0].StringFor("a") != "A1" || indValues[0].StringFor("b") != "B1" ||
+		indValues[1].StringFor("a") != "A2" || indValues[1].StringFor("b") != "" ||
+		indValues[2].StringFor("a") != "A3" || indValues[2].StringFor("b") != "B3" {
+		t.Errorf("Unexpected values: %#v", indValues)
 	}
 }
 
@@ -66,19 +57,18 @@ func TestMarcValuesJoinDuplicateTag(t *testing.T) {
 
 	// Tests joined values and makes sure the duplicate tag "a" in the second
 	// 520 is handled as expected.
-	joinedValues := fields.MarcValuesByField("520ab", true)
-	if len(joinedValues) != 2 ||
-		joinedValues[0][0] != "A1 B1" ||
-		joinedValues[1][0] != "A20 A21 B20" {
-		t.Errorf("Unexpected joinedValues: %#v", joinedValues)
+	values := fields.MarcValuesNew("520ab", true)
+	if len(values) != 2 ||
+		values[0].String() != "A1 B1" ||
+		values[1].String() != "A20 A21 B20" {
+		t.Errorf("Unexpected values: %#v", values)
 	}
 
 	// Tests not joined values and makes sure the duplicate tag "a" in the second
 	// 520 is handled as expected.
-	values := fields.MarcValuesByField("520ab", false)
 	if len(values) != 2 ||
-		values[0][0] != "A1" || values[0][1] != "B1" ||
-		values[1][0] != "A20" || values[1][1] != "A21" || values[1][2] != "B20" {
+		values[0].StringFor("a") != "A1" || values[0].StringFor("b") != "B1" ||
+		values[1].StringFor("a") != "A20 A21" || values[1].StringFor("b") != "B20" {
 		t.Errorf("Unexpected values: %#v", values)
 	}
 }
@@ -96,12 +86,12 @@ func TestTwoFields(t *testing.T) {
 
 	// Two fields should result in two results
 	// (even if they are the same MARC field).
-	values := fields.MarcValuesByField("100abc", true)
+	values := fields.MarcValuesNew("100abc", true)
 	if len(values) != 2 {
 		t.Errorf("Unexpected number of results: %d", len(values))
 	}
 
-	if !in(values[0], "a1") || !in(values[1], "a2") {
+	if values[0].String() != "a1" || values[1].String() != "a2" {
 		t.Errorf("Did not fetch the expected values: %#v", values)
 	}
 }
@@ -119,15 +109,15 @@ func TestFieldValuesJoined(t *testing.T) {
 	field2.Subfields = []map[string]string{ta2, tb2}
 
 	fields := MarcFields{field1, field2}
-	values := fields.MarcValuesByField("100abc", true)
+	values := fields.MarcValuesNew("100abc", true)
 
 	// Joins the values per-field when the spec has multiple
 	// subfields (e.g. "abc")
-	if !in(values[0], "X a X b X c") {
+	if values[0].String() != "X a X b X c" {
 		t.Errorf("Did not fetch the expected values: %#v", values)
 	}
 
-	if !in(values[1], "Y a Y b") {
+	if values[1].String() != "Y a Y b" {
 		t.Errorf("Did not fetch the expected values: %#v", values)
 	}
 }
@@ -149,8 +139,8 @@ func TestFieldValuesNotJoined(t *testing.T) {
 
 	// Does not join the values per-field when the spec has a single
 	// subfield (e.g. "t")
-	values := fields.MarcValuesByField("505t", true)
-	if values[0][0] != "T1" || values[1][0] != "T2" || values[2][0] != "T3" {
+	values := fields.MarcValuesNew("505t", true)
+	if values[0].String() != "T1" || values[1].String() != "T2" || values[2].String() != "T3" {
 		t.Errorf("Did not fetch the expected values: %#v", values)
 	}
 }
@@ -187,23 +177,17 @@ func TestVernacular(t *testing.T) {
 	fields := MarcFields{f700_1, f700_2, f880_1, f880_2}
 
 	// Make sure fetching the 700 picks up the associated 880 fields
-	values := fields.MarcValues("700ab", true)
-	if !in(values, "aaa bbb") || !in(values, "ccc") {
+	values := fields.MarcValuesNew("700ab", true)
+	if len(values) != 4 {
+		t.Errorf("Unexpected number of values found: %#v", values)
+	}
+
+	if values[0].String() != "aaa bbb" || values[1].String() != "ccc" {
 		t.Errorf("700 field values not found: %#v", values)
 	}
 
-	log.Printf("== {")
-	for i, fieldValues := range fields.MarcValuesByFieldNew("700ab", true) {
-		log.Printf("%d %#v", i, fieldValues)
-	}
-	log.Printf("} == ")
-
-	if !in(values, "AAA BBB") || !in(values, "CCC") {
+	if values[2].String() != "AAA BBB" || values[3].String() != "CCC" {
 		t.Errorf("880 field values not found: %#v", values)
-	}
-
-	if len(values) != 4 {
-		t.Errorf("Unexpected number of values found: %#v", values)
 	}
 }
 
@@ -215,15 +199,15 @@ func TestVernacularFreestanding(t *testing.T) {
 	f880.Subfields = []map[string]string{t6, ta, tb}
 	fields := MarcFields{f880}
 
-	vern := fields.VernacularValuesByField("700ab")
-	if vern[0][0] != "AAA BBB" {
+	vern := fields.VernacularValuesNew("700ab")
+	if vern[0].String() != "AAA BBB" {
 		t.Errorf("Did not pick up freestanding vernacular values")
 	}
 
 	// Make sure fetching the 700 picks up vernacular values
 	// even though there is no 700 field in the record.
-	values := fields.MarcValues("700ab", true)
-	if !in(values, "AAA BBB") {
+	values := fields.MarcValuesNew("700ab", true)
+	if values[0].String() != "AAA BBB" {
 		t.Errorf("Did not pick up freestanding vernacular values")
 	}
 }
@@ -258,7 +242,7 @@ func TestVernacularIncompleteLinking(t *testing.T) {
 	// Make sure the original value (700) is detected separated
 	// from the vernacular (880s). Each of the 880s should come
 	// as an independent field, hence len(all) == 4.
-	all := fields.MarcValuesByField("700abcd", true)
+	all := fields.MarcValuesNew("700abcd", true)
 	if len(all) != 4 {
 		t.Errorf("Invalid values detected: %#v", all)
 	}
@@ -266,7 +250,7 @@ func TestVernacularIncompleteLinking(t *testing.T) {
 	// Make sure all three vernacular values are picked up even if
 	// their linking is incomplete (notice how one of them matches
 	// "700-01" but not the other two only partially match "700")
-	vern := fields.VernacularValuesByField("700abcd")
+	vern := fields.VernacularValuesNew("700abcd")
 	if len(vern) != 3 {
 		t.Errorf("Invalid vernacular values detected: %#v", vern)
 	}
@@ -312,11 +296,11 @@ func TestTitleSeries(t *testing.T) {
 	// 	values[2] => 830av
 	// 	values[3] => 880av for 830av
 	specsStr := "490a:830adv"
-	values := fields.MarcValuesByField(specsStr, true)
-	if values[0][0] != "Rekishi bunka raiburarī ;" ||
-		values[1][0] != "歴史文化ライブラリー ;" ||
-		values[2][0] != "Rekishi bunka raiburarī ; 451" ||
-		values[3][0] != "歴史文化ライブラリー ; 451" {
+	values := fields.MarcValuesNew(specsStr, true)
+	if values[0].String() != "Rekishi bunka raiburarī ;" ||
+		values[1].String() != "歴史文化ライブラリー ;" ||
+		values[2].String() != "Rekishi bunka raiburarī ; 451" ||
+		values[3].String() != "歴史文化ライブラリー ; 451" {
 		t.Errorf("Unexpected values were found: %#v")
 	}
 }
