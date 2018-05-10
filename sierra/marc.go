@@ -115,7 +115,7 @@ func (allFields MarcFields) MarcValuesByField(specsStr string, join bool) [][]st
 	return values
 }
 
-func (allFields MarcFields) MarcValuesNew(specsStr string, join bool) []MarcField {
+func (allFields MarcFields) MarcValuesNew(specsStr string) []MarcField {
 	values := []MarcField{}
 	vernProcessed := []string{}
 	specs := NewFieldSpecs(specsStr)
@@ -141,7 +141,7 @@ func (allFields MarcFields) MarcValuesNew(specsStr string, join bool) []MarcFiel
 
 		// Gather the vernacular values for the fields
 		for _, field := range fields {
-			vernValues := allFields.vernacularValuesForNew(field, spec, join)
+			vernValues := allFields.vernacularValuesForNew(field, spec)
 			if len(vernValues) > 0 && !in(vernProcessed, field.MarcTag) {
 				vernProcessed = append(vernProcessed, field.MarcTag)
 				for _, fieldVernValues := range vernValues {
@@ -298,7 +298,7 @@ func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec,
 	return values
 }
 
-func (allFields MarcFields) vernacularValuesForNew(field MarcField, spec FieldSpec, join bool) []MarcField {
+func (allFields MarcFields) vernacularValuesForNew(field MarcField, spec FieldSpec) []MarcField {
 	values := []MarcField{}
 
 	// True if the field (say "700") has subfield with tag 6.
