@@ -112,7 +112,7 @@ func (bib Bib) AuthorDisplay() string {
 }
 
 func (bib Bib) AuthorVernacularDisplay() string {
-	vernAuthors := bib.VarFields.VernacularValuesNew("100abcdq:110abcd:111abcd")
+	vernAuthors := bib.VarFields.VernacularValues("100abcdq:110abcd:111abcd")
 	return strings.Join(toArray(vernAuthors, true, true), " ")
 }
 
@@ -154,29 +154,28 @@ func (bib Bib) UniformRelatedWorks() string {
 }
 
 func (bib Bib) relatedWorksForField(marcTag, authorSubs, titleSubs string) []UniformRelatedWorks {
+	works := []UniformRelatedWorks{}
 	authorSubfields := stringToArray(authorSubs)
 	titleSubfields := stringToArray(titleSubs)
-	works := []UniformRelatedWorks{}
-	for _, field := range bib.VarFields.getFields(marcTag) {
-		authors := field.Values(authorSubfields, true)
-		author := ""
-		if len(authors) > 0 {
-			author = trimDot(trimPunct(authors[0]))
-		}
-		titles := field.Values(titleSubfields, false)
-		if len(titles) > 0 {
+	spec := marcTag + authorSubs + titleSubs
+	for _, field := range bib.VarFields.MarcValuesNew(spec) {
+		authors := field.Values(authorSubfields)
+		author := trimDot(trimPunct(authors.String()))
+		titles := field.Values(titleSubfields)
+		if len(titles.Subfields) > 0 {
 			// TODO: Ask Jeanette why we don't process empty titles
 			// (but we process empty authors)
 			work := UniformRelatedWorks{Author: author}
 			query := ""
-			for i, t := range titles {
+			for i, titleStr := range titles.Strings() {
+				titleDisplay := addPeriod(titleStr)
 				if i == 0 {
-					query = addPeriod(t)
+					query = titleDisplay
 				} else {
-					query += " " + addPeriod(t)
+					query += " " + titleDisplay
 				}
 				title := UniformTitle{
-					Display: addPeriod(t),
+					Display: titleDisplay,
 					Query:   query,
 				}
 				work.Titles = append(work.Titles, title)
@@ -199,10 +198,10 @@ func (bib Bib) UniformTitles(newVersion bool) []UniformTitles {
 	}
 
 	titlesArray := []UniformTitles{}
-	for _, valuesForField := range bib.VarFields.MarcValuesNew(spec) {
+	for _, field := range bib.VarFields.MarcValuesNew(spec) {
 		titles := UniformTitles{}
 		query := ""
-		for _, sub := range valuesForField.Subfields {
+		for _, sub := range field.Subfields {
 			// TODO: revisit this. Is it OK to periods to vernacular values?
 			value := sub["content"]
 			display := addPeriod(value)
@@ -273,7 +272,7 @@ func (bib Bib) TitleSeries() []string {
 }
 
 func (bib Bib) TitleVernacularDisplay() string {
-	vernTitles := bib.VarFields.VernacularValuesNew("245apbfgkn")
+	vernTitles := bib.VarFields.VernacularValues("245apbfgkn")
 	return strings.Join(toArray(vernTitles, true, true), " ")
 }
 
@@ -393,20 +392,28 @@ func (bib Bib) PublishedDisplay() []string {
 }
 
 func (bib Bib) PublishedVernacularDisplay() string {
-	vernPub := bib.VarFields.VernacularValuesNew("260a")
+	vernPub := bib.VarFields.VernacularValues("260a")
 	return strings.Join(toArray(vernPub, false, true), " ")
 }
 
 func (bib Bib) IsDissertaion() bool {
-	subs := []string{"a", "c"}
-	for _, field := range bib.VarFields.getFields("502") {
-		for _, value := range field.Values(subs, true) {
-			if strings.Contains(strings.ToLower(value), "brown univ") {
-				return true
-			}
+	for _, field := range bib.VarFields.MarcValuesNew("502ac") {
+		value := field.String()
+		if strings.Contains(strings.ToLower(value), "brown univ") {
+			return true
 		}
 	}
 	return false
+	//
+	// subs := []string{"a", "c"}
+	// for _, field := range bib.VarFields.getFields("502") {
+	// 	for _, value := range field.Values(subs) {
+	// 		if strings.Contains(strings.ToLower(value), "brown univ") {
+	// 			return true
+	// 		}
+	// 	}
+	// }
+	// return false
 }
 
 func (bib Bib) PhysicalDisplay() []string {

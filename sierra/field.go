@@ -30,7 +30,7 @@ func (f MarcField) Strings() []string {
 
 func (f MarcField) StringsTrim() []string {
 	if f.Content != "" {
-		return []string{f.Content}
+		return []string{trimPunct(f.Content)}
 	}
 	values := []string{}
 	for _, subfield := range f.Subfields {
@@ -51,14 +51,6 @@ func (f MarcField) StringsFor(tag string) []string {
 		}
 	}
 	return values
-}
-
-func (f MarcField) Tags() []string {
-	tags := []string{}
-	for _, sub := range f.Subfields {
-		safeAppend(&tags, sub["tag"])
-	}
-	return tags
 }
 
 // Returns true if the field indicates that there are vernacular
@@ -91,15 +83,7 @@ func (f MarcField) IsVernacularFor(target string) bool {
 	return false
 }
 
-func (f MarcField) Values(tagsWanted []string, join bool) []string {
-	values := f.valuesNoJoin(tagsWanted)
-	if len(tagsWanted) > 1 && join {
-		return []string{strings.Join(values, " ")}
-	}
-	return values
-}
-
-func (f MarcField) ValuesNew(subsWanted []string) MarcField {
+func (f MarcField) Values(subsWanted []string) MarcField {
 	newField := MarcField{MarcTag: f.MarcTag}
 
 	// We walk through the subfields in the Field because it is important
@@ -116,22 +100,4 @@ func (f MarcField) ValuesNew(subsWanted []string) MarcField {
 		}
 	}
 	return newField
-}
-
-func (f MarcField) valuesNoJoin(subfields []string) []string {
-	values := []string{}
-	// We walk through the subfields in the Field because it is important
-	// to preserve the order of the values returned according to the order
-	// in which they are listed on the data, not on the spec.
-	for _, fieldSub := range f.Subfields {
-		for _, specSub := range subfields {
-			if fieldSub["tag"] == specSub {
-				content := fieldSub["content"]
-				if content != "" {
-					values = append(values, content)
-				}
-			}
-		}
-	}
-	return values
 }

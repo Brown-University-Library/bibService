@@ -388,11 +388,31 @@ func TestSubjects(t *testing.T) {
 	if subjects[0] != "A1 D1 T1" ||
 		subjects[1] != "A2 D2 T2" ||
 		subjects[2] != "A3 D3 T3" {
-		t.Errorf("Unexpected values found: x %#v", subjects)
+		t.Errorf("Unexpected values found (1/2): %#v", subjects)
 	}
 
 	// ...and that the "a" subfields are also picked on their own
 	if subjects[3] != "A1" || subjects[4] != "A2" || subjects[5] != "A3" {
-		t.Errorf("Unexpected values found: y %#v", subjects)
+		t.Errorf("Unexpected values found (2/2): %#v", subjects)
+	}
+}
+
+func TestIsDissertation(t *testing.T) {
+	a1 := map[string]string{"tag": "a", "content": "something Brown University something"}
+	c1 := map[string]string{"tag": "c", "content": "c"}
+	f1 := MarcField{MarcTag: "502"}
+	f1.Subfields = []map[string]string{a1, c1}
+	bib1 := Bib{VarFields: MarcFields{f1}}
+	if !bib1.IsDissertaion() {
+		t.Errorf("Failed to detect dissertation")
+	}
+
+	a2 := map[string]string{"tag": "a", "content": "a"}
+	d2 := map[string]string{"tag": "d", "content": "something Brown University something"}
+	f2 := MarcField{MarcTag: "502"}
+	f2.Subfields = []map[string]string{a2, d2}
+	bib2 := Bib{VarFields: MarcFields{f2}}
+	if bib2.IsDissertaion() {
+		t.Errorf("Incorrectly detected a dissertation")
 	}
 }

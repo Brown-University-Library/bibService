@@ -204,7 +204,7 @@ func TestVernacularFreestanding(t *testing.T) {
 	f880.Subfields = []map[string]string{t6, ta, tb}
 	fields := MarcFields{f880}
 
-	vern := fields.VernacularValuesNew("700ab")
+	vern := fields.VernacularValues("700ab")
 	if vern[0].String() != "AAA BBB" {
 		t.Errorf("Did not pick up freestanding vernacular values")
 	}
@@ -255,7 +255,7 @@ func TestVernacularIncompleteLinking(t *testing.T) {
 	// Make sure all three vernacular values are picked up even if
 	// their linking is incomplete (notice how one of them matches
 	// "700-01" but not the other two only partially match "700")
-	vern := fields.VernacularValuesNew("700abcd")
+	vern := fields.VernacularValues("700abcd")
 	if len(vern) != 3 {
 		t.Errorf("Invalid vernacular values detected: %#v", vern)
 	}
