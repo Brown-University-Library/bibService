@@ -150,9 +150,6 @@ func (bib Bib) UniformRelatedWorks() string {
 	}
 
 	str, _ := toJSON(works)
-	// log.Printf("STR %s {", bib.Bib())
-	// log.Printf("%s", str)
-	// log.Printf("}")
 	return str
 }
 
@@ -257,21 +254,22 @@ func (bib Bib) TitleT() []string {
 	// Traject does this via the "joinable?" flag that automatically
 	// treats single subfield specs as not joinable.
 	for _, f505t := range bib.VarFields.MarcValuesNew("505t") {
-		for _, value := range f505t.Strings() {
-			safeAppend(&titles, trimPunct(value))
-		}
+		arrayAppend(&titles, f505t.StringsTrim())
 	}
 	return titles
 }
 
 func (bib Bib) TitleSeries() []string {
-	specsStr := "400flnptv:410flnptv:411fklnptv:440ap:490a:800abcdflnpqt:"
+	specsStr := "400flnptv:410flnptv:411fklnptv:440ap:800abcdflnpqt:"
 	specsStr += "810tflnp:811tfklpsv:830adfklmnoprstv"
-	values := bib.VarFields.MarcValuesNew(specsStr)
-	for i, value := range values {
-		log.Printf("%d %#v", i, value)
+	series := bib.VarFields.MarcValuesNew(specsStr)
+	values := toArray(series, true, true)
+	// Special treatment for 490 because we want each "a" value
+	// on its own.
+	for _, f490a := range bib.VarFields.MarcValuesNew("490a") {
+		arrayAppend(&values, f490a.StringsTrim())
 	}
-	return toArray(values, true, true)
+	return values
 }
 
 func (bib Bib) TitleVernacularDisplay() string {
@@ -338,22 +336,29 @@ func (bib Bib) TopicFacet() []string {
 }
 
 func (bib Bib) Subjects() []string {
-	spec := "600a:600abcdefghjklmnopqrstuvxyz:"
-	spec += "610a:610abcdefghklmnoprstuvxyz:"
-	spec += "611a:611acdefghjklnpqstuvxyz:"
-	spec += "630a:630adefghklmnoprstvxyz:"
-	spec += "648a:648avxyz:"
-	spec += "650a:650abcdezxvy:"
-	spec += "651a:651aexzvy:"
-	spec += "653a:654abevyz:"
-	spec += "654a:655abvxyz:"
-	spec += "655a:656akvxyz:"
-	spec += "656a:657avxyz:"
-	spec += "657a:658ab:"
-	spec += "658a:662abcdefgh:"
-	spec += "690a:690abcdevxyz"
-	subjects := bib.VarFields.MarcValuesNew(spec)
-	return toArray(subjects, true, true)
+	spec := "600abcdefghjklmnopqrstuvxyz:"
+	spec += "610abcdefghklmnoprstuvxyz:"
+	spec += "611acdefghjklnpqstuvxyz:"
+	spec += "630adefghklmnoprstvxyz:"
+	spec += "648avxyz:"
+	spec += "650abcdezxvy:"
+	spec += "651aexzvy:"
+	spec += "654abevyz:"
+	spec += "655abvxyz:"
+	spec += "656akvxyz:"
+	spec += "657avxyz:"
+	spec += "658ab:"
+	spec += "662abcdefgh:"
+	spec += "690abcdevxyz"
+	values := bib.VarFields.MarcValuesNew(spec)
+	subjects := toArray(values, true, true)
+
+	specA := "600a:610a:611a:630a:648a:650a:651a:653a:"
+	specA += "654a:655a:656a:657a:658a:690a"
+	for _, field := range bib.VarFields.MarcValuesNew(specA) {
+		arrayAppend(&subjects, field.StringsTrim())
+	}
+	return subjects
 }
 
 func (bib Bib) BookplateCodes() []string {

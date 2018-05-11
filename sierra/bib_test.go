@@ -143,6 +143,29 @@ func TestTitleT(t *testing.T) {
 	}
 }
 
+func TestTitleSeries(t *testing.T) {
+	f1 := map[string]string{"tag": "f", "content": "F1"}
+	l1 := map[string]string{"tag": "l", "content": "P1"}
+	f400 := MarcField{MarcTag: "400"}
+	f400.Subfields = []map[string]string{f1, l1}
+
+	a1 := map[string]string{"tag": "a", "content": "A1"}
+	b1 := map[string]string{"tag": "B", "content": "B1"}
+	a2 := map[string]string{"tag": "a", "content": "A2"}
+	f490 := MarcField{MarcTag: "490"}
+	f490.Subfields = []map[string]string{a1, b1, a2}
+
+	fields := MarcFields{f400, f490}
+	bib := Bib{VarFields: fields}
+	titles := bib.TitleSeries()
+
+	if len(titles) != 3 ||
+		titles[0] != "F1 P1" ||
+		titles[1] != "A1" || titles[2] != "A2" {
+		t.Errorf("Unexpected titles found: %#v", titles)
+	}
+}
+
 func TestRegionFacet(t *testing.T) {
 	z1 := map[string]string{"content": "usa", "tag": "z"}
 	z2 := map[string]string{"content": "ri", "tag": "z"}
@@ -334,5 +357,42 @@ func TestFormatCode(t *testing.T) {
 	code := bib.FormatCode()
 	if code != "BV" {
 		t.Errorf("Failed to detect a video: %#v", code)
+	}
+}
+
+func TestSubjects(t *testing.T) {
+	// Sample record b1000980
+	a1 := map[string]string{"tag": "a", "content": "A1"}
+	d1 := map[string]string{"tag": "d", "content": "D1"}
+	t1 := map[string]string{"tag": "t", "content": "T1"}
+	f1 := MarcField{MarcTag: "600"}
+	f1.Subfields = []map[string]string{a1, d1, t1}
+
+	a2 := map[string]string{"tag": "a", "content": "A2"}
+	d2 := map[string]string{"tag": "d", "content": "D2"}
+	t2 := map[string]string{"tag": "t", "content": "T2"}
+	f2 := MarcField{MarcTag: "600"}
+	f2.Subfields = []map[string]string{a2, d2, t2}
+
+	v3 := map[string]string{"tag": "6", "content": "600-02/$1"}
+	a3 := map[string]string{"tag": "a", "content": "A3"}
+	d3 := map[string]string{"tag": "d", "content": "D3"}
+	t3 := map[string]string{"tag": "t", "content": "T3"}
+	f3 := MarcField{MarcTag: "880"}
+	f3.Subfields = []map[string]string{v3, a3, d3, t3}
+
+	fields := MarcFields{f1, f2, f3}
+	bib := Bib{VarFields: fields}
+	subjects := bib.Subjects()
+	// Make sure the subjects are picked correctly...
+	if subjects[0] != "A1 D1 T1" ||
+		subjects[1] != "A2 D2 T2" ||
+		subjects[2] != "A3 D3 T3" {
+		t.Errorf("Unexpected values found: x %#v", subjects)
+	}
+
+	// ...and that the "a" subfields are also picked on their own
+	if subjects[3] != "A1" || subjects[4] != "A2" || subjects[5] != "A3" {
+		t.Errorf("Unexpected values found: y %#v", subjects)
 	}
 }

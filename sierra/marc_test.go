@@ -52,31 +52,30 @@ func TestMarcValuesJoinDuplicateTag(t *testing.T) {
 	f2.Subfields = []map[string]string{a20, a21, b20}
 
 	fields := MarcFields{f1, f2}
-
-	// Values for a field are joined when using requesting more than one
-	// subfield from the field (e.g. 520ab)
 	values := fields.MarcValuesNew("520ab")
-	if len(values) != 2 || values[0].String() != "A1 B1" || values[1].String() != "A20 A21 B20" {
+	if len(values) != 2 {
+		t.Errorf("Unexpected number of values: %d, %#v", len(values), values)
+	}
+
+	// Values for each field are joined appropriately
+	if values[0].String() != "A1 B1" || values[1].String() != "A20 A21 B20" {
 		t.Errorf("Unexpected values: %#v", values)
 	}
 
-	// We can access each of the individual subfields
+	// We can access each of the individual subfields on each field
 	// but notice that the two "a" subfields are joined ("A20 A21")
-	if len(values) != 2 ||
-		values[0].StringFor("a") != "A1" || values[0].StringFor("b") != "B1" ||
+	if values[0].StringFor("a") != "A1" || values[0].StringFor("b") != "B1" ||
 		values[1].StringFor("a") != "A20 A21" || values[1].StringFor("b") != "B20" {
 		t.Errorf("Unexpected values: %#v", values)
 	}
 
-	// // When requesting a single subfield (e.g. 520a) the duplicate values
-	// // in the field are automatically NOT joined.
-	// values = fields.MarcValuesNew("520a")
-	// for i, value := range values {
-	// 	log.Printf("%d, %#v", i, value.StringsFor("a"))
-	// }
-	// if len(values) != 3 {
-	// 	t.Errorf("Unexpected values (requesting single subfield): %d, %#v", len(values), values)
-	// }
+	// We can access each of the individual values
+	field1 := values[0].Strings()
+	field2 := values[1].Strings()
+	if field1[0] != "A1" || field1[1] != "B1" ||
+		field2[0] != "A20" || field2[1] != "A21" || field2[2] != "B20" {
+		t.Errorf("Unexpected values (requesting single subfield): %#v", values)
+	}
 }
 
 func TestTwoFields(t *testing.T) {
@@ -262,7 +261,7 @@ func TestVernacularIncompleteLinking(t *testing.T) {
 	}
 }
 
-func TestTitleSeries(t *testing.T) {
+func TestVernacularSubfields(t *testing.T) {
 	// real sample: https://search.library.brown.edu/catalog/b8060352
 
 	// field 490

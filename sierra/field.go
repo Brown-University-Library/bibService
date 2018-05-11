@@ -5,13 +5,12 @@ import (
 )
 
 type MarcField struct {
-	FieldTag        string              `json:"fieldTag"`
-	MarcTag         string              `json:"marcTag"`
-	Ind1            string              `json:"ind1"`
-	Ind2            string              `json:"ind2"`
-	Subfields       []map[string]string `json:"subfields"`
-	Content         string              `json:"content"`
-	SubsIndependent bool
+	FieldTag  string              `json:"fieldTag"`
+	MarcTag   string              `json:"marcTag"`
+	Ind1      string              `json:"ind1"`
+	Ind2      string              `json:"ind2"`
+	Subfields []map[string]string `json:"subfields"`
+	Content   string              `json:"content"`
 }
 
 func (f MarcField) String() string {
@@ -25,6 +24,17 @@ func (f MarcField) Strings() []string {
 	values := []string{}
 	for _, subfield := range f.Subfields {
 		values = append(values, subfield["content"])
+	}
+	return values
+}
+
+func (f MarcField) StringsTrim() []string {
+	if f.Content != "" {
+		return []string{f.Content}
+	}
+	values := []string{}
+	for _, subfield := range f.Subfields {
+		values = append(values, trimPunct(subfield["content"]))
 	}
 	return values
 }
@@ -91,10 +101,6 @@ func (f MarcField) Values(tagsWanted []string, join bool) []string {
 
 func (f MarcField) ValuesNew(subsWanted []string) MarcField {
 	newField := MarcField{MarcTag: f.MarcTag}
-
-	// When requesting a single subfield we want to keep the
-	// subfield values individual (e.g. don't concatenate them)
-	newField.SubsIndependent = len(subsWanted) == 1
 
 	// We walk through the subfields in the Field because it is important
 	// to preserve the order of the values returned according to the order
