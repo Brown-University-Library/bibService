@@ -217,7 +217,7 @@ func (model BibModel) SolrDocFromFile(fileName string) (SolrDoc, error) {
 	if bibs.Total == 0 {
 		return SolrDoc{}, err
 	}
-	return NewSolrDoc(bibs.Entries[0])
+	return NewSolrDoc(bibs.Entries[0]), nil
 }
 
 func (model BibModel) bibsUpdatedPaginated(fromDate, toDate string, page int, includeItems bool) (sierra.Bibs, error) {

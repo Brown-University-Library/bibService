@@ -163,10 +163,13 @@ func solrDoc(resp http.ResponseWriter, req *http.Request) {
 	log.Printf("Fetching SolrDoc for %s", bib)
 	model := bibModel.New(settings)
 	bibs, err := model.GetBib(bib)
-	var doc bibModel.SolrDoc
+	if err != nil {
+		renderJSON(resp, nil, err, "bibController")
+		return
+	}
 	if len(bibs.Entries) > 0 {
-		doc, err = bibModel.NewSolrDoc(bibs.Entries[0])
-		renderJSON(resp, doc, err, "solrDoc")
+		doc := bibModel.NewSolrDoc(bibs.Entries[0])
+		renderJSON(resp, doc, nil, "solrDoc")
 	} else {
 		renderJSON(resp, "", errors.New("no bibs returned"), "solrDoc")
 	}

@@ -49,9 +49,9 @@ type SolrDoc struct {
 	BookplateCodeSS    []string `json:"bookplate_code_ss"`
 }
 
-func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
+func NewSolrDoc(bib sierra.Bib) SolrDoc {
 	doc := SolrDoc{}
-	doc.Id = []string{"b" + bib.Id}
+	doc.Id = []string{bib.Bib()}
 	doc.UpdatedDt = []string{bib.UpdatedDate() + "T00:00:00Z"}
 	doc.IsbnT = bib.Isbn()
 	doc.IssnT = bib.Issn()
@@ -70,8 +70,6 @@ func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 
 	if year, ok := bib.PublicationYear(); ok {
 		doc.PublicationYear = []int{year}
-	} else {
-		doc.PublicationYear = []int{}
 	}
 
 	doc.TitleT = bib.TitleT()
@@ -108,5 +106,5 @@ func NewSolrDoc(bib sierra.Bib) (SolrDoc, error) {
 
 	doc.BookplateCodeFacet = bib.BookplateCodes()
 	doc.BookplateCodeSS = doc.BookplateCodeFacet
-	return doc, nil
+	return doc
 }
