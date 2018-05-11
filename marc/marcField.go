@@ -4,6 +4,7 @@ import (
 	"strings"
 )
 
+// MarcField represents a single MARC field in a MARC record.
 type MarcField struct {
 	FieldTag  string              `json:"fieldTag"`
 	MarcTag   string              `json:"marcTag"`
@@ -13,10 +14,12 @@ type MarcField struct {
 	Content   string              `json:"content"`
 }
 
+// Returns the value of the subfields as a string.
 func (f MarcField) String() string {
 	return strings.Join(f.Strings(), " ")
 }
 
+// Returns the value of the subfields as an array of strings.
 func (f MarcField) Strings() []string {
 	if f.Content != "" {
 		return []string{f.Content}
@@ -28,6 +31,8 @@ func (f MarcField) Strings() []string {
 	return values
 }
 
+// Returns the value of the subfields as an array of strings.
+// Trims the values (via TrimPunct) before adding them to the array.
 func (f MarcField) StringsTrim() []string {
 	if f.Content != "" {
 		return []string{TrimPunct(f.Content)}
@@ -39,10 +44,12 @@ func (f MarcField) StringsTrim() []string {
 	return values
 }
 
+// Returns the values in the field as a string for the given tag.
 func (f MarcField) StringFor(tag string) string {
 	return strings.Join(f.StringsFor(tag), " ")
 }
 
+// Returns the values in the field as an array of strings for the given tag.
 func (f MarcField) StringsFor(tag string) []string {
 	values := []string{}
 	for _, subfield := range f.Subfields {
@@ -83,6 +90,7 @@ func (f MarcField) IsVernacularFor(target string) bool {
 	return false
 }
 
+// Returns a field with only the values of the subfields requested.
 func (f MarcField) Values(subsWanted []string) MarcField {
 	newField := MarcField{MarcTag: f.MarcTag}
 

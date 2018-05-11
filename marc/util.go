@@ -56,6 +56,8 @@ func toInt(str string) int {
 	return int(num)
 }
 
+// Removes punctuation from a string. The algorithm to remove punctuation
+// is tailored for common issues in MARC data.
 func TrimPunct(str string) string {
 	if str == "" {
 		return str
@@ -67,6 +69,8 @@ func TrimPunct(str string) string {
 	return cleanStr
 }
 
+// Calculates the publication year from a value that is from the MARC 008
+// in a MARC record.
 func PubYear008(f008 string, tolerance int) (int, bool) {
 	// Logic stolen from
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb

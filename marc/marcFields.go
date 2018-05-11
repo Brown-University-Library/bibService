@@ -4,6 +4,9 @@ import (
 	"strings"
 )
 
+// MarcFields represents a MARC record as an array of MarcField.
+// All the information of the MARC record is meant to be in MarcFields
+// (including the Leader)
 type MarcFields []MarcField
 
 // ContentForFieldTag() returns the content for the Field Tag that matches
