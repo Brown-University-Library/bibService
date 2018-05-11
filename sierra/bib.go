@@ -3,8 +3,6 @@ package sierra
 import (
 	"bibService/marc"
 	"encoding/json"
-	"fmt"
-	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -37,10 +35,14 @@ type Bib struct {
 	hasMarc         string              // does not come on the Sierra response
 }
 
-func (b Bib) log(show bool, msg string) {
-	if show {
-		log.Printf(fmt.Sprintf("%s", msg))
-	}
+var re4Digit *regexp.Regexp
+var reOclc *regexp.Regexp
+
+func init() {
+	re4Digit = regexp.MustCompile("(\\d{4})")
+	// RegEx based on Traject's marc21.rb
+	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
+	reOclc = regexp.MustCompile("\\s*(ocm|ocn|on|\\(OCoLC\\))(\\d+)")
 }
 
 func (b Bib) Bib() string {
@@ -69,7 +71,7 @@ func (bib Bib) AuthorsAddlT() []string {
 
 func (bib Bib) AuthorsT() []string {
 	if !bib.HasMarc() {
-		value := marc.TrimPunct(bib.VarFields.GetFieldTagContent("a"))
+		value := marc.TrimPunct(bib.VarFields.ContentForFieldTag("a"))
 		return []string{value}
 	}
 	fields := bib.VarFields.FieldValues("100abcdq:110abcd:111abcdeq")
@@ -101,7 +103,7 @@ func (bib Bib) AuthorFacet() []string {
 
 func (bib Bib) AuthorDisplay() string {
 	if !bib.HasMarc() {
-		return marc.TrimPunct(bib.VarFields.GetFieldTagContent("a"))
+		return marc.TrimPunct(bib.VarFields.ContentForFieldTag("a"))
 	}
 
 	fields := bib.VarFields.FieldValues("100abcdq:110abcd:111abcd")
@@ -233,7 +235,7 @@ func (bib Bib) UniformTitlesDisplay(newVersion bool) string {
 
 func (bib Bib) TitleDisplay() string {
 	if !bib.HasMarc() {
-		return marc.TrimPunct(bib.VarFields.GetFieldTagContent("t"))
+		return marc.TrimPunct(bib.VarFields.ContentForFieldTag("t"))
 	}
 	fields := bib.VarFields.FieldValues("245apbfgkn")
 	titles := fields.ToArray()
@@ -281,7 +283,7 @@ func (bib Bib) TitleVernacularDisplay() string {
 
 func (bib Bib) SortableTitle() string {
 	if !bib.HasMarc() {
-		return strings.TrimSpace(marc.TrimPunct(bib.VarFields.GetFieldTagContent("t")))
+		return strings.TrimSpace(marc.TrimPunct(bib.VarFields.ContentForFieldTag("t")))
 	}
 
 	// Logic stolen from
@@ -384,7 +386,7 @@ func (bib Bib) Isbn() []string {
 
 func (bib Bib) PublishedDisplay() []string {
 	if !bib.HasMarc() {
-		value := marc.TrimPunct(bib.VarFields.GetFieldTagContent("p"))
+		value := marc.TrimPunct(bib.VarFields.ContentForFieldTag("p"))
 		return []string{value}
 	}
 
@@ -409,16 +411,6 @@ func (bib Bib) IsDissertaion() bool {
 		}
 	}
 	return false
-	//
-	// subs := []string{"a", "c"}
-	// for _, field := range bib.VarFields.getFields("502") {
-	// 	for _, value := range field.Values(subs) {
-	// 		if strings.Contains(strings.ToLower(value), "brown univ") {
-	// 			return true
-	// 		}
-	// 	}
-	// }
-	// return false
 }
 
 func (bib Bib) PhysicalDisplay() []string {
@@ -455,8 +447,7 @@ func (bib Bib) PublicationYear() (int, bool) {
 func (bib Bib) pubYear260() (int, bool) {
 	fields := bib.VarFields.FieldValues("260c")
 	for _, value := range fields.ToArrayTrim() {
-		re := regexp.MustCompile("(\\d{4})")
-		year := re.FindString(value)
+		year := re4Digit.FindString(value)
 		return toIntTry(year)
 	}
 	return 0, false
@@ -476,15 +467,12 @@ func (bib Bib) OclcNum() []string {
 }
 
 func cleanOclcNum(value string) string {
-	// RegEx based on Traject's marc21.rb
-	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
-	re := regexp.MustCompile("\\s*(ocm|ocn|on|\\(OCoLC\\))(\\d+)")
 	if strings.HasPrefix(value, "ssj") {
 		// TODO: Ask Jeanette about these values
 		// eg. b4643178, b4643180
 		return ""
 	}
-	return strings.TrimSpace(re.ReplaceAllString(value, "$2"))
+	return strings.TrimSpace(reOclc.ReplaceAllString(value, "$2"))
 }
 
 func (bib Bib) UpdatedDate() string {

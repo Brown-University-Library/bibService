@@ -1,13 +1,47 @@
 package marc
 
 import (
-	"math"
 	"strings"
 )
 
 type MarcFields []MarcField
 
-// MarcValues returns an array of MarcField with the values for
+// ContentForFieldTag() returns the content for the Field Tag that matches
+// the request tag. Notice that the FieldTag is different from the MARC tag.
+// FieldTag seems to be a Sierra-specific thing. It is used to represent
+// MARC records with minimal data (i.e. records with a minimal skeleton of
+// data that is not in the MARC fields)
+func (fields MarcFields) ContentForFieldTag(fieldTag string) string {
+	for _, field := range fields {
+		if field.FieldTag == fieldTag {
+			return field.Content
+		}
+	}
+	return ""
+}
+
+// ControlValue() returns the value as-is for a given MARC tag.
+// This is meant to be used with MARC control fields (001-009)
+// that have a single value. If more than one value is found they
+// will be joined.
+func (fields MarcFields) ControlValue(marcTag string) string {
+	values := fields.ControlValues(marcTag)
+	return strings.Join(values, " ")
+}
+
+// ControlValue() returns an array with the values as-is for a
+// given MARC tag. This is meant to be used with MARC control
+// fields (001-009).
+func (fields MarcFields) ControlValues(marcTag string) []string {
+	// TODO should I validate the marcTag is >= "001" && <= "009"
+	values := []string{}
+	for _, field := range fields.GetFields(marcTag) {
+		values = append(values, field.Content)
+	}
+	return values
+}
+
+// MarcValues() returns an array of MarcField with the values for
 // the fields and subfields indicated in `specsStr`. The result
 // includes one row for each field where data was found.
 //
@@ -15,16 +49,16 @@ type MarcFields []MarcField
 // field and "abc" represents the subfields. For example: "100ac" means
 // field "100" subfields "a" and "c". Multiple fields can be indicated
 // separated by colons, for example: "100ac:210f".
-func (allFields MarcFields) FieldValues(specsStr string) MarcFields {
+func (fields MarcFields) FieldValues(specsStr string) MarcFields {
 	values := []MarcField{}
 	vernProcessed := []string{}
 	specs := NewFieldSpecs(specsStr)
 	for _, spec := range specs {
 
-		fields := allFields.GetFields(spec.MarcTag)
+		fieldsFound := fields.GetFields(spec.MarcTag)
 		if len(spec.Subfields) == 0 {
 			// Get the value directly
-			for _, field := range fields {
+			for _, field := range fieldsFound {
 				if field.Content != "" {
 					value := MarcField{MarcTag: spec.MarcTag, Content: field.Content}
 					values = append(values, value)
@@ -34,14 +68,14 @@ func (allFields MarcFields) FieldValues(specsStr string) MarcFields {
 		}
 
 		// Process the subfields
-		for _, field := range fields {
+		for _, field := range fieldsFound {
 			fieldValues := field.Values(spec.Subfields)
 			values = append(values, fieldValues)
 		}
 
 		// Gather the vernacular values for the fields
-		for _, field := range fields {
-			vernValues := allFields.vernacularValuesFor(field, spec)
+		for _, field := range fieldsFound {
+			vernValues := fields.vernacularValuesFor(field, spec)
 			if len(vernValues) > 0 && !in(vernProcessed, field.MarcTag) {
 				vernProcessed = append(vernProcessed, field.MarcTag)
 				for _, fieldVernValues := range vernValues {
@@ -56,7 +90,7 @@ func (allFields MarcFields) FieldValues(specsStr string) MarcFields {
 	// record (e.g. we might have an 880 for field 505, but no 505
 	// value in the record, or an 880 for field 490a but no 409a
 	// on the record)
-	f880s := allFields.GetFields("880")
+	f880s := fields.GetFields("880")
 	for _, spec := range specs {
 		for _, f880 := range f880s {
 			if f880.IsVernacularFor(spec.MarcTag) && !in(vernProcessed, spec.MarcTag) {
@@ -69,36 +103,59 @@ func (allFields MarcFields) FieldValues(specsStr string) MarcFields {
 	return values
 }
 
-// Returns the value as-is. No trimming of spaces or punctuation.
-// This is very important for control fields.
-func (allFields MarcFields) ControlValue(marcTag string) string {
-	values := allFields.ControlValues(marcTag)
-	return strings.Join(values, " ")
-}
-
-// Returns the values as-is. No trimming of spaces or punctuation.
-// This is very important for control fields.
-func (allFields MarcFields) ControlValues(marcTag string) []string {
-	// TODO should I validate the marcTag is >= "001" && <= "009"
-	values := []string{}
-	for _, field := range allFields.GetFields(marcTag) {
-		values = append(values, field.Content)
+// GetFields() returns an array of MarcField for those that match the
+// given MARC tag.
+func (fields MarcFields) GetFields(marcTag string) MarcFields {
+	fieldsFound := MarcFields{}
+	for _, field := range fields {
+		if field.MarcTag == marcTag {
+			fieldsFound = append(fieldsFound, field)
+		}
 	}
-	return values
+	return fieldsFound
 }
 
+// HasMarc() returns true if there any of fields has a MARC tag
+func (fields MarcFields) HasMarc() bool {
+	for _, field := range fields {
+		if field.MarcTag != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// Leader() returns the content of the lader field tag.
+// This is very Sierra-specific.
+func (fields MarcFields) Leader() string {
+	for _, field := range fields {
+		if field.FieldTag == "_" {
+			return field.Content
+		}
+	}
+	return ""
+}
+
+// ToArray() returns an string array with the values in the fields.
+// Values will be trimmed and subfields will be joined.
 func (fields MarcFields) ToArray() []string {
 	return fields.toArray(true, true)
 }
 
+// ToArray() returns an string array with the values in the fields.
+// Values will be trimmed but subfields will not be joined.
 func (fields MarcFields) ToArrayTrim() []string {
 	return fields.toArray(true, false)
 }
 
+// ToArray() returns an string array with the values in the fields.
+// Values will not be trimmed but subfields will be joined.
 func (fields MarcFields) ToArrayJoin() []string {
 	return fields.toArray(false, true)
 }
 
+// ToArray() returns an string array with the values in the fields.
+// No trimming or joining is performed on the values.
 func (fields MarcFields) ToArrayRaw() []string {
 	return fields.toArray(false, false)
 }
@@ -128,13 +185,15 @@ func (fields MarcFields) toArray(trim, join bool) []string {
 	return array
 }
 
-func (allFields MarcFields) VernacularValues(specsStr string) MarcFields {
+// VernacularValues() returns an array of MarcFields with the fields that
+// are the vernacular representation for the given specs.
+func (fields MarcFields) VernacularValues(specsStr string) MarcFields {
 	// Notice that we loop through the 880 fields rather than checking if
 	// each of the indicated fields have vernacular values because sometimes
 	// the actual field does not point to the 880 but the 880 always points
 	// to the original field.
 	values := MarcFields{}
-	f880s := allFields.GetFields("880")
+	f880s := fields.GetFields("880")
 	for _, spec := range NewFieldSpecs(specsStr) {
 		for _, f880 := range f880s {
 			if f880.IsVernacularFor(spec.MarcTag) {
@@ -148,44 +207,7 @@ func (allFields MarcFields) VernacularValues(specsStr string) MarcFields {
 	return values
 }
 
-func (allFields MarcFields) Leader() string {
-	for _, field := range allFields {
-		if field.FieldTag == "_" {
-			return field.Content
-		}
-	}
-	return ""
-}
-
-func (allFields MarcFields) HasMarc() bool {
-	for _, field := range allFields {
-		if field.MarcTag != "" {
-			return true
-		}
-	}
-	return false
-}
-
-func (allFields MarcFields) GetFieldTagContent(fieldTag string) string {
-	for _, field := range allFields {
-		if field.FieldTag == fieldTag {
-			return field.Content
-		}
-	}
-	return ""
-}
-
-func (allFields MarcFields) GetFields(marcTag string) MarcFields {
-	fields := MarcFields{}
-	for _, field := range allFields {
-		if field.MarcTag == marcTag {
-			fields = append(fields, field)
-		}
-	}
-	return fields
-}
-
-func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec) MarcFields {
+func (fields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec) MarcFields {
 	values := MarcFields{}
 
 	// True if the field (say "700") has subfield with tag 6.
@@ -204,7 +226,7 @@ func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec)
 	tag6 := field.MarcTag // "700" (we ignore the "-04" since it's not always used in the referenced "880".)
 
 	// Process the fields indicated in target (e.g. 880s)...
-	for _, vernField := range allFields.GetFields(marcTag) {
+	for _, vernField := range fields.GetFields(marcTag) {
 		// ...is this the one that corresponds with the tag 6
 		// value that we calculated (e.g. 700-04)
 		if vernField.IsVernacularFor(tag6) {
@@ -213,67 +235,4 @@ func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec)
 		}
 	}
 	return values
-}
-
-func PubYear008(f008 string, tolerance int) (int, bool) {
-	// Logic stolen from
-	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
-	//
-	// e.g. "760629c19749999ne tr pss o   0   a0eng  cas   "
-	if len(f008) < 11 {
-		return 0, false
-	}
-
-	dateType := f008[6:7]
-	if dateType == "n" {
-		// unknown
-		return 0, false
-	}
-
-	var dateStr1, dateStr2 string
-	dateStr1 = f008[7:11]
-	if len(f008) >= 15 {
-		dateStr2 = f008[11:15]
-	} else {
-		dateStr2 = dateStr1
-	}
-
-	if dateType == "q" {
-		// questionable
-		date1 := toInt(strings.Replace(dateStr1, "u", "0", -1))
-		date2 := toInt(strings.Replace(dateStr2, "u", "9", -1))
-		if (date2 > date1) && ((date2 - date1) <= tolerance) {
-			return (date2 + date1) / 2, true
-		} else {
-			return 0, false
-		}
-	}
-
-	var dateStr string
-	if dateType == "p" {
-		// use the oldest date
-		if dateStr1 <= dateStr2 || toInt(dateStr2) == 0 {
-			dateStr = dateStr1
-		} else {
-			dateStr = dateStr2
-		}
-	} else if dateType == "r" && toInt(dateStr2) != 0 {
-		dateStr = dateStr2 // use the second date
-	} else {
-		dateStr = dateStr1 // use the first date
-	}
-
-	uCount := strings.Count(dateStr, "u")
-	// should we replace with "9" if we pick dateStr2 ?
-	date := toInt(strings.Replace(dateStr, "u", "0", -1))
-	if uCount > 0 && date != 0 {
-		delta := int(math.Pow10(uCount))
-		if delta <= tolerance {
-			return date + (delta / 2), true
-		}
-	} else if date != 0 {
-		return date, true
-	}
-
-	return 0, false
 }

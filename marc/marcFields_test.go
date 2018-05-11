@@ -335,4 +335,32 @@ func TestPubYear008X(t *testing.T) {
 	if ok {
 		t.Errorf("Should have returned false on questionable date %s (%v, %v)", test4)
 	}
+
+	if _, ok = PubYear008("too short", 15); ok {
+		t.Errorf("Failed to detect too short value")
+	}
+
+	if _, ok = PubYear008("760629n1974", 15); ok {
+		t.Errorf("Failed to detect unknown date type")
+	}
+
+	if year, _ = PubYear008("760629c1974", 15); year != 1974 {
+		t.Errorf("Did not pick year 1: %d", year)
+	}
+
+	if year, _ = PubYear008("760629q19741980", 15); year != 1977 {
+		t.Errorf("Did not calculate year from year 1 and 2: %d", year)
+	}
+
+	if year, _ = PubYear008("760629p19741980", 15); year != 1974 {
+		t.Errorf("Did not use the oldest date: %d", year)
+	}
+
+	if year, _ = PubYear008("760629p19991980", 15); year != 1980 {
+		t.Errorf("Did not use the oldest date: %d", year)
+	}
+
+	if year, _ = PubYear008("760629r19801982", 15); year != 1982 {
+		t.Errorf("Did not use the second date: %d", year)
+	}
 }
