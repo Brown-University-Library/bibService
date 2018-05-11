@@ -13,8 +13,8 @@ type MarcFields []MarcField
 //
 // See MarcValuesByField() for more information.
 func (allFields MarcFields) MarcValue(specsStr string, trim bool) string {
-	values := allFields.MarcValuesByField(specsStr, true)
-	return valuesToString(values, trim)
+	values := allFields.MarcValuesNew(specsStr)
+	return strings.Join(toArray(values, trim, true), " ")
 }
 
 // MarcValues returns an array of strings with the values for the fields
@@ -23,98 +23,20 @@ func (allFields MarcFields) MarcValue(specsStr string, trim bool) string {
 //
 // See MarcValuesByField() for more information.
 func (allFields MarcFields) MarcValues(specsStr string, trim bool) []string {
-	values := allFields.MarcValuesByField(specsStr, true)
-	return valuesToArray(values, trim, false)
+	// values := allFields.MarcValuesByField(specsStr, true)
+	// return valuesToArray(values, trim, false)
+	values := allFields.MarcValuesNew(specsStr)
+	return toArray(values, trim, false)
 }
 
-// MarcValuesByField returns an array of string arrays with the values for
-// the fields and subfields indicated in `specsStr`. The result includes
-// one row for each field where data was found.
+// MarcValues returns an array of MarcField with the values for
+// the fields and subfields indicated in `specsStr`. The result
+// includes one row for each field where data was found.
 //
 // `specsStr` is something in the form "nnnabc" where "nnn" is the tag of the
 // field and "abc" represents the subfields. For example: "100ac" means
 // field "100" subfields "a" and "c". Multiple fields can be indicated
 // separated by colons, for example: "100ac:210f".
-//
-// `join` controls whether the subfield values for a given field will be
-// concatenated together. For example when given the spec "520ab" and the
-// following data:
-//
-//		520 a "A1"
-//		    b "B1"
-//		520 a "A2"
-//		    a "A3"
-//		    b "B3"
-//
-// When "join = true" it gives [0]["A1 B1"], [1]["A2 A3 B3"]
-// notice "A1 B1" and "A2 A3 B3" where concatenated.
-//
-// When "join = false" it gives [0]["A1", "B1"], [2]["A2", "A3", "B3"]
-// notice that none of the subfields are concatenated.
-func (allFields MarcFields) MarcValuesByField(specsStr string, join bool) [][]string {
-	values := [][]string{}
-	vernProcessed := []string{}
-	specs := NewFieldSpecs(specsStr)
-	for _, spec := range specs {
-
-		fields := allFields.getFields(spec.MarcTag)
-		if len(spec.Subfields) == 0 {
-			// Get the value directly
-			for _, field := range fields {
-				if field.Content != "" {
-					values = append(values, []string{field.Content})
-				}
-			}
-			continue
-		}
-
-		// Process the subfields
-		for _, field := range fields {
-			subValues := field.Values(spec.Subfields, join)
-			fieldValues := []string{}
-			for _, subValue := range subValues {
-				safeAppend(&fieldValues, subValue)
-			}
-			if len(fieldValues) > 0 {
-				values = append(values, fieldValues)
-			}
-		}
-
-		// Gather the vernacular values for the fields
-		for _, field := range fields {
-			vernValues := allFields.vernacularValuesFor(field, spec, join)
-			if len(vernValues) > 0 {
-				vernProcessed = append(vernProcessed, field.MarcTag)
-				for _, fieldValues := range vernValues {
-					values = append(values, fieldValues)
-				}
-			}
-		}
-	}
-
-	// Process the 880 fields again this time to gather vernacular
-	// values for fields in the spec that have no values in the
-	// record (e.g. we might have an 880 for field 505, but no 505
-	// value in the record, or an 880 for field 490a but no 409a
-	// on the record)
-	f880s := allFields.getFields("880")
-	for _, spec := range specs {
-		for _, f880 := range f880s {
-			if f880.IsVernacularFor(spec.MarcTag) && !in(vernProcessed, spec.MarcTag) {
-				fieldValues := []string{}
-				for _, vernValue := range f880.Values(spec.Subfields, join) {
-					safeAppend(&fieldValues, vernValue)
-				}
-				if len(fieldValues) > 0 {
-					values = append(values, fieldValues)
-				}
-			}
-		}
-	}
-
-	return values
-}
-
 func (allFields MarcFields) MarcValuesNew(specsStr string) []MarcField {
 	values := []MarcField{}
 	vernProcessed := []string{}
@@ -183,29 +105,6 @@ func (allFields MarcFields) ControlValues(marcTag string) []string {
 	values := []string{}
 	for _, field := range allFields.getFields(marcTag) {
 		values = append(values, field.Content)
-	}
-	return values
-}
-
-func (allFields MarcFields) VernacularValuesByField(specsStr string) [][]string {
-	// Notice that we loop through the 880 fields rather than checking if
-	// each of the indicated fields have vernacular values because sometimes
-	// the actual field does not point to the 880 but the 880 always points
-	// to the original field.
-	values := [][]string{}
-	f880s := allFields.getFields("880")
-	for _, spec := range NewFieldSpecs(specsStr) {
-		for _, f880 := range f880s {
-			if f880.IsVernacularFor(spec.MarcTag) {
-				vernValues := []string{}
-				for _, value := range f880.Values(spec.Subfields, true) {
-					safeAppend(&vernValues, value)
-				}
-				if len(vernValues) > 0 {
-					values = append(values, vernValues)
-				}
-			}
-		}
 	}
 	return values
 }

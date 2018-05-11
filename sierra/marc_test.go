@@ -53,22 +53,30 @@ func TestMarcValuesJoinDuplicateTag(t *testing.T) {
 
 	fields := MarcFields{f1, f2}
 
-	// Tests joined values and makes sure the duplicate tag "a" in the second
-	// 520 is handled as expected.
+	// Values for a field are joined when using requesting more than one
+	// subfield from the field (e.g. 520ab)
 	values := fields.MarcValuesNew("520ab")
-	if len(values) != 2 ||
-		values[0].String() != "A1 B1" ||
-		values[1].String() != "A20 A21 B20" {
+	if len(values) != 2 || values[0].String() != "A1 B1" || values[1].String() != "A20 A21 B20" {
 		t.Errorf("Unexpected values: %#v", values)
 	}
 
-	// Tests not joined values and makes sure the duplicate tag "a" in the second
-	// 520 is handled as expected.
+	// We can access each of the individual subfields
+	// but notice that the two "a" subfields are joined ("A20 A21")
 	if len(values) != 2 ||
 		values[0].StringFor("a") != "A1" || values[0].StringFor("b") != "B1" ||
 		values[1].StringFor("a") != "A20 A21" || values[1].StringFor("b") != "B20" {
 		t.Errorf("Unexpected values: %#v", values)
 	}
+
+	// // When requesting a single subfield (e.g. 520a) the duplicate values
+	// // in the field are automatically NOT joined.
+	// values = fields.MarcValuesNew("520a")
+	// for i, value := range values {
+	// 	log.Printf("%d, %#v", i, value.StringsFor("a"))
+	// }
+	// if len(values) != 3 {
+	// 	t.Errorf("Unexpected values (requesting single subfield): %d, %#v", len(values), values)
+	// }
 }
 
 func TestTwoFields(t *testing.T) {

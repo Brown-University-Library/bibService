@@ -124,6 +124,7 @@ func TestTitleT(t *testing.T) {
 	fields := MarcFields{field}
 	bib := Bib{VarFields: fields}
 	titles := bib.TitleT()
+	// when multiple subfields are present, value is joined
 	if titles[0] != "a1. p1. p2" {
 		t.Errorf("Unexpected titles found: %#v", titles)
 	}
@@ -136,6 +137,7 @@ func TestTitleT(t *testing.T) {
 	fields = MarcFields{field}
 	bib = Bib{VarFields: fields}
 	titles = bib.TitleT()
+	// when a single subfield is repeated, values are NOT joines
 	if titles[0] != "t1" || titles[1] != "t2" || titles[2] != "t3" {
 		t.Errorf("Unexpected titles found: %#v", titles)
 	}
