@@ -1,4 +1,4 @@
-package sierra
+package marc
 
 import (
 	"strings"
@@ -30,11 +30,11 @@ func (f MarcField) Strings() []string {
 
 func (f MarcField) StringsTrim() []string {
 	if f.Content != "" {
-		return []string{trimPunct(f.Content)}
+		return []string{TrimPunct(f.Content)}
 	}
 	values := []string{}
 	for _, subfield := range f.Subfields {
-		values = append(values, trimPunct(subfield["content"]))
+		values = append(values, TrimPunct(subfield["content"]))
 	}
 	return values
 }

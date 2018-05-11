@@ -1,6 +1,7 @@
 package sierra
 
 import (
+	"bibService/marc"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -31,7 +32,7 @@ type Bib struct {
 	NormTitle       string              `json:"normTitle,omitempty"`
 	NormAuthor      string              `json:"normAuthor,omitempty"`
 	Locations       []map[string]string `json:"locations,omitempty"`
-	VarFields       MarcFields          `json:"varFields,omitempty"`
+	VarFields       marc.MarcFields     `json:"varFields,omitempty"`
 	Items           []Item              // does not come on the Sierra response
 	hasMarc         string              // does not come on the Sierra response
 }
@@ -48,7 +49,7 @@ func (b Bib) Bib() string {
 
 func (bib Bib) HasMarc() bool {
 	if bib.hasMarc == "" {
-		if bib.VarFields.hasMarc() {
+		if bib.VarFields.HasMarc() {
 			bib.hasMarc = "Y"
 		} else {
 			bib.hasMarc = "N"
@@ -68,7 +69,7 @@ func (bib Bib) AuthorsAddlT() []string {
 
 func (bib Bib) AuthorsT() []string {
 	if !bib.HasMarc() {
-		value := trimPunct(bib.VarFields.getFieldTagContent("a"))
+		value := marc.TrimPunct(bib.VarFields.GetFieldTagContent("a"))
 		return []string{value}
 	}
 	fields := bib.VarFields.FieldValues("100abcdq:110abcd:111abcdeq")
@@ -85,7 +86,7 @@ func (bib Bib) AuthorsAddlDisplay() []string {
 func (bib Bib) AuthorFacet() []string {
 	specStr := "100abcd:110ab:111ab:700abcd:711ab"
 
-	f710 := bib.VarFields.getFields("710")
+	f710 := bib.VarFields.GetFields("710")
 	if len(f710) > 0 {
 		// If there is more than one 710 field this will only check the first one.
 		// TODO: handle multi 710 fields
@@ -100,7 +101,7 @@ func (bib Bib) AuthorFacet() []string {
 
 func (bib Bib) AuthorDisplay() string {
 	if !bib.HasMarc() {
-		return trimPunct(bib.VarFields.getFieldTagContent("a"))
+		return marc.TrimPunct(bib.VarFields.GetFieldTagContent("a"))
 	}
 
 	fields := bib.VarFields.FieldValues("100abcdq:110abcd:111abcd")
@@ -161,7 +162,7 @@ func (bib Bib) relatedWorksForField(marcTag, authorSubs, titleSubs string) []Uni
 	spec := marcTag + authorSubs + titleSubs
 	for _, field := range bib.VarFields.FieldValues(spec) {
 		authors := field.Values(authorSubfields)
-		author := trimDot(trimPunct(authors.String()))
+		author := trimDot(marc.TrimPunct(authors.String()))
 		titles := field.Values(titleSubfields)
 		if len(titles.Subfields) > 0 {
 			// TODO: Ask Jeanette why we don't process empty titles
@@ -232,7 +233,7 @@ func (bib Bib) UniformTitlesDisplay(newVersion bool) string {
 
 func (bib Bib) TitleDisplay() string {
 	if !bib.HasMarc() {
-		return trimPunct(bib.VarFields.getFieldTagContent("t"))
+		return marc.TrimPunct(bib.VarFields.GetFieldTagContent("t"))
 	}
 	fields := bib.VarFields.FieldValues("245apbfgkn")
 	titles := fields.ToArray()
@@ -280,7 +281,7 @@ func (bib Bib) TitleVernacularDisplay() string {
 
 func (bib Bib) SortableTitle() string {
 	if !bib.HasMarc() {
-		return strings.TrimSpace(trimPunct(bib.VarFields.getFieldTagContent("t")))
+		return strings.TrimSpace(marc.TrimPunct(bib.VarFields.GetFieldTagContent("t")))
 	}
 
 	// Logic stolen from
@@ -295,15 +296,15 @@ func (bib Bib) SortableTitle() string {
 	}
 
 	sortTitle := titles[0].String()
-	fields := bib.VarFields.getFields("245")
+	fields := bib.VarFields.GetFields("245")
 	if len(fields) > 0 {
-		ind2 := toInt(fields[0].Ind2)
-		if ind2 > 0 && len(sortTitle) > ind2 {
+		ind2, ok := toIntTry(fields[0].Ind2)
+		if ok && len(sortTitle) > ind2 {
 			// drop the prefix as noted in the second indicator
 			sortTitle = sortTitle[ind2:len(sortTitle)]
 		}
 	}
-	return strings.TrimSpace(trimPunct(sortTitle))
+	return strings.TrimSpace(marc.TrimPunct(sortTitle))
 }
 
 /*
@@ -383,7 +384,7 @@ func (bib Bib) Isbn() []string {
 
 func (bib Bib) PublishedDisplay() []string {
 	if !bib.HasMarc() {
-		value := trimPunct(bib.VarFields.getFieldTagContent("p"))
+		value := marc.TrimPunct(bib.VarFields.GetFieldTagContent("p"))
 		return []string{value}
 	}
 
@@ -440,7 +441,7 @@ func (bib Bib) PublicationYear() (int, bool) {
 	tolerance := 15
 
 	f008 := bib.VarFields.ControlValue("008")
-	year, ok := pubYear008(f008, tolerance)
+	year, ok := marc.PubYear008(f008, tolerance)
 	if !ok {
 		year, ok = bib.pubYear260()
 	}
@@ -594,7 +595,7 @@ func (bib Bib) RegionFacet() []string {
 	values := []string{}
 	f043s := bib.VarFields.FieldValues("043a")
 	for _, value := range f043s.ToArrayTrim() {
-		code := trimPunct(value)
+		code := marc.TrimPunct(value)
 		code = strings.TrimRight(code, "-")
 		name := regionName(code)
 		safeAppend(&values, name)
@@ -602,7 +603,7 @@ func (bib Bib) RegionFacet() []string {
 
 	f6XXs := bib.VarFields.FieldValues("651a:691a")
 	for _, value := range f6XXs.ToArrayTrim() {
-		trimVal := trimPunct(value)
+		trimVal := marc.TrimPunct(value)
 		safeAppend(&values, trimVal)
 	}
 
@@ -619,8 +620,8 @@ func (bib Bib) RegionFacetZFields() []string {
 		if len(regions) == 2 {
 			// Asumme the first one is the parent region of the second one
 			// e.g. v[0] := "USA", v[1] := "Rhode Island (USA)"
-			parentRegion := trimPunct(regions[0])
-			region := trimPunct(regions[1]) + " (" + parentRegion + ")"
+			parentRegion := marc.TrimPunct(regions[0])
+			region := marc.TrimPunct(regions[1]) + " (" + parentRegion + ")"
 			safeAppend(&values, parentRegion)
 			safeAppend(&values, region)
 		} else {

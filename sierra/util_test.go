@@ -21,29 +21,3 @@ func TestSafeAppend(t *testing.T) {
 		t.Errorf("Appended empty value")
 	}
 }
-
-func TestTrimPunct(t *testing.T) {
-	if trimPunct("one hundred/ ") != "one hundred" {
-		t.Errorf("Failed to remove trailing slash")
-	}
-
-	if trimPunct("one.") != "one" {
-		t.Errorf("Failed to remove trailing period")
-	}
-
-	if trimPunct("ct.") != "ct." {
-		t.Errorf("Removed trailing period")
-	}
-
-	if trimPunct("[hello") != "hello" {
-		t.Errorf("Failed to remove square bracket")
-	}
-
-	if trimPunct("[hello]") != "hello" {
-		t.Errorf("Failed to remove square brackets")
-	}
-
-	if trimPunct("[hello [world]]") != "[hello [world]]" {
-		t.Errorf("Removed square brackets")
-	}
-}

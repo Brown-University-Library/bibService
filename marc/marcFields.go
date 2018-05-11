@@ -1,4 +1,4 @@
-package sierra
+package marc
 
 import (
 	"math"
@@ -21,7 +21,7 @@ func (allFields MarcFields) FieldValues(specsStr string) MarcFields {
 	specs := NewFieldSpecs(specsStr)
 	for _, spec := range specs {
 
-		fields := allFields.getFields(spec.MarcTag)
+		fields := allFields.GetFields(spec.MarcTag)
 		if len(spec.Subfields) == 0 {
 			// Get the value directly
 			for _, field := range fields {
@@ -56,7 +56,7 @@ func (allFields MarcFields) FieldValues(specsStr string) MarcFields {
 	// record (e.g. we might have an 880 for field 505, but no 505
 	// value in the record, or an 880 for field 490a but no 409a
 	// on the record)
-	f880s := allFields.getFields("880")
+	f880s := allFields.GetFields("880")
 	for _, spec := range specs {
 		for _, f880 := range f880s {
 			if f880.IsVernacularFor(spec.MarcTag) && !in(vernProcessed, spec.MarcTag) {
@@ -81,7 +81,7 @@ func (allFields MarcFields) ControlValue(marcTag string) string {
 func (allFields MarcFields) ControlValues(marcTag string) []string {
 	// TODO should I validate the marcTag is >= "001" && <= "009"
 	values := []string{}
-	for _, field := range allFields.getFields(marcTag) {
+	for _, field := range allFields.GetFields(marcTag) {
 		values = append(values, field.Content)
 	}
 	return values
@@ -111,7 +111,7 @@ func (fields MarcFields) toArray(trim, join bool) []string {
 			// the returning array
 			value := field.String()
 			if trim {
-				value = trimPunct(value)
+				value = TrimPunct(value)
 			}
 			safeAppend(&array, value)
 		} else {
@@ -119,7 +119,7 @@ func (fields MarcFields) toArray(trim, join bool) []string {
 			// as a single element in the returning arrray
 			for _, value := range field.Strings() {
 				if trim {
-					value = trimPunct(value)
+					value = TrimPunct(value)
 				}
 				safeAppend(&array, value)
 			}
@@ -134,7 +134,7 @@ func (allFields MarcFields) VernacularValues(specsStr string) MarcFields {
 	// the actual field does not point to the 880 but the 880 always points
 	// to the original field.
 	values := MarcFields{}
-	f880s := allFields.getFields("880")
+	f880s := allFields.GetFields("880")
 	for _, spec := range NewFieldSpecs(specsStr) {
 		for _, f880 := range f880s {
 			if f880.IsVernacularFor(spec.MarcTag) {
@@ -157,7 +157,7 @@ func (allFields MarcFields) Leader() string {
 	return ""
 }
 
-func (allFields MarcFields) hasMarc() bool {
+func (allFields MarcFields) HasMarc() bool {
 	for _, field := range allFields {
 		if field.MarcTag != "" {
 			return true
@@ -166,7 +166,7 @@ func (allFields MarcFields) hasMarc() bool {
 	return false
 }
 
-func (allFields MarcFields) getFieldTagContent(fieldTag string) string {
+func (allFields MarcFields) GetFieldTagContent(fieldTag string) string {
 	for _, field := range allFields {
 		if field.FieldTag == fieldTag {
 			return field.Content
@@ -175,7 +175,7 @@ func (allFields MarcFields) getFieldTagContent(fieldTag string) string {
 	return ""
 }
 
-func (allFields MarcFields) getFields(marcTag string) MarcFields {
+func (allFields MarcFields) GetFields(marcTag string) MarcFields {
 	fields := MarcFields{}
 	for _, field := range allFields {
 		if field.MarcTag == marcTag {
@@ -204,7 +204,7 @@ func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec)
 	tag6 := field.MarcTag // "700" (we ignore the "-04" since it's not always used in the referenced "880".)
 
 	// Process the fields indicated in target (e.g. 880s)...
-	for _, vernField := range allFields.getFields(marcTag) {
+	for _, vernField := range allFields.GetFields(marcTag) {
 		// ...is this the one that corresponds with the tag 6
 		// value that we calculated (e.g. 700-04)
 		if vernField.IsVernacularFor(tag6) {
@@ -215,7 +215,7 @@ func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec)
 	return values
 }
 
-func pubYear008(f008 string, tolerance int) (int, bool) {
+func PubYear008(f008 string, tolerance int) (int, bool) {
 	// Logic stolen from
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	//
