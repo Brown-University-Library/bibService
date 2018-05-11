@@ -27,26 +27,26 @@ type SolrDoc struct {
 	PublishedVernDisplay         []string `json:"published_vern_display"`
 	PhysicalDisplay              []string `json:"physical_display"`
 	AbstractDisplay              []string `json:"abstract_display"`
-	// y                            []string `json:"toc_display"`
-	// y                            []string `json:"toc_970_display"`
-	PublicationYear    []int    `json:"pub_date"`
-	UrlFullTextDisplay []string `json:"url_fulltext_display"`
-	UrlSupplDisplay    []string `json:"url_suppl_display"`
-	Online             []bool   `json:"online_b"`
-	AccessFacet        []string `json:"access_facet"`
-	Format             []string `json:"format"`
-	AuthorFacet        []string `json:"author_facet"`
-	LanguageFacet      []string `json:"language_facet"`
-	BuildingFacet      []string `json:"building_facet"`
-	LocationCodeT      []string `json:"location_code_t"`
-	RegionFacet        []string `json:"region_facet"`
-	TopicFacet         []string `json:"topic_facet"`
-	SubjectsT          []string `json:"subject_t"`
-	CallNumbers        []string `json:"callnumber_t"`
-	// y                            []string `json:"text"`
-	// y                            []string `json:"marc_display"`
-	BookplateCodeFacet []string `json:"bookplate_code_facet"`
-	BookplateCodeSS    []string `json:"bookplate_code_ss"`
+	TableOfContents              []string `json:"toc_display"`
+	TableOfContents970           []string `json:"toc_970_display"`
+	PublicationYear              []int    `json:"pub_date"`
+	UrlFullTextDisplay           []string `json:"url_fulltext_display"`
+	UrlSupplDisplay              []string `json:"url_suppl_display"`
+	Online                       []bool   `json:"online_b"`
+	AccessFacet                  []string `json:"access_facet"`
+	Format                       []string `json:"format"`
+	AuthorFacet                  []string `json:"author_facet"`
+	LanguageFacet                []string `json:"language_facet"`
+	BuildingFacet                []string `json:"building_facet"`
+	LocationCodeT                []string `json:"location_code_t"`
+	RegionFacet                  []string `json:"region_facet"`
+	TopicFacet                   []string `json:"topic_facet"`
+	SubjectsT                    []string `json:"subject_t"`
+	CallNumbers                  []string `json:"callnumber_t"`
+	Text                         []string `json:"text"`
+	MarcDisplay                  []string `json:"marc_display"`
+	BookplateCodeFacet           []string `json:"bookplate_code_facet"`
+	BookplateCodeSS              []string `json:"bookplate_code_ss"`
 }
 
 func NewSolrDoc(bib sierra.Bib) SolrDoc {
@@ -106,5 +106,11 @@ func NewSolrDoc(bib sierra.Bib) SolrDoc {
 
 	doc.BookplateCodeFacet = bib.BookplateCodes()
 	doc.BookplateCodeSS = doc.BookplateCodeFacet
+
+	doc.TableOfContents = bib.TableOfContents()
+	doc.TableOfContents970 = bib.TableOfContents970()
+	doc.Text = bib.Text()
+	doc.MarcDisplay = bib.MarcDisplay()
+
 	return doc
 }

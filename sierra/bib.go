@@ -618,3 +618,22 @@ func (bib Bib) RegionFacetZFields() []string {
 	}
 	return values
 }
+
+/*
+ * TODO
+ */
+func (bib Bib) TableOfContents() []string {
+	return []string{}
+}
+
+func (bib Bib) TableOfContents970() []string {
+	return []string{}
+}
+
+func (bib Bib) Text() []string {
+	return []string{}
+}
+
+func (bib Bib) MarcDisplay() []string {
+	return []string{}
+}
