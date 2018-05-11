@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Bib represents a bibliographic record.
+// Bib represents a Sierra bibliographic record.
 // Notice that Bib records in Sierra don't include "item" data but this
 // struct can accomodate them.
 type Bib struct {

@@ -2,31 +2,9 @@ package sierra
 
 import (
 	"encoding/json"
-	"log"
-	"math"
 	"strconv"
 	"strings"
 )
-
-func arrayToPages(values []string, pageSize int) [][]string {
-	pages := [][]string{}
-	total := len(values)
-	pageCount := total / pageSize
-	if math.Mod(float64(total), float64(pageSize)) != 0 {
-		pageCount += 1
-	}
-	for i := 0; i < pageCount; i++ {
-		start := i * pageSize
-		end := start + pageSize
-		if end > total {
-			end = total
-		}
-		log.Printf("from: %d to %d", start, end)
-		page := values[start:end]
-		pages = append(pages, page)
-	}
-	return pages
-}
 
 func toIntTry(str string) (int, bool) {
 	num, err := strconv.ParseInt(str, 10, 64)
