@@ -43,8 +43,6 @@ type Sierra struct {
 	SessionFile   string
 }
 
-func x() { log.Printf("dummy") }
-
 func NewSierra(apiUrl, keySecret, sessionFile string) Sierra {
 	s := Sierra{
 		ApiUrl:      apiUrl,
