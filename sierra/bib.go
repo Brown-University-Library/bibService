@@ -61,8 +61,8 @@ func (bib Bib) HasMarc() bool {
  * Author functions
  */
 func (bib Bib) AuthorsAddlT() []string {
-	values := bib.VarFields.MarcValuesNew("700aqbcd:710abcd:711aqbcde:810abc:811aqdce")
-	authors := toArray(values, false, true)
+	fields := bib.VarFields.FieldValues("700aqbcd:710abcd:711aqbcde:810abc:811aqdce")
+	authors := fields.ToArrayJoin()
 	return dedupArray(authors)
 }
 
@@ -71,14 +71,14 @@ func (bib Bib) AuthorsT() []string {
 		value := trimPunct(bib.VarFields.getFieldTagContent("a"))
 		return []string{value}
 	}
-	values := bib.VarFields.MarcValuesNew("100abcdq:110abcd:111abcdeq")
-	authors := toArray(values, true, true)
+	fields := bib.VarFields.FieldValues("100abcdq:110abcd:111abcdeq")
+	authors := fields.ToArray()
 	return dedupArray(authors)
 }
 
 func (bib Bib) AuthorsAddlDisplay() []string {
-	values := bib.VarFields.MarcValuesNew("700abcd:710ab:711ab")
-	authors := toArray(values, true, true)
+	fields := bib.VarFields.FieldValues("700abcd:710ab:711ab")
+	authors := fields.ToArray()
 	return dedupArray(authors)
 }
 
@@ -94,8 +94,8 @@ func (bib Bib) AuthorFacet() []string {
 		}
 	}
 
-	values := bib.VarFields.MarcValuesNew(specStr)
-	return toArray(values, true, true)
+	fields := bib.VarFields.FieldValues(specStr)
+	return fields.ToArray()
 }
 
 func (bib Bib) AuthorDisplay() string {
@@ -103,8 +103,8 @@ func (bib Bib) AuthorDisplay() string {
 		return trimPunct(bib.VarFields.getFieldTagContent("a"))
 	}
 
-	values := bib.VarFields.MarcValuesNew("100abcdq:110abcd:111abcd")
-	authors := toArray(values, true, true)
+	fields := bib.VarFields.FieldValues("100abcdq:110abcd:111abcd")
+	authors := fields.ToArray()
 	if len(authors) > 0 {
 		return authors[0]
 	}
@@ -112,12 +112,13 @@ func (bib Bib) AuthorDisplay() string {
 }
 
 func (bib Bib) AuthorVernacularDisplay() string {
-	vernAuthors := bib.VarFields.VernacularValues("100abcdq:110abcd:111abcd")
-	return strings.Join(toArray(vernAuthors, true, true), " ")
+	fields := bib.VarFields.VernacularValues("100abcdq:110abcd:111abcd")
+	authors := fields.ToArray()
+	return strings.Join(authors, " ")
 }
 
 func (bib Bib) AbstractDisplay() string {
-	values := bib.VarFields.MarcValuesNew("520a")
+	values := bib.VarFields.FieldValues("520a")
 	if len(values) > 0 {
 		return values[0].String()
 	}
@@ -158,7 +159,7 @@ func (bib Bib) relatedWorksForField(marcTag, authorSubs, titleSubs string) []Uni
 	authorSubfields := stringToArray(authorSubs)
 	titleSubfields := stringToArray(titleSubs)
 	spec := marcTag + authorSubs + titleSubs
-	for _, field := range bib.VarFields.MarcValuesNew(spec) {
+	for _, field := range bib.VarFields.FieldValues(spec) {
 		authors := field.Values(authorSubfields)
 		author := trimDot(trimPunct(authors.String()))
 		titles := field.Values(titleSubfields)
@@ -198,7 +199,7 @@ func (bib Bib) UniformTitles(newVersion bool) []UniformTitles {
 	}
 
 	titlesArray := []UniformTitles{}
-	for _, field := range bib.VarFields.MarcValuesNew(spec) {
+	for _, field := range bib.VarFields.FieldValues(spec) {
 		titles := UniformTitles{}
 		query := ""
 		for _, sub := range field.Subfields {
@@ -233,8 +234,8 @@ func (bib Bib) TitleDisplay() string {
 	if !bib.HasMarc() {
 		return trimPunct(bib.VarFields.getFieldTagContent("t"))
 	}
-	values := bib.VarFields.MarcValuesNew("245apbfgkn")
-	titles := toArray(values, true, true)
+	fields := bib.VarFields.FieldValues("245apbfgkn")
+	titles := fields.ToArray()
 	if len(titles) > 0 {
 		return titles[0]
 	}
@@ -245,14 +246,14 @@ func (bib Bib) TitleT() []string {
 	specsStr := "100tflnp:110tflnp:111tfklpsv:130adfklmnoprst:210ab:222ab:"
 	specsStr += "240adfklmnoprs:242abnp:246abnp:247abnp:"
 	specsStr += "700fklmtnoprsv:710fklmorstv:711fklpt:730adfklmnoprstv:740ap"
-	values := bib.VarFields.MarcValuesNew(specsStr)
-	titles := toArray(values, true, true)
+	fields := bib.VarFields.FieldValues(specsStr)
+	titles := fields.ToArray()
 
 	// We handle table of content titles (505t) separate because we want
 	// each of them as a single item rather then combined.
 	// Traject does this via the "joinable?" flag that automatically
 	// treats single subfield specs as not joinable.
-	for _, f505t := range bib.VarFields.MarcValuesNew("505t") {
+	for _, f505t := range bib.VarFields.FieldValues("505t") {
 		arrayAppend(&titles, f505t.StringsTrim())
 	}
 	return titles
@@ -261,19 +262,20 @@ func (bib Bib) TitleT() []string {
 func (bib Bib) TitleSeries() []string {
 	specsStr := "400flnptv:410flnptv:411fklnptv:440ap:800abcdflnpqt:"
 	specsStr += "810tflnp:811tfklpsv:830adfklmnoprstv"
-	series := bib.VarFields.MarcValuesNew(specsStr)
-	values := toArray(series, true, true)
+	fields := bib.VarFields.FieldValues(specsStr)
+	titles := fields.ToArray()
 	// Special treatment for 490 because we want each "a" value
 	// on its own.
-	for _, f490a := range bib.VarFields.MarcValuesNew("490a") {
-		arrayAppend(&values, f490a.StringsTrim())
+	for _, f490a := range bib.VarFields.FieldValues("490a") {
+		arrayAppend(&titles, f490a.StringsTrim())
 	}
-	return values
+	return titles
 }
 
 func (bib Bib) TitleVernacularDisplay() string {
-	vernTitles := bib.VarFields.VernacularValues("245apbfgkn")
-	return strings.Join(toArray(vernTitles, true, true), " ")
+	fields := bib.VarFields.VernacularValues("245apbfgkn")
+	titles := fields.ToArray()
+	return strings.Join(titles, " ")
 }
 
 func (bib Bib) SortableTitle() string {
@@ -287,7 +289,7 @@ func (bib Bib) SortableTitle() string {
 
 	// Use MarcValuesByField because we don't want to trim the value prematurely.
 	// We trim at the end _after_ processing ind2.
-	titles := bib.VarFields.MarcValuesNew("245ab")
+	titles := bib.VarFields.FieldValues("245ab")
 	if len(titles) == 0 || titles[0].String() == "" {
 		return ""
 	}
@@ -325,13 +327,13 @@ func (bib Bib) BuildingFacets() []string {
 }
 
 func (bib Bib) CallNumbers() []string {
-	values := bib.VarFields.MarcValuesNew("050ab:090ab:091ab:092ab:096ab:099ab")
-	return toArray(values, true, true)
+	fields := bib.VarFields.FieldValues("050ab:090ab:091ab:092ab:096ab:099ab")
+	return fields.ToArray()
 }
 
 func (bib Bib) TopicFacet() []string {
-	values := bib.VarFields.MarcValuesNew("650a:690a")
-	return toArray(values, true, false)
+	fields := bib.VarFields.FieldValues("650a:690a")
+	return fields.ToArrayTrim()
 }
 
 func (bib Bib) Subjects() []string {
@@ -349,12 +351,12 @@ func (bib Bib) Subjects() []string {
 	spec += "658ab:"
 	spec += "662abcdefgh:"
 	spec += "690abcdevxyz"
-	values := bib.VarFields.MarcValuesNew(spec)
-	subjects := toArray(values, true, true)
+	fields := bib.VarFields.FieldValues(spec)
+	subjects := fields.ToArray()
 
 	specA := "600a:610a:611a:630a:648a:650a:651a:653a:"
 	specA += "654a:655a:656a:657a:658a:690a"
-	for _, field := range bib.VarFields.MarcValuesNew(specA) {
+	for _, field := range bib.VarFields.FieldValues(specA) {
 		arrayAppend(&subjects, field.StringsTrim())
 	}
 	return subjects
@@ -369,13 +371,14 @@ func (bib Bib) BookplateCodes() []string {
 	for _, item := range bib.Items {
 		arrayAppend(&values, item.BookplateCodes())
 	}
-	arrayAppend(&values, bib.VarFields.MarcValues("935a", true))
+	fields := bib.VarFields.FieldValues("935a")
+	arrayAppend(&values, fields.ToArrayTrim())
 	return values
 }
 
 func (bib Bib) Isbn() []string {
-	values := bib.VarFields.MarcValuesNew("020a:020z")
-	return toArray(values, true, true)
+	fields := bib.VarFields.FieldValues("020a:020z")
+	return fields.ToArray()
 }
 
 func (bib Bib) PublishedDisplay() []string {
@@ -387,17 +390,18 @@ func (bib Bib) PublishedDisplay() []string {
 	// More than one "a" subfield can exists on the same 260
 	// therefore we can get a single field with multiple values.
 	// Here we break each value on its own.
-	fieldValues := bib.VarFields.MarcValuesNew("260a")
-	return toArray(fieldValues, true, false)
+	fields := bib.VarFields.FieldValues("260a")
+	return fields.ToArrayTrim()
 }
 
 func (bib Bib) PublishedVernacularDisplay() string {
-	vernPub := bib.VarFields.VernacularValues("260a")
-	return strings.Join(toArray(vernPub, false, true), " ")
+	fields := bib.VarFields.VernacularValues("260a")
+	published := fields.ToArrayJoin()
+	return strings.Join(published, " ")
 }
 
 func (bib Bib) IsDissertaion() bool {
-	for _, field := range bib.VarFields.MarcValuesNew("502ac") {
+	for _, field := range bib.VarFields.FieldValues("502ac") {
 		value := field.String()
 		if strings.Contains(strings.ToLower(value), "brown univ") {
 			return true
@@ -418,7 +422,7 @@ func (bib Bib) IsDissertaion() bool {
 
 func (bib Bib) PhysicalDisplay() []string {
 	displays := []string{}
-	for _, field := range bib.VarFields.MarcValuesNew("300abcefg:530abcd") {
+	for _, field := range bib.VarFields.FieldValues("300abcefg:530abcd") {
 		display := addPeriod(field.String())
 		displays = append(displays, display)
 	}
@@ -426,8 +430,8 @@ func (bib Bib) PhysicalDisplay() []string {
 }
 
 func (bib Bib) Issn() []string {
-	values := bib.VarFields.MarcValuesNew("022a:022l:022y:773x:774x:776x")
-	return toArray(values, true, true)
+	fields := bib.VarFields.FieldValues("022a:022l:022y:773x:774x:776x")
+	return fields.ToArray()
 }
 
 func (bib Bib) PublicationYear() (int, bool) {
@@ -448,10 +452,13 @@ func (bib Bib) PublicationYear() (int, bool) {
 }
 
 func (bib Bib) pubYear260() (int, bool) {
-	f260c := bib.VarFields.MarcValue("260c", true)
-	re := regexp.MustCompile("(\\d{4})")
-	year := re.FindString(f260c)
-	return toIntTry(year)
+	fields := bib.VarFields.FieldValues("260c")
+	for _, value := range fields.ToArrayTrim() {
+		re := regexp.MustCompile("(\\d{4})")
+		year := re.FindString(value)
+		return toIntTry(year)
+	}
+	return 0, false
 }
 
 func (bib Bib) OclcNum() []string {
@@ -460,8 +467,8 @@ func (bib Bib) OclcNum() []string {
 	f001 := bib.VarFields.ControlValue("001")
 	safeAppend(&nums, cleanOclcNum(f001))
 
-	values := bib.VarFields.MarcValuesNew("035a:035z")
-	for _, value := range toArray(values, false, false) {
+	fields := bib.VarFields.FieldValues("035a:035z")
+	for _, value := range fields.ToArrayRaw() {
 		safeAppend(&nums, cleanOclcNum(value))
 	}
 	return nums
@@ -494,14 +501,16 @@ func (bib Bib) IsOnline() bool {
 		}
 	}
 
-	for _, value := range bib.VarFields.MarcValues("338a", true) {
+	f338s := bib.VarFields.FieldValues("338a")
+	for _, value := range f338s.ToArrayTrim() {
 		if value == "online resource" {
 			return true
 		}
 	}
 
 	// Using this instead of the 998 logic below
-	for _, value := range bib.VarFields.MarcValues("300a", true) {
+	f300s := bib.VarFields.FieldValues("300a")
+	for _, value := range f300s.ToArrayTrim() {
 		if strings.Contains(value, "online resource") {
 			return true
 		}
@@ -547,7 +556,8 @@ func (bib Bib) FormatCode() string {
 }
 
 func (bib Bib) IsDissertation() bool {
-	for _, value := range bib.VarFields.MarcValues("502ac", false) {
+	fields := bib.VarFields.FieldValues("502ac")
+	for _, value := range fields.ToArrayRaw() {
 		if strings.Contains(strings.ToLower(value), "brown univ") {
 			return true
 		}
@@ -564,7 +574,7 @@ func (bib Bib) Languages() []string {
 		safeAppend(&values, f008_lang)
 	}
 
-	for _, valuesByField := range bib.VarFields.MarcValuesNew("041a:041d:041e:041j") {
+	for _, valuesByField := range bib.VarFields.FieldValues("041a:041d:041e:041j") {
 		for _, value := range valuesByField.Strings() {
 			langs := languageNames(value)
 			arrayAppend(&values, langs)
@@ -574,22 +584,24 @@ func (bib Bib) Languages() []string {
 }
 
 func (bib Bib) UrlDisplay(specStr string) []string {
-	values := bib.VarFields.MarcValuesNew(specStr)
-	return toArray(values, false, false)
+	fields := bib.VarFields.FieldValues(specStr)
+	return fields.ToArrayRaw()
 }
 
 func (bib Bib) RegionFacet() []string {
 	// Stolen from Traject's marc_geo_facet
 	// https://github.com/traject/traject/blob/master/lib/traject/macros/marc21_semantics.rb
 	values := []string{}
-	for _, value := range bib.VarFields.MarcValues("043a", true) {
+	f043s := bib.VarFields.FieldValues("043a")
+	for _, value := range f043s.ToArrayTrim() {
 		code := trimPunct(value)
 		code = strings.TrimRight(code, "-")
 		name := regionName(code)
 		safeAppend(&values, name)
 	}
 
-	for _, value := range bib.VarFields.MarcValues("651a:691a", true) {
+	f6XXs := bib.VarFields.FieldValues("651a:691a")
+	for _, value := range f6XXs.ToArrayTrim() {
 		trimVal := trimPunct(value)
 		safeAppend(&values, trimVal)
 	}
@@ -602,7 +614,7 @@ func (bib Bib) RegionFacetZFields() []string {
 	values := []string{}
 	zFieldSpecs := "600z:610z:611z:630z:648z:650z:"
 	zFieldSpecs += "654z:655z:656z:690z:651z:691z"
-	for _, fieldValues := range bib.VarFields.MarcValuesNew(zFieldSpecs) {
+	for _, fieldValues := range bib.VarFields.FieldValues(zFieldSpecs) {
 		regions := fieldValues.Strings()
 		if len(regions) == 2 {
 			// Asumme the first one is the parent region of the second one

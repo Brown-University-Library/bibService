@@ -146,68 +146,6 @@ func dedupArray(original []string) []string {
 	return dedup
 }
 
-// TODO: This should be moved to field.go or fields.go (currently marc.go)
-func toArray(fields []MarcField, trim bool, join bool) []string {
-	array := []string{}
-	for _, field := range fields {
-		if join {
-			// join all the values for the field as a single element in
-			// the returning array
-			value := field.String()
-			if trim {
-				value = trimPunct(value)
-			}
-			safeAppend(&array, value)
-		} else {
-			// preserve each individual value (regardless of their field)
-			// as a single element in the returning arrray
-			for _, value := range field.Strings() {
-				if trim {
-					value = trimPunct(value)
-				}
-				safeAppend(&array, value)
-			}
-		}
-	}
-	return array
-}
-
-func valuesToArray(values [][]string, trim bool, join bool) []string {
-	array := []string{}
-	for _, fieldValues := range values {
-		if join {
-			// join all the values for the field as a single element in
-			// the returning array
-			value := strings.Join(fieldValues, " ")
-			if trim {
-				value = trimPunct(value)
-			}
-			safeAppend(&array, value)
-		} else {
-			// preserve each individual value (regardless of their field)
-			// as a single element in the returning arrray
-			for _, value := range fieldValues {
-				if trim {
-					value = trimPunct(value)
-				}
-				safeAppend(&array, value)
-			}
-		}
-	}
-	return array
-}
-
-func valuesToString(values [][]string, trim bool) string {
-	rowValues := []string{}
-	for _, fieldValues := range values {
-		safeAppend(&rowValues, strings.Join(fieldValues, " "))
-	}
-	if trim {
-		return trimPunct(strings.Join(rowValues, " "))
-	}
-	return strings.Join(rowValues, " ")
-}
-
 func toJSON(data interface{}) (string, error) {
 	bytes, err := json.Marshal(data)
 	if err != nil {

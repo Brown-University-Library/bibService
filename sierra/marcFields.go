@@ -7,28 +7,6 @@ import (
 
 type MarcFields []MarcField
 
-// MarcValue returns a string with the values for the fields (and subfields)
-// indicated in `specsStr`. When `trim` is true punctuation is trimmed from
-// each of the values before adding them to the resulting string.
-//
-// See MarcValuesByField() for more information.
-func (allFields MarcFields) MarcValue(specsStr string, trim bool) string {
-	values := allFields.MarcValuesNew(specsStr)
-	return strings.Join(toArray(values, trim, true), " ")
-}
-
-// MarcValues returns an array of strings with the values for the fields
-// (and subfields) indicated in `specsStr`. When `trim` is true punctuation is
-// trimmed from each of the values in the resulting array (e.g. trailing commas)
-//
-// See MarcValuesByField() for more information.
-func (allFields MarcFields) MarcValues(specsStr string, trim bool) []string {
-	// values := allFields.MarcValuesByField(specsStr, true)
-	// return valuesToArray(values, trim, false)
-	values := allFields.MarcValuesNew(specsStr)
-	return toArray(values, trim, false)
-}
-
 // MarcValues returns an array of MarcField with the values for
 // the fields and subfields indicated in `specsStr`. The result
 // includes one row for each field where data was found.
@@ -37,7 +15,7 @@ func (allFields MarcFields) MarcValues(specsStr string, trim bool) []string {
 // field and "abc" represents the subfields. For example: "100ac" means
 // field "100" subfields "a" and "c". Multiple fields can be indicated
 // separated by colons, for example: "100ac:210f".
-func (allFields MarcFields) MarcValuesNew(specsStr string) []MarcField {
+func (allFields MarcFields) FieldValues(specsStr string) MarcFields {
 	values := []MarcField{}
 	vernProcessed := []string{}
 	specs := NewFieldSpecs(specsStr)
@@ -109,12 +87,53 @@ func (allFields MarcFields) ControlValues(marcTag string) []string {
 	return values
 }
 
-func (allFields MarcFields) VernacularValues(specsStr string) []MarcField {
+func (fields MarcFields) ToArray() []string {
+	return fields.toArray(true, true)
+}
+
+func (fields MarcFields) ToArrayTrim() []string {
+	return fields.toArray(true, false)
+}
+
+func (fields MarcFields) ToArrayJoin() []string {
+	return fields.toArray(false, true)
+}
+
+func (fields MarcFields) ToArrayRaw() []string {
+	return fields.toArray(false, false)
+}
+
+func (fields MarcFields) toArray(trim, join bool) []string {
+	array := []string{}
+	for _, field := range fields {
+		if join {
+			// join all the values for the field as a single element in
+			// the returning array
+			value := field.String()
+			if trim {
+				value = trimPunct(value)
+			}
+			safeAppend(&array, value)
+		} else {
+			// preserve each individual value (regardless of their field)
+			// as a single element in the returning arrray
+			for _, value := range field.Strings() {
+				if trim {
+					value = trimPunct(value)
+				}
+				safeAppend(&array, value)
+			}
+		}
+	}
+	return array
+}
+
+func (allFields MarcFields) VernacularValues(specsStr string) MarcFields {
 	// Notice that we loop through the 880 fields rather than checking if
 	// each of the indicated fields have vernacular values because sometimes
 	// the actual field does not point to the 880 but the 880 always points
 	// to the original field.
-	values := []MarcField{}
+	values := MarcFields{}
 	f880s := allFields.getFields("880")
 	for _, spec := range NewFieldSpecs(specsStr) {
 		for _, f880 := range f880s {
@@ -156,9 +175,8 @@ func (allFields MarcFields) getFieldTagContent(fieldTag string) string {
 	return ""
 }
 
-// TODO: should this return MarcFields?
-func (allFields MarcFields) getFields(marcTag string) []MarcField {
-	fields := []MarcField{}
+func (allFields MarcFields) getFields(marcTag string) MarcFields {
+	fields := MarcFields{}
 	for _, field := range allFields {
 		if field.MarcTag == marcTag {
 			fields = append(fields, field)
@@ -167,8 +185,8 @@ func (allFields MarcFields) getFields(marcTag string) []MarcField {
 	return fields
 }
 
-func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec) []MarcField {
-	values := []MarcField{}
+func (allFields MarcFields) vernacularValuesFor(field MarcField, spec FieldSpec) MarcFields {
+	values := MarcFields{}
 
 	// True if the field (say "700") has subfield with tag 6.
 	// Target would be "880-04"
