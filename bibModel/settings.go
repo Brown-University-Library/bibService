@@ -6,13 +6,14 @@ import (
 )
 
 type Settings struct {
-	ServerAddress string `json:"serverAddress"`
-	SessionFile   string `json:"sessionFile"`
-	SierraUrl     string `json:"sierraUrl"`
-	KeySecret     string `json:"keySecret"`
-	Verbose       bool   `json:"verbose"`
-	SolrUrl       string `json:"solrUrl"`
-	RootUrl       string `json:"rootUrl"`
+	ServerAddress  string `json:"serverAddress"`
+	SessionFile    string `json:"sessionFile"`
+	SierraUrl      string `json:"sierraUrl"`
+	KeySecret      string `json:"keySecret"`
+	Verbose        bool   `json:"verbose"`
+	SolrUrl        string `json:"solrUrl"`
+	RootUrl        string `json:"rootUrl"`
+	CachedDataPath string `json:"cachedDataPath"`
 }
 
 func LoadSettings(filename string) (Settings, error) {

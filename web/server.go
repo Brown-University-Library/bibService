@@ -19,6 +19,7 @@ func StartWebServer(settingsFile string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("%#v", settings)
 
 	// Solr
 	http.HandleFunc("/bibutils/solr/doc/", solrDoc)
@@ -29,7 +30,8 @@ func StartWebServer(settingsFile string) {
 	http.HandleFunc("/bibutils/bib/updated/", bibUpdated)
 	http.HandleFunc("/bibutils/bib/deleted/", bibDeleted)
 	http.HandleFunc("/bibutils/bib/suppressed/", bibSuppressed)
-	http.HandleFunc("/bibutils/bib/", bibController)
+	http.HandleFunc("/bibutils/bib/", bibOne)
+	http.HandleFunc("/bibutils/bibs/", bibRange)
 	http.HandleFunc("/bibutils/item/", itemController)
 
 	// MARC operations
@@ -49,23 +51,37 @@ func status(resp http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(resp, "OK")
 }
 
-func bibController(resp http.ResponseWriter, req *http.Request) {
+func bibOne(resp http.ResponseWriter, req *http.Request) {
 	bib := qsParam("bib", req)
 	if bib == "" {
 		err := errors.New("No bib parameter was received")
-		renderJSON(resp, nil, err, "bibController")
+		renderJSON(resp, nil, err, "bibOne")
 		return
 	}
 	model := bibModel.New(settings)
 	if qsParam("raw", req) == "true" {
 		log.Printf("Fetching BIB data for bib: %s %v(raw)", bib, req.URL.Query())
 		body, err := model.GetBibRaw(bib)
-		renderJSON(resp, body, err, "bibController")
+		renderJSON(resp, body, err, "bibOne")
 	} else {
 		log.Printf("Fetching BIB data for bib: %s %v", bib, req.URL.Query())
 		bibs, err := model.GetBib(bib)
-		renderJSON(resp, bibs, err, "bibController")
+		renderJSON(resp, bibs, err, "bibOne")
 	}
+}
+
+func bibRange(resp http.ResponseWriter, req *http.Request) {
+	from := qsParam("from", req)
+	to := qsParam("to", req)
+	if from == "" || to == "" {
+		err := errors.New("No from/to parameters were received")
+		renderJSON(resp, nil, err, "bibRange")
+		return
+	}
+	model := bibModel.New(settings)
+	log.Printf("Fetching BIB data for bibs: %s - %s", from, to)
+	bibs, err := model.GetBibRange(from, to)
+	renderJSON(resp, bibs, err, "bibRange")
 }
 
 func bibUpdated(resp http.ResponseWriter, req *http.Request) {
@@ -149,7 +165,7 @@ func solrDocFromFile(resp http.ResponseWriter, req *http.Request) {
 	}
 	log.Printf("Generating SolrDoc from file for BIB: %s", bib)
 	model := bibModel.New(settings)
-	path := "/Users/hectorcorrea/dev/marc_files_json/" // Make this a parameter
+	path := settings.CachedDataPath
 	fileName := path + bib + ".json"
 	doc, err := model.SolrDocFromFile(fileName)
 	renderJSON(resp, doc, err, "solrDocFromFile")

@@ -77,6 +77,45 @@ func (model BibModel) GetBib(bibs string) (sierra.Bibs, error) {
 	return sierraBibs, err
 }
 
+func (model BibModel) GetBibRange(fromBib, toBib string) (sierra.Bibs, error) {
+	bibs := sierra.Bibs{}
+	fromId := idFromBib(fromBib)
+	toBib := idFromBib(toBib)
+	pageNum := 0
+	for {
+		pageNum += 1
+		page, err := model.bibRangePaginated(fromId, toId, pageNum)
+		if err != nil {
+			return sierra.Bibs{}, err
+		}
+		for _, entry := range page.Entries {
+			if !entry.Deleted {
+				bibs.Total += 1
+				bibs.Entries = append(bibs.Entries, entry)
+			}
+		}
+		if page.Total < pageSize {
+			break
+		}
+	}
+	return bibs, nil
+}
+
+func (model BibModel) bibRangePaginated(fromBib, toBib string, page int) (sierra.Bibs, error) {
+	offset := (page - 1) * pageSize
+	params := map[string]string{
+		"offset": strconv.Itoa(offset),
+		"limit":  strconv.Itoa(pageSize),
+	}
+
+	if fromBib == "" && fromBib == "" {
+		return sierra.Bibs{}, errors.New("No BIB range was received")
+	} else {
+		params["id"] = fmt.Sprintf("[%s,%s]", fromBib, toBib)
+	}
+	return model.api.Get(params, true)
+}
+
 func (model BibModel) GetBibsUpdated(fromDate, toDate string, includeItems bool) (sierra.Bibs, error) {
 	bibs := sierra.Bibs{}
 	pageNum := 0

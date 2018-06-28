@@ -75,9 +75,9 @@ func (s *Sierra) Search(value string) (string, error) {
 // Get retrieves the information about of a BIB record and its ITEM information.
 //
 // params is meant to include a key like
-//		"id" : "the-id"
-// in order to tell Sierra what record to fetch or
-//		"updatedDate": "date-range"
+//	"id" : "the-id"											to fetch one record
+//	"id" : "[fromId,toId]"							to fetch by ID range
+//	"updatedDate": "[dateFrom,dateTo]"	to fetch by date range
 //
 // TODO: make these explicit parameters instead.
 func (s *Sierra) Get(params map[string]string, includeItems bool) (Bibs, error) {
@@ -98,6 +98,11 @@ func (s *Sierra) Get(params map[string]string, includeItems bool) (Bibs, error) 
 			continue
 		}
 		if includeItems {
+			// TODO: Figure out a way to get items in batch.
+			//			 In a previous attempt I tried passing the BIBs as a comma
+			//			 delimited string but that did not work if any of the BIBs
+			//			 was deleted. Need to revisit this.
+			//
 			items, err := s.Items(bib.Id)
 			if err != nil {
 				// TODO: Figure out why some records return "404 not found"
@@ -109,34 +114,6 @@ func (s *Sierra) Get(params map[string]string, includeItems bool) (Bibs, error) 
 			bibs.Entries[i].Items = items.ForBib(bib.Id)
 		}
 	}
-
-	// This approach unfortunately does not work when there are BIBs
-	// in the result for records that have been deleted. It is possible
-	// that a record was indeed updated in the indicatd time frame but
-	// was deleted later on. In that case fetching a batch of BIBs that
-	// include the deleted one will fail with no indication of which BIB
-	// was the culprit.
-	//
-	// 		A possible workaround would be to get the list of deleted BIBs
-	// 		in the same time frame and exclude those from the list.
-	//
-	//		Need to also figure out the other "404 not found" error before
-	//		attempting this workaround.
-	//
-	// // fetch the items (fetch items for many bibs at once)
-	// for _, page := range bibs.BibsIdPages() {
-	// 	bibIdsStr := strings.Join(page, ",")
-	// 	items, err := s.Items(bibIdsStr)
-	// 	if err != nil {
-	// 		return Bibs{}, err
-	// 	}
-	// 	for i, bib := range page {
-	// 		bibItems := items.ForBib(bib)
-	// 		log.Printf("Set %d items to bib %s", len(bibItems), bib)
-	// 		bibs.Entries[i].Items = bibItems
-	// 	}
-	// }
-
 	return bibs, err
 }
 

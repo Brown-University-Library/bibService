@@ -4,5 +4,6 @@
   "keySecret": "your-key:your-secret",
   "sessionFile": "iii_session.json",
   "verbose": true,
-  "solrUrl": "http://localhost:8081/solr/your-solr-core"
+  "solrUrl": "http://localhost:8081/solr/your-solr-core",
+  "cachedDataPath": "./data/"
 }
