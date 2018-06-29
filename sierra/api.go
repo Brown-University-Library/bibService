@@ -205,7 +205,10 @@ func (s *Sierra) Marc(idRange string) (string, error) {
 		return "", err
 	}
 
-	url := s.ApiUrl + "/bibs/marc?id=" + idRange
+	// The default export table in Sierra does not include the table of contents
+	// information (MARC 970). The "b2mtab.toc" export table include this data.
+	// Passing "toc" tells Sierra to use the b2mtab.toc export table.
+	url := s.ApiUrl + "/bibs/marc?id=" + idRange + "&mapping=toc"
 
 	body, err := s.httpGet(url, s.Authorization.AccessToken)
 	if err != nil {
