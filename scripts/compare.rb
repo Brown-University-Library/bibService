@@ -72,6 +72,7 @@ def compare_one(id, json1, json2, show_equal, sequence)
     "uniform_related_works_display", # minor punctuation differences (including encoding of ampersand)
     "text",             # pending
     "toc_display",      # pending
+    "toc_970_display",  # pending
     "marc_display"      # pending
   ]
 
