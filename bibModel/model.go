@@ -80,7 +80,7 @@ func (model BibModel) GetBib(bibs string) (sierra.Bibs, error) {
 func (model BibModel) GetBibRange(fromBib, toBib string) (sierra.Bibs, error) {
 	bibs := sierra.Bibs{}
 	fromId := idFromBib(fromBib)
-	toBib := idFromBib(toBib)
+	toId := idFromBib(toBib)
 	pageNum := 0
 	for {
 		pageNum += 1
