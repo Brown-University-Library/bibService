@@ -631,7 +631,13 @@ func (bib Bib) TableOfContents970() []string {
 }
 
 func (bib Bib) Text() []string {
-	return []string{}
+	text := []string{}
+	for _, field := range bib.VarFields {
+		if field.MarcTag >= "090" && field.MarcTag <= "900" {
+			text = append(text, field.String())
+		}
+	}
+	return text
 }
 
 func (bib Bib) MarcDisplay() []string {
