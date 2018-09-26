@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+
+# chkconfig: 345 20 80
+# description: bibService Go Daemon on port 9001, start priority 20 stop priority 80, run levels 3-5
+# processname: bibService
+# pidfile: /PATH/GOES/HERE/bibService.pid
+# config: /PATH/GOES/HERE/settings.json
+
+bibLog="/PATH/GOES/HERE/bibService.log"
+bibUser="USER_NAME_GOES_HERE"
+bibAppDir="/PATH/GOES/HERE"
+bibCmd="bibService"
+bibSettings="/PATH/GOES/HERE/settings.json"
+bibPid=$(pgrep -f "bibService/settings.json")
+
+function start() {
+    echo "Starting $bibCmd..."
+    cd $bibAppDir
+    su -s /bin/bash $bibUser -c "./$bibCmd $bibSettings >> $bibLog 2>&1 &"
+    retval=$?
+    [[ $retval -eq 0 ]] && echo "$bibCmd started..." || echo "Epic Failure"
+}
+
+function stop() {
+    if [[ -n $bibPid ]]; then
+        echo "Stopping $bibCmd..."
+        kill "$bibPid"
+        retval=$?
+        [[ $retval -eq 0 ]] && { return $retval; echo "$bibCmd stopped..."; }
+    else
+        echo "$bibCmd is NOT running..."
+    fi
+}
+
+function status() {
+    if [[ -n $bibPid ]]; then
+        echo "$bibCmd is running with PID: $bibPid"
+    else
+        echo "$bibCmd is NOT running..."
+    fi
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
+    *)
+    echo $"Usage: $0 {start|stop|status}"
+    RETVAL=1
+esac
+
+exit $RETVAL
