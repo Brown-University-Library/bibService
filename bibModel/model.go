@@ -224,7 +224,7 @@ func (model BibModel) Delete(fromDate, toDate string) error {
 	// for the same date range twice will report 0 records deleted in Solr the
 	// second time (even if Sierra reports that there are records deleted and
 	// suppressed)
-	log.Printf("Deleted %d documents from Solr (%d, %d)", endCount-beginCount, len(deleted), len(suppressed))
+	log.Printf("Deleted %d documents from Solr (D=%d, S=%d)", beginCount-endCount, len(deleted), len(suppressed))
 	return nil
 }
 
