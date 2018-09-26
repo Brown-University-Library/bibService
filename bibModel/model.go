@@ -184,15 +184,20 @@ func (model BibModel) GetBibsDeleted(fromDate, toDate string) ([]string, error) 
 // in Sierra or that have been marked as Suppressed in Sierra.
 func (model BibModel) Delete(fromDate, toDate string) error {
 	solrClient := solr.New(model.solrUrl, true)
+	beginCount, err := solrClient.Count()
+	if err != nil {
+		return err
+	}
+
 	deleted, err := model.GetBibsDeleted(fromDate, toDate)
 	if err != nil {
 		return err
 	}
 
 	if len(deleted) != 0 {
-		log.Printf("Submitting %d deleted IDs for delete to Solr", len(deleted))
 		err = solrClient.Delete(deleted)
 		if err != nil {
+			log.Printf("Error deleting from Solr deleted records in Sierra (%d)", len(deleted))
 			return err
 		}
 	}
@@ -203,12 +208,23 @@ func (model BibModel) Delete(fromDate, toDate string) error {
 	}
 
 	if len(suppressed) != 0 {
-		log.Printf("Submitting %d suppressed IDs for delete to Solr ", len(suppressed))
 		err = solrClient.Delete(suppressed)
 		if err != nil {
+			log.Printf("Error deleting from Solr suppressed records in Sierra (%d)", len(suppressed))
 			return err
 		}
 	}
+
+	endCount, err := solrClient.Count()
+	if err != nil {
+		return err
+	}
+
+	// It's possible that the totals don't add up. For example, running the delete
+	// for the same date range twice will report 0 records deleted in Solr the
+	// second time (even if Sierra reports that there are records deleted and
+	// suppressed)
+	log.Printf("Deleted %d documents from Solr (%d, %d)", endCount-beginCount, len(deleted), len(suppressed))
 	return nil
 }
 
