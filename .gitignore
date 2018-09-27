@@ -3,4 +3,5 @@ bibService
 iii_session.json
 settings.json
 deploy_dev.sh
+deploy_prod.sh
 data/
