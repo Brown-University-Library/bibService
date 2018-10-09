@@ -81,7 +81,7 @@ func (s *Sierra) Search(value string) (string, error) {
 //
 // TODO: make these explicit parameters instead.
 func (s *Sierra) Get(params map[string]string, includeItems bool) (Bibs, error) {
-	fields := "fields=default,available,orders,normTitle,normAuthor,locations,varFields" // ,fixedFields
+	fields := "fields=default,available,orders,normTitle,normAuthor,locations,varFields,fixedFields"
 	body, err := s.GetRaw(params, fields)
 	if err != nil {
 		return Bibs{}, err
@@ -140,7 +140,7 @@ func (s *Sierra) GetRaw(params map[string]string, fields string) (string, error)
 	}
 
 	if fields == "" {
-		fields = "fields=default,available,orders,normTitle,normAuthor,locations,varFields" // ,fixedFields
+		fields = "fields=default,available,orders,normTitle,normAuthor,locations,varFields,fixedFields"
 	}
 
 	url := s.ApiUrl + "/bibs?"
@@ -192,7 +192,7 @@ func (s *Sierra) ItemsRaw(bibsList string) (string, error) {
 	}
 
 	url := s.ApiUrl + "/items?bibIds=" + bibsList
-	url += "&fields=default,varFields" // ,fixedFields
+	url += "&fields=default,varFields,fixedFields"
 	return s.httpGet(url, s.Authorization.AccessToken)
 }
 
