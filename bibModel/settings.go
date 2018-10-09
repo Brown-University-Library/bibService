@@ -14,6 +14,9 @@ type Settings struct {
 	SolrUrl        string `json:"solrUrl"`
 	RootUrl        string `json:"rootUrl"`
 	CachedDataPath string `json:"cachedDataPath"`
+	DbUser         string `json:"dbUser"`
+	DbPassword     string `json:"dbPassword"`
+	DbHost         string `json:"dbHost"`
 }
 
 func LoadSettings(filename string) (Settings, error) {

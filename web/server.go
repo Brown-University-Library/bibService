@@ -2,6 +2,7 @@ package web
 
 import (
 	"bibService/bibModel"
+	"bibService/sierra"
 	"errors"
 	"fmt"
 	"log"
@@ -38,6 +39,8 @@ func StartWebServer(settingsFile string) {
 	http.HandleFunc("/bibutils/marc/", marcController)
 
 	// Misc
+	http.HandleFunc("/bibutils/hayQuery.tsv", hayQueryTsv)
+	http.HandleFunc("/bibutils/hayQuery", hayQuery)
 	http.HandleFunc("/status", status)
 	http.HandleFunc("/", homePage)
 	log.Printf("Listening for requests at: http://%s", settings.ServerAddress)
@@ -49,6 +52,70 @@ func StartWebServer(settingsFile string) {
 
 func status(resp http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(resp, "OK")
+}
+
+func hayQueryTsv(resp http.ResponseWriter, req *http.Request) {
+	connString := fmt.Sprintf("host=%s port=1032 user=%s password=%s dbname=iii sslmode=require",
+		settings.DbHost, settings.DbUser, settings.DbPassword)
+	hayRows, _ := sierra.HayQuery(connString)
+	text := ""
+	for _, row := range hayRows {
+		text += row.ToTSV() + "\r\n"
+	}
+	resp.Header().Add("Content-Type", "text/plain; charset=us-ascii")
+	fmt.Fprint(resp, text)
+}
+
+func hayQuery(resp http.ResponseWriter, req *http.Request) {
+	connString := fmt.Sprintf("host=%s port=1032 user=%s password=%s dbname=iii sslmode=require",
+		settings.DbHost, settings.DbUser, settings.DbPassword)
+	hayRows, _ := sierra.HayQuery(connString)
+	html := `<html>
+		<body>
+		<style>
+			table.noborder td {
+			    margin: 0px 0px 0px 0px;
+			    padding: 0px 0px 0px 0px;
+			}
+			table.noborder {
+			    border-collapse: separate;
+			    border-spacing: 0px;
+			    *border-collapse: expression('separate', cellSpacing = '0px');
+			}
+			</style>`
+
+	html += "<table class=noborder>"
+	html += "<tr style=text-align:left;>"
+	html += "<th>Record Num</th>"
+	html += "<th>Order</th>"
+	html += "<th>Code2</th>"
+	html += "<th>Location</th>"
+	html += "<th>Status </th>"
+	html += "<th>Copy</th>"
+	html += "<th>Barcode</th>"
+	html += "<th>Callnumber</th>"
+	html += "<th>Best Title</th>"
+	html += "</tr>\r\n"
+
+	for i, row := range hayRows {
+		rowStyle := "style=background-color:#dbe9fe;"
+		if (i % 2) != 0 {
+			rowStyle = ""
+		}
+		html += fmt.Sprintf("<tr %s>", rowStyle)
+		html += "<td>" + row.RecordNum + "</td>"
+		html += "<td>" + row.DisplayOrder + "</td>"
+		html += "<td>" + row.Code2 + "</td>"
+		html += "<td>" + row.LocationCode + "</td>"
+		html += "<td>" + row.StatusCode + "</td>"
+		html += "<td>" + row.CopyNum + "</td>"
+		html += "<td style=width:150px>" + row.BarCode + "</td>"
+		html += "<td style=width:150px>" + row.CallNumber + "</td>"
+		html += "<td>" + row.BestTitle + "</td>"
+		html += "</tr>\r\n"
+	}
+	html += "</table></body></html>"
+	fmt.Fprint(resp, html)
 }
 
 func bibOne(resp http.ResponseWriter, req *http.Request) {

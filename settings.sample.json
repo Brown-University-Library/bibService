@@ -5,5 +5,8 @@
   "sessionFile": "iii_session.json",
   "verbose": true,
   "solrUrl": "http://localhost:8081/solr/your-solr-core",
-  "cachedDataPath": "./data/"
+  "cachedDataPath": "./data/",
+  "dbUser": "db-user-name",
+  "dbPassword": "db-password",
+  "dbHost": "the-iii-hostname"
 }
