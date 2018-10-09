@@ -29,14 +29,12 @@ func (row HayRow) ToTSV() string {
 }
 
 func HayQuery(connString string) ([]HayRow, error) {
-	log.Printf("Connecting to DB...")
+	log.Printf("Connecting to DB: %s", connString)
 	// https://godoc.org/github.com/lib/pq
 	db, err := sql.Open("postgres", connString)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Printf("Running query...")
 
 	// Query provided by Kylene
 	sqlSelect := `
@@ -53,8 +51,9 @@ func HayQuery(connString string) ([]HayRow, error) {
 		i.id = p.item_record_id AND
 		p.item_record_id = l.item_record_id AND
 		l.bib_record_id = b.bib_record_id
-	ORDER BY bo.display_order;
-`
+	ORDER BY bo.display_order;`
+	log.Printf("Running query: \r\n%s\r\n", sqlSelect)
+
 	rows, err := db.Query(sqlSelect)
 	if err != nil {
 		log.Fatal(err)
