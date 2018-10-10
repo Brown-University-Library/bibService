@@ -71,8 +71,16 @@ func hayQuery(resp http.ResponseWriter, req *http.Request) {
 		settings.DbHost, settings.DbUser, settings.DbPassword)
 	hayRows, _ := sierra.HayQuery(connString)
 	html := `<html>
+		<head>
+			<link href="https://fonts.googleapis.com/css?family=Libre+Barcode+128+Text" rel="stylesheet">
+		</head>
 		<body>
 		<style>
+			.barcode {
+			   font-family: 'Libre Barcode 128 Text', cursive;
+				 font-size: 30px;
+			}
+
 			table.noborder td {
 			    margin: 0px 0px 0px 0px;
 			    padding: 0px 0px 0px 0px;
@@ -109,7 +117,7 @@ func hayQuery(resp http.ResponseWriter, req *http.Request) {
 		html += "<td>" + row.LocationCode + "</td>"
 		html += "<td>" + row.StatusCode + "</td>"
 		html += "<td>" + row.CopyNum + "</td>"
-		html += "<td style=width:150px>" + row.BarCode + "</td>"
+		html += "<td style=\"width:200px\" class=\"barcode\" >" + row.BarCode + "</td>"
 		html += "<td style=width:150px>" + row.CallNumber + "</td>"
 		html += "<td>" + row.BestTitle + "</td>"
 		html += "</tr>\r\n"
