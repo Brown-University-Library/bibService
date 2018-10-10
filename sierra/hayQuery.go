@@ -33,7 +33,7 @@ func HayQuery(connString string) ([]HayRow, error) {
 	// https://godoc.org/github.com/lib/pq
 	db, err := sql.Open("postgres", connString)
 	if err != nil {
-		log.Fatal(err)
+		return []HayRow{}, err
 	}
 
 	// Query provided by Kylene
@@ -56,7 +56,7 @@ func HayQuery(connString string) ([]HayRow, error) {
 
 	rows, err := db.Query(sqlSelect)
 	if err != nil {
-		log.Fatal(err)
+		return []HayRow{}, err
 	}
 	defer rows.Close()
 
@@ -68,7 +68,7 @@ func HayQuery(connString string) ([]HayRow, error) {
 			&row.LocationCode, &row.StatusCode, &row.CopyNum, &row.BarCode,
 			&row.CallNumber, &row.BestTitle)
 		if err != nil {
-			log.Fatal(err)
+			return []HayRow{}, err
 		}
 		values = append(values, row)
 	}

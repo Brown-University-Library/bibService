@@ -57,7 +57,12 @@ func status(resp http.ResponseWriter, req *http.Request) {
 func hayQueryTsv(resp http.ResponseWriter, req *http.Request) {
 	connString := fmt.Sprintf("host=%s port=1032 user=%s password=%s dbname=iii sslmode=require",
 		settings.DbHost, settings.DbUser, settings.DbPassword)
-	hayRows, _ := sierra.HayQuery(connString)
+	hayRows, err := sierra.HayQuery(connString)
+	if err != nil {
+		log.Printf("ERROR getting data from Sierra: %s", err)
+		fmt.Fprint(resp, "Error getting data from Sierra")
+		return
+	}
 	text := ""
 	for _, row := range hayRows {
 		text += row.ToTSV() + "\r\n"
@@ -69,7 +74,12 @@ func hayQueryTsv(resp http.ResponseWriter, req *http.Request) {
 func hayQuery(resp http.ResponseWriter, req *http.Request) {
 	connString := fmt.Sprintf("host=%s port=1032 user=%s password=%s dbname=iii sslmode=require",
 		settings.DbHost, settings.DbUser, settings.DbPassword)
-	hayRows, _ := sierra.HayQuery(connString)
+	hayRows, err := sierra.HayQuery(connString)
+	if err != nil {
+		log.Printf("ERROR getting data from Sierra: %s", err)
+		fmt.Fprint(resp, "Error getting data from Sierra")
+		return
+	}
 	html := `<html>
 		<head>
 			<link href="https://fonts.googleapis.com/css?family=Libre+Barcode+128+Text" rel="stylesheet">
