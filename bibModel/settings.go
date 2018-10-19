@@ -17,6 +17,8 @@ type Settings struct {
 	DbUser         string `json:"dbUser"`
 	DbPassword     string `json:"dbPassword"`
 	DbHost         string `json:"dbHost"`
+	DbPort         int    `json:dbPort`
+	DbName         string `json:dbName`
 }
 
 func LoadSettings(filename string) (Settings, error) {
