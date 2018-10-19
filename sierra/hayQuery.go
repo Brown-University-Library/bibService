@@ -35,6 +35,7 @@ func HayQuery(connString string) ([]HayRow, error) {
 	if err != nil {
 		return []HayRow{}, err
 	}
+	defer db.Close()
 
 	// Query provided by Kylene
 	sqlSelect := `
