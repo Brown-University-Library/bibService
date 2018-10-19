@@ -8,5 +8,7 @@
   "cachedDataPath": "./data/",
   "dbUser": "db-user-name",
   "dbPassword": "db-password",
-  "dbHost": "the-iii-hostname"
+  "dbHost": "the-iii-hostname",
+  "dbPort": 1032,
+  "dbName": "the-db-name"
 }
