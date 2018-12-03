@@ -36,6 +36,9 @@ func StartWebServer(settingsFile string) {
 	http.HandleFunc("/bibutils/bibs/", bibRange)
 	http.HandleFunc("/bibutils/item/", itemController)
 
+	// Patron operations
+	http.HandleFunc("/bibutils/patron/checkout/", checkoutController)
+
 	// MARC operations
 	http.HandleFunc("/bibutils/marc/", marcController)
 
@@ -226,6 +229,31 @@ func itemController(resp http.ResponseWriter, req *http.Request) {
 		items, err := model.Items(bib)
 		renderJSON(resp, items, err, "itemController")
 	}
+}
+
+func checkoutController(resp http.ResponseWriter, req *http.Request) {
+	patronId := qsParam("patronId", req)
+	if patronId == "" {
+		err := errors.New("No patronId parameter was received")
+		renderJSON(resp, nil, err, "checkoutController")
+		return
+	}
+	log.Printf("Fetching checkout information for patronId: %s", patronId)
+	model := bibModel.NewPatronModel(settings)
+	checkouts, err := model.Checkouts(patronId)
+	if err != nil {
+		log.Printf("ERROR (checkoutController): %s", err)
+		fmt.Fprint(resp, "Error fetching patron checkouts")
+		return
+	}
+
+	bibs, err := model.GetBibs(checkouts)
+	if err != nil {
+		log.Printf("ERROR (checkoutController): %s", err)
+		fmt.Fprint(resp, "Error fetching details for patron checkouts")
+		return
+	}
+	renderJSON(resp, bibs, err, "checkoutController")
 }
 
 func marcController(resp http.ResponseWriter, req *http.Request) {
