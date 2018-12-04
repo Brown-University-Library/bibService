@@ -87,6 +87,23 @@ func (s *Sierra) GetBib(bibID string) (Bib, error) {
 	return bibs.Entries[0], nil
 }
 
+// BibIDForItemID returns the BibID for a given ItemID
+// If the itemID is associated with more than one BIB it will return the first one.
+func (s *Sierra) BibIDForItemID(itemID string) (string, error) {
+	item, err := s.GetItem(itemID)
+	if err != nil {
+		return "", err
+	}
+	if len(item.BibIds) == 0 {
+		return "", fmt.Errorf("No BIB records found for item %s", itemID)
+	}
+	if len(item.BibIds) > 1 {
+		// should I return error fmt.Errorf("Multiple BIB records found for item %s", itemID)
+		return item.BibIds[0], nil
+	}
+	return item.BibIds[0], nil
+}
+
 // Get retrieves the information about of a BIB record and its ITEM information.
 //
 // params is meant to include a key like
