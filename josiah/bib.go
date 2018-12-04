@@ -1,4 +1,4 @@
-package bibModel
+package josiah
 
 import (
 	"bibService/sierra"
@@ -53,7 +53,7 @@ type Range struct {
 	last  int
 }
 
-func New(settings Settings) BibModel {
+func NewBibModel(settings Settings) BibModel {
 	model := BibModel{settings: settings}
 	model.api = sierra.NewSierra(model.settings.SierraURL, model.settings.KeySecret, model.settings.SessionFile)
 	model.api.Verbose = settings.Verbose

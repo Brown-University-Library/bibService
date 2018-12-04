@@ -1,4 +1,4 @@
-package bibModel
+package josiah
 
 import (
 	"bibService/sierra"

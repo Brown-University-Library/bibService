@@ -1,7 +1,7 @@
 package web
 
 import (
-	"bibService/bibModel"
+	"bibService/josiah"
 	"bibService/sierra"
 	"encoding/json"
 	"errors"
@@ -11,13 +11,13 @@ import (
 	"strconv"
 )
 
-var settings bibModel.Settings
+var settings josiah.Settings
 
 func StartWebServer(settingsFile string) {
 	var err error
 
 	log.Printf("Loading settings from: %s", settingsFile)
-	settings, err = bibModel.LoadSettings(settingsFile)
+	settings, err = josiah.LoadSettings(settingsFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func bibOne(resp http.ResponseWriter, req *http.Request) {
 		renderJSON(resp, nil, err, "bibOne")
 		return
 	}
-	model := bibModel.New(settings)
+	model := josiah.NewBibModel(settings)
 	if qsParam("raw", req) == "true" {
 		log.Printf("Fetching BIB data for bib: %s %v(raw)", bib, req.URL.Query())
 		body, err := model.GetBibRaw(bib)
@@ -102,7 +102,7 @@ func bibRange(resp http.ResponseWriter, req *http.Request) {
 		renderJSON(resp, nil, err, "bibRange")
 		return
 	}
-	model := bibModel.New(settings)
+	model := josiah.NewBibModel(settings)
 	log.Printf("Fetching BIB data for bibs: %s - %s", from, to)
 	bibs, err := model.GetBibRange(from, to)
 	renderJSON(resp, bibs, err, "bibRange")
@@ -117,7 +117,7 @@ func bibUpdated(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Printf("Fetching BIB updated (%s - %s)", from, to)
-	model := bibModel.New(settings)
+	model := josiah.NewBibModel(settings)
 	body, err := model.GetBibsUpdated(from, to, true)
 	renderJSON(resp, body, err, "bibUpdated")
 }
@@ -135,7 +135,7 @@ func bibDeleted(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Printf("Fetching BIB deleted (%s - %s)", from, to)
-	model := bibModel.New(settings)
+	model := josiah.NewBibModel(settings)
 	body, err := model.GetBibsDeleted(from, to)
 	renderJSON(resp, body, err, "bibDeleted")
 }
@@ -153,7 +153,7 @@ func bibSuppressed(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Printf("Fetching BIB suppressed (%s - %s)", from, to)
-	model := bibModel.New(settings)
+	model := josiah.NewBibModel(settings)
 	body, err := model.GetBibsSuppressed(from, to)
 	renderJSON(resp, body, err, "bibSuppressed")
 }
@@ -166,14 +166,14 @@ func solrDoc(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Printf("Fetching SolrDoc for %s", bib)
-	model := bibModel.New(settings)
+	model := josiah.NewBibModel(settings)
 	bibs, err := model.GetBib(bib)
 	if err != nil {
 		renderJSON(resp, nil, err, "bibController")
 		return
 	}
 	if len(bibs.Entries) > 0 {
-		doc := bibModel.NewSolrDoc(bibs.Entries[0])
+		doc := josiah.NewSolrDoc(bibs.Entries[0])
 		renderJSON(resp, doc, nil, "solrDoc")
 	} else {
 		renderJSON(resp, "", errors.New("no bibs returned"), "solrDoc")
@@ -188,7 +188,7 @@ func solrDocFromFile(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Printf("Generating SolrDoc from file for BIB: %s", bib)
-	model := bibModel.New(settings)
+	model := josiah.NewBibModel(settings)
 	path := settings.CachedDataPath
 	fileName := path + bib + ".json"
 	doc, err := model.SolrDocFromFile(fileName)
@@ -207,7 +207,7 @@ func solrDelete(resp http.ResponseWriter, req *http.Request) {
 		from, to = rangeFromDays(days)
 	}
 	log.Printf("Deleting from Solr (%s - %s)", from, to)
-	model := bibModel.New(settings)
+	model := josiah.NewBibModel(settings)
 	err := model.Delete(from, to)
 	renderJSON(resp, "OK", err, "solrDelete")
 }
@@ -219,7 +219,7 @@ func itemController(resp http.ResponseWriter, req *http.Request) {
 		renderJSON(resp, nil, err, "itemController")
 		return
 	}
-	model := bibModel.New(settings)
+	model := josiah.NewBibModel(settings)
 	if qsParam("raw", req) == "true" {
 		log.Printf("Fetching item data for bib: %s (raw)", bib)
 		body, err := model.ItemsRaw(bib)
@@ -239,7 +239,7 @@ func checkoutController(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Printf("Fetching checkout information for patronId: %s", patronId)
-	model := bibModel.NewPatronModel(settings)
+	model := josiah.NewPatronModel(settings)
 	checkouts, err := model.CheckedoutBibs(patronId)
 	if err != nil {
 		log.Printf("ERROR (checkoutController): %s", err)
@@ -257,7 +257,7 @@ func marcController(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Printf("Fetching MARC for bib: %s", bib)
-	model := bibModel.New(settings)
+	model := josiah.NewBibModel(settings)
 	marcData, err := model.Marc(bib)
 	if err != nil {
 		log.Printf("ERROR (marcController): %s", err)
