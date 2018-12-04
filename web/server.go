@@ -240,20 +240,13 @@ func checkoutController(resp http.ResponseWriter, req *http.Request) {
 	}
 	log.Printf("Fetching checkout information for patronId: %s", patronId)
 	model := bibModel.NewPatronModel(settings)
-	checkouts, err := model.Checkouts(patronId)
+	checkouts, err := model.CheckedoutBibs(patronId)
 	if err != nil {
 		log.Printf("ERROR (checkoutController): %s", err)
 		fmt.Fprint(resp, "Error fetching patron checkouts")
 		return
 	}
-
-	bibs, err := model.GetBibs(checkouts)
-	if err != nil {
-		log.Printf("ERROR (checkoutController): %s", err)
-		fmt.Fprint(resp, "Error fetching details for patron checkouts")
-		return
-	}
-	renderJSON(resp, bibs, err, "checkoutController")
+	renderJSON(resp, checkouts, err, "checkoutController")
 }
 
 func marcController(resp http.ResponseWriter, req *http.Request) {

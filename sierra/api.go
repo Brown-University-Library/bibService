@@ -72,6 +72,21 @@ func (s *Sierra) Search(value string) (string, error) {
 	return body, err
 }
 
+// GetBib fetches on BIB record by ID
+func (s *Sierra) GetBib(bibID string) (Bib, error) {
+	params := map[string]string{
+		"id": bibID,
+	}
+	bibs, err := s.Get(params, true)
+	if err != nil {
+		return Bib{}, err
+	}
+	if len(bibs.Entries) == 0 {
+		return Bib{}, fmt.Errorf("No BIB was found for ID %s", bibID)
+	}
+	return bibs.Entries[0], nil
+}
+
 // Get retrieves the information about of a BIB record and its ITEM information.
 //
 // params is meant to include a key like

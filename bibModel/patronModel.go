@@ -2,13 +2,26 @@ package bibModel
 
 import (
 	"bibService/sierra"
+	"fmt"
 )
 
+// PatronModel handles patron interactions with Sierra.
 type PatronModel struct {
 	settings Settings
 	api      sierra.Sierra
 }
 
+// CheckedoutItem represents the bib information for a checked out item.
+type CheckedoutItem struct {
+	BibID     string
+	BibNumber string
+	Title     string
+	Author    string
+	DueDate   string
+	ItemID    string
+}
+
+// NewPatronModel creates a new PatronModel
 func NewPatronModel(settings Settings) PatronModel {
 	model := PatronModel{settings: settings}
 	model.api = sierra.NewSierra(model.settings.SierraUrl, model.settings.KeySecret, model.settings.SessionFile)
@@ -16,29 +29,55 @@ func NewPatronModel(settings Settings) PatronModel {
 	return model
 }
 
-func (model PatronModel) Checkouts(patronId string) (sierra.Checkouts, error) {
-	data, err := model.api.Checkouts(patronId)
+// Checkouts returns the raw checked out data for a given patron
+func (model PatronModel) Checkouts(patronID string) (sierra.Checkouts, error) {
+	data, err := model.api.Checkouts(patronID)
 	return data, err
 }
 
-func (model PatronModel) GetBibs(checkouts sierra.Checkouts) ([]sierra.Bib, error) {
-	bibs := []sierra.Bib{}
+// CheckedoutBibs returns the BIB information for the items checked out by a given patron.
+func (model PatronModel) CheckedoutBibs(patronID string) ([]CheckedoutItem, error) {
+
+	checkouts, err := model.Checkouts(patronID)
+	if err != nil {
+		return []CheckedoutItem{}, err
+	}
+
+	items := []CheckedoutItem{}
 	for _, checkout := range checkouts.Entries {
 		itemID := checkout.ItemID()
-		item, err := model.api.GetItem(itemID)
+		bibID, err := model.bibIDForItemID(itemID)
 		if err != nil {
-			return []sierra.Bib{}, err
+			return []CheckedoutItem{}, err
 		}
-		for _, bibID := range item.BibIds {
-			params := map[string]string{"id": bibID}
-			itemBibs, err := model.api.Get(params, true)
-			if err != nil {
-				return []sierra.Bib{}, err
-			}
-			for _, bib := range itemBibs.Entries {
-				bibs = append(bibs, bib)
-			}
+		bib, err := model.api.GetBib(bibID)
+		if err != nil {
+			return []CheckedoutItem{}, err
 		}
+		item := CheckedoutItem{
+			BibID:     bib.Id,
+			BibNumber: "b" + bib.Id,
+			Title:     bib.Title,
+			Author:    bib.Author,
+			DueDate:   checkout.DueDate,
+			ItemID:    itemID,
+		}
+		items = append(items, item)
 	}
-	return bibs, nil
+	return items, nil
+}
+
+func (model PatronModel) bibIDForItemID(itemID string) (string, error) {
+	sierraItem, err := model.api.GetItem(itemID)
+	if err != nil {
+		return "", err
+	}
+	if len(sierraItem.BibIds) == 0 {
+		return "", fmt.Errorf("No BIB records found for item %s", itemID)
+	}
+	if len(sierraItem.BibIds) > 1 {
+		// should I return error fmt.Errorf("Multiple BIB records found for item %s", itemID)
+		return sierraItem.BibIds[0], nil
+	}
+	return sierraItem.BibIds[0], nil
 }
