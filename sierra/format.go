@@ -74,9 +74,8 @@ func formatCode(leader string) string {
 	if isMusicFormat(recType, level) {
 		if recType == "c" {
 			return "MS" // musical score
-		} else {
-			return "BSR" // sound recording
 		}
+		return "BSR" // sound recording
 	}
 
 	if isVisualMaterial(recType, level) {

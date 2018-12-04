@@ -18,23 +18,7 @@ type Item struct {
 	Fields      []marc.MarcField  `json:"varFields"`
 }
 
-func (s *Sierra) GetItem(itemID string) (Item, error) {
-	err := s.authenticate()
-	if err != nil {
-		return Item{}, err
-	}
-
-	url := s.ApiUrl + "/items/" + itemID
-	body, err := s.httpGet(url, s.Authorization.AccessToken)
-	if err != nil {
-		return Item{}, err
-	}
-
-	var item Item
-	err = json.Unmarshal([]byte(body), &item)
-	return item, err
-}
-
+// IsForBib returns true if the item belongs to the BIB ID passed.
 func (i Item) IsForBib(bib string) bool {
 	for _, b := range i.BibIds {
 		if b == bib {
@@ -73,4 +57,22 @@ func (i Item) BookplateCodes() []string {
 		}
 	}
 	return values
+}
+
+// Item fetches information about an individual item by ID.
+func (s *Sierra) Item(itemID string) (Item, error) {
+	err := s.authenticate()
+	if err != nil {
+		return Item{}, err
+	}
+
+	url := s.URL + "/items/" + itemID
+	body, err := s.httpGet(url, s.Authorization.AccessToken)
+	if err != nil {
+		return Item{}, err
+	}
+
+	var item Item
+	err = json.Unmarshal([]byte(body), &item)
+	return item, err
 }

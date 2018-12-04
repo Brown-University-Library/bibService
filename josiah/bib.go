@@ -70,7 +70,7 @@ func (model BibModel) GetBibs(bibs string) (sierra.Bibs, error) {
 	params := map[string]string{
 		"id": ids,
 	}
-	sierraBibs, err := model.api.Get(params, true)
+	sierraBibs, err := model.api.GetBibs(params, true)
 	if err != nil {
 		return sierra.Bibs{}, err
 	}
@@ -113,7 +113,7 @@ func (model BibModel) bibRangePaginated(fromBib, toBib string, page int) (sierra
 	} else {
 		params["id"] = fmt.Sprintf("[%s,%s]", fromBib, toBib)
 	}
-	return model.api.Get(params, true)
+	return model.api.GetBibs(params, true)
 }
 
 func (model BibModel) GetBibsUpdated(fromDate, toDate string, includeItems bool) (sierra.Bibs, error) {
@@ -180,7 +180,7 @@ func (model BibModel) GetBibsDeleted(fromDate, toDate string) ([]string, error) 
 	return bibs, nil
 }
 
-// Deletes from Solr the IDs of the records that have been deleted
+// Delete removes from Solr the IDs of the records that have been deleted
 // in Sierra or that have been marked as Suppressed in Sierra.
 func (model BibModel) Delete(fromDate, toDate string) error {
 	solrClient := solr.New(model.solrUrl, true)
@@ -254,7 +254,7 @@ func (model BibModel) bibsDeletedPaginated(fromDate, toDate string, page int) (s
 	} else {
 		params["deletedDate"] = dateRange(fromDate, toDate)
 	}
-	return model.api.Get(params, false)
+	return model.api.GetBibs(params, false)
 }
 
 func (model BibModel) SolrDocFromFile(fileName string) (SolrDoc, error) {
@@ -283,7 +283,7 @@ func (model BibModel) bibsUpdatedPaginated(fromDate, toDate string, page int, in
 		"updatedDate": dateRange(fromDate, toDate),
 	}
 
-	return model.api.Get(params, includeItems)
+	return model.api.GetBibs(params, includeItems)
 }
 
 func (model BibModel) bibsSuppressedPaginated(fromDate, toDate string, page int) (sierra.Bibs, error) {
@@ -294,7 +294,7 @@ func (model BibModel) bibsSuppressedPaginated(fromDate, toDate string, page int)
 		"suppressed":  "true",
 		"updatedDate": dateRange(fromDate, toDate),
 	}
-	return model.api.GetBibs(params)
+	return model.api.GetBibsMinimal(params)
 }
 
 func (model BibModel) GetBibRaw(bib string) (string, error) {
