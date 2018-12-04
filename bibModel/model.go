@@ -55,9 +55,9 @@ type Range struct {
 
 func New(settings Settings) BibModel {
 	model := BibModel{settings: settings}
-	model.api = sierra.NewSierra(model.settings.SierraUrl, model.settings.KeySecret, model.settings.SessionFile)
+	model.api = sierra.NewSierra(model.settings.SierraURL, model.settings.KeySecret, model.settings.SessionFile)
 	model.api.Verbose = settings.Verbose
-	model.solrUrl = settings.SolrUrl
+	model.solrUrl = settings.SolrURL
 	return model
 }
 
