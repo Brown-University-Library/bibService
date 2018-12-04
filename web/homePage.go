@@ -35,8 +35,8 @@ func homePage(resp http.ResponseWriter, req *http.Request) {
 
 	<p>Troubleshooting: <a href="/status">/status</a></p>
 	`
-	if settings.RootUrl != "" {
-		html = strings.Replace(html, "/bibutils/", settings.RootUrl, -1)
+	if settings.RootURL != "" {
+		html = strings.Replace(html, "/bibutils/", settings.RootURL, -1)
 	}
 	fmt.Fprint(resp, html)
 }
