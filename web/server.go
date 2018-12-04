@@ -13,6 +13,7 @@ import (
 
 var settings josiah.Settings
 
+// StartWebServer runs the web server.
 func StartWebServer(settingsFile string) {
 	var err error
 
@@ -43,7 +44,7 @@ func StartWebServer(settingsFile string) {
 	http.HandleFunc("/bibutils/marc/", marcController)
 
 	// Misc
-	http.HandleFunc("/bibutils/hayQuery.json", hayQueryJson)
+	http.HandleFunc("/bibutils/hayQuery.json", hayQueryJSON)
 	http.HandleFunc("/status", status)
 	http.HandleFunc("/", homePage)
 	log.Printf("Listening for requests at: http://%s", settings.ServerAddress)
@@ -57,7 +58,7 @@ func status(resp http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(resp, "OK")
 }
 
-func hayQueryJson(resp http.ResponseWriter, req *http.Request) {
+func hayQueryJSON(resp http.ResponseWriter, req *http.Request) {
 	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require",
 		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName)
 	hayRows, err := sierra.HayQuery(connString)
@@ -89,7 +90,7 @@ func bibOne(resp http.ResponseWriter, req *http.Request) {
 		renderJSON(resp, body, err, "bibOne")
 	} else {
 		log.Printf("Fetching BIB data for bib: %s %v", bib, req.URL.Query())
-		bibs, err := model.GetBib(bib)
+		bibs, err := model.GetBibs(bib)
 		renderJSON(resp, bibs, err, "bibOne")
 	}
 }
@@ -167,7 +168,7 @@ func solrDoc(resp http.ResponseWriter, req *http.Request) {
 	}
 	log.Printf("Fetching SolrDoc for %s", bib)
 	model := josiah.NewBibModel(settings)
-	bibs, err := model.GetBib(bib)
+	bibs, err := model.GetBibs(bib)
 	if err != nil {
 		renderJSON(resp, nil, err, "bibController")
 		return
@@ -232,15 +233,15 @@ func itemController(resp http.ResponseWriter, req *http.Request) {
 }
 
 func checkoutController(resp http.ResponseWriter, req *http.Request) {
-	patronId := qsParam("patronId", req)
-	if patronId == "" {
+	patronID := qsParam("patronId", req)
+	if patronID == "" {
 		err := errors.New("No patronId parameter was received")
 		renderJSON(resp, nil, err, "checkoutController")
 		return
 	}
-	log.Printf("Fetching checkout information for patronId: %s", patronId)
+	log.Printf("Fetching checkout information for patronId: %s", patronID)
 	model := josiah.NewPatronModel(settings)
-	checkouts, err := model.CheckedoutBibs(patronId)
+	checkouts, err := model.CheckedoutBibs(patronID)
 	if err != nil {
 		log.Printf("ERROR (checkoutController): %s", err)
 		fmt.Fprint(resp, "Error fetching patron checkouts")

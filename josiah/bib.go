@@ -61,7 +61,7 @@ func NewBibModel(settings Settings) BibModel {
 	return model
 }
 
-func (model BibModel) GetBib(bibs string) (sierra.Bibs, error) {
+func (model BibModel) GetBibs(bibs string) (sierra.Bibs, error) {
 	ids := idsFromBib(bibs)
 	if ids == "" {
 		return sierra.Bibs{}, errors.New("No ID was received")
