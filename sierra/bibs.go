@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Bibs represents a collection of Sierra items.
 type Bibs struct {
 	Total   int   `json:"total"`
 	Entries []Bib `json:"entries"`
@@ -62,7 +63,7 @@ func (s *Sierra) GetBibs(params map[string]string, includeItems bool) (Bibs, err
 	return bibs, err
 }
 
-// Fetches minimal information about the records,
+// GetBibsMinimal fetches minimal information about the records,
 // we could eventually return an []string but I need to
 // decide how to handle deleted records in that case.
 func (s *Sierra) GetBibsMinimal(params map[string]string) (Bibs, error) {
@@ -78,6 +79,7 @@ func (s *Sierra) GetBibsMinimal(params map[string]string) (Bibs, error) {
 	return bibs, err
 }
 
+// BibsUpdatedSince returns an array of BIB record updated since a given date.
 func (s *Sierra) BibsUpdatedSince(date string) (Bibs, error) {
 	err := s.authenticate()
 	if err != nil {
@@ -113,18 +115,6 @@ func (s *Sierra) BibIDForItemID(itemID string) (string, error) {
 	return item.BibIds[0], nil
 }
 
-func (s *Sierra) Search(value string) (string, error) {
-	err := s.authenticate()
-	if err != nil {
-		return "", err
-	}
-
-	url := s.URL + "/bibs"
-	url += "?deleted=false&suppressed=false&fields=title,author,publishYear,updatedDate"
-	body, err := s.httpGet(url, s.Authorization.AccessToken)
-	return body, err
-}
-
 func (s *Sierra) GetRaw(params map[string]string, fields string) (string, error) {
 	err := s.authenticate()
 	if err != nil {
@@ -143,6 +133,7 @@ func (s *Sierra) GetRaw(params map[string]string, fields string) (string, error)
 	return s.httpGet(url, s.Authorization.AccessToken)
 }
 
+// Marc fetches the MARC data for a given range of IDs.
 // idRange can be a single ID or a comma delimited list of IDs.
 // Becareful because it seems that Sierra's backend chokes when
 // the list is to long (e.g. it fails with 50 IDs)
