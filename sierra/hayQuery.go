@@ -28,6 +28,13 @@ func (row HayRow) ToTSV() string {
 	return s
 }
 
+func stringValue(s sql.NullString) string {
+	if s.Valid {
+		return s.String
+	}
+	return ""
+}
+
 func HayQuery(connString string) ([]HayRow, error) {
 	log.Printf("Connecting to DB: %s", connString)
 	// https://godoc.org/github.com/lib/pq
@@ -62,16 +69,36 @@ func HayQuery(connString string) ([]HayRow, error) {
 	defer rows.Close()
 
 	values := []HayRow{}
-
 	for rows.Next() {
-		row := HayRow{}
-		err := rows.Scan(&row.RecordNum, &row.DisplayOrder, &row.Code2,
-			&row.LocationCode, &row.StatusCode, &row.CopyNum, &row.BarCode,
-			&row.CallNumber, &row.BestTitle)
+		row, err := scanHayRow(rows)
 		if err != nil {
 			return []HayRow{}, err
 		}
 		values = append(values, row)
 	}
 	return values, nil
+}
+
+func scanHayRow(rows *sql.Rows) (HayRow, error) {
+	var recordNum, displayOrder, code2, locationCode, statusCode,
+		copyNum, barCode, callNumber, bestTitle sql.NullString
+
+	err := rows.Scan(&recordNum, &displayOrder, &code2,
+		&locationCode, &statusCode, &copyNum, &barCode,
+		&callNumber, &bestTitle)
+	if err != nil {
+		return HayRow{}, err
+	}
+
+	row := HayRow{}
+	row.RecordNum = stringValue(recordNum)
+	row.DisplayOrder = stringValue(displayOrder)
+	row.Code2 = stringValue(code2)
+	row.LocationCode = stringValue(locationCode)
+	row.StatusCode = stringValue(statusCode)
+	row.CopyNum = stringValue(copyNum)
+	row.BarCode = stringValue(barCode)
+	row.CallNumber = stringValue(callNumber)
+	row.BestTitle = stringValue(bestTitle)
+	return row, nil
 }
