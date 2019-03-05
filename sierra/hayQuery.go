@@ -78,9 +78,10 @@ func HayQuery(connString string) ([]HayRow, error) {
 	rb.record_type_code || rb.record_num || 'a' as bib_record_num,
 	ri.record_type_code || ri.record_num || 'a' as item_record_num,
 	(
-		SELECT regexp_replace(trim(v.field_content), '(\|[a-z]{1})', '', 'ig')
+		SELECT regexp_replace(trim(v.field_content), '(\|[a-z]{1}Hathi Trust Report)', '', 'ig')
 		FROM sierra_view.varfield as v
-		WHERE v.record_id = l.bib_record_id AND v.marc_tag='910'
+		WHERE v.record_id = l.bib_record_id
+		AND v.marc_tag='910' AND v.field_content like '%Hathi%'
 		ORDER BY v.occ_num
 		LIMIT 1
 	) as localtag,
