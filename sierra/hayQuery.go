@@ -122,12 +122,12 @@ func HayQuery(connString string) ([]HayRow, error) {
 		LIMIT 1
 	) as localnotes
 	FROM sierra_view.item_record as i
-	JOIN sierra_view.bib_record_item_record_link as l ON (l.item_record_id = i.record_id)
-	JOIN sierra_view.item_view as i2 ON (i2.id=i.record_id)
-	JOIN sierra_view.item_record_property as p ON (p.item_record_id=i.record_id)
-	JOIN sierra_view.bool_set as bo ON (bo.record_metadata_id=i.record_id)
-	JOIN sierra_view.record_metadata as ri ON (ri.id = i.record_id)
-	JOIN sierra_view.record_metadata as rb ON (rb.id = l.bib_record_id) AND (rb.campus_code = '')
+	LEFT JOIN sierra_view.bib_record_item_record_link as l ON (l.item_record_id = i.record_id)
+	LEFT JOIN sierra_view.item_view as i2 ON (i2.id=i.record_id)
+	LEFT JOIN sierra_view.item_record_property as p ON (p.item_record_id=i.record_id)
+	LEFT JOIN sierra_view.bool_set as bo ON (bo.record_metadata_id=i.record_id)
+	LEFT JOIN sierra_view.record_metadata as ri ON (ri.id = i.record_id)
+	LEFT JOIN sierra_view.record_metadata as rb ON (rb.id = l.bib_record_id) AND (rb.campus_code = '')
 	WHERE bo.bool_info_id=171;
 
 	CREATE TEMP TABLE temp_dupe AS
@@ -158,6 +158,7 @@ func HayQuery(connString string) ([]HayRow, error) {
 		}
 		values = append(values, row)
 	}
+	log.Printf("Found %d rows\r\n", len(values))
 	return values, nil
 }
 
