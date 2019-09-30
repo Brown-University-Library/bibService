@@ -42,8 +42,13 @@ func (patron PatronModel) CheckedoutBibs(patronID string) ([]CheckedoutItem, err
 	}
 
 	// Get the BIB data associated with each checked out ITEM.
+	// Notice that we skip Borrow Direct items because we don't have Bib
+	// information for those (even though they have item records)
 	items := []CheckedoutItem{}
 	for _, checkout := range checkouts.Entries {
+		if checkout.IsBorrowDirect() {
+			continue
+		}
 		itemID := checkout.ItemID()
 		bibID, err := patron.sierra.BibIDForItemID(itemID)
 		if err != nil {

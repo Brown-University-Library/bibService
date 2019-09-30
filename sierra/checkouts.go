@@ -30,6 +30,13 @@ func (e CheckoutEntry) ItemID() string {
 	return tokens[len(tokens)-1]
 }
 
+// IsBorrowDirect returns true if the item is a Borrow Direct item.
+// Borrow Direct Items have an ItemURL in the form "http://.../nnnnnn@xxxx" where xxxx seems
+// to be value "ncip" but I suspect it could be other values too.
+func (e CheckoutEntry) IsBorrowDirect() bool {
+	return strings.Contains(e.ItemID(), "@")
+}
+
 // Checkouts returns the checkout information for the given patron ID.
 func (s *Sierra) Checkouts(patronID string) (Checkouts, error) {
 	err := s.authenticate()
