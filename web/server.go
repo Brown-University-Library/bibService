@@ -60,7 +60,7 @@ func status(resp http.ResponseWriter, req *http.Request) {
 
 func hayQueryJSON(resp http.ResponseWriter, req *http.Request) {
 	timeout := 300 // seconds
-	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require CommandTimeout=%d",
+	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require connect_timeout=%d",
 		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
 	hayRows, err := sierra.HayQuery(connString)
 	if err != nil {

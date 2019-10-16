@@ -144,6 +144,7 @@ func HayQuery(connString string) ([]HayRow, error) {
 
 	log.Printf("Running query: \r\n%s\r\n", sqlSelect)
 
+	db.
 	rows, err := db.Query(sqlSelect)
 	if err != nil {
 		return []HayRow{}, err
