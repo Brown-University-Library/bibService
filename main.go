@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bibService/josiah"
+	"bibService/sierra"
 	"bibService/web"
+	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -12,7 +16,35 @@ func main() {
 		return
 	}
 	settingsFile := os.Args[1]
+
+	testRun := len(os.Args) == 3 && os.Args[2] == "smoketest"
+	if testRun {
+		smokeTest(settingsFile)
+		return
+	}
+
 	web.StartWebServer(settingsFile)
+}
+
+func smokeTest(settingsFile string) {
+	settings, err := josiah.LoadSettings(settingsFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("%#v", settings)
+
+	timeout := 300 // seconds
+	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require CommandTimeout=%d ",
+		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
+	hayRows, err := sierra.HayQuery(connString)
+	if err != nil {
+		log.Printf("ERROR getting data from Sierra: %s", err)
+		return
+	}
+
+	bytes, err := json.Marshal(hayRows)
+	json := string(bytes)
+	fmt.Printf("%s", json)
 }
 
 func displayHelp(msg string) {
