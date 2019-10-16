@@ -151,12 +151,18 @@ func HayQuery(connString string) ([]HayRow, error) {
 	defer rows.Close()
 
 	values := []HayRow{}
+	log.Printf("Fetching rows...")
 	for rows.Next() {
 		row, err := scanHayRow(rows)
 		if err != nil {
 			return []HayRow{}, err
 		}
 		values = append(values, row)
+
+		count := len(values)
+		if count > 0 && (count%100) == 0 {
+			log.Printf("Fetched %d rows...", count)
+		}
 	}
 	log.Printf("Found %d rows\r\n", len(values))
 	return values, nil

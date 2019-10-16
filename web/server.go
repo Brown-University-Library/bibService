@@ -59,8 +59,9 @@ func status(resp http.ResponseWriter, req *http.Request) {
 }
 
 func hayQueryJSON(resp http.ResponseWriter, req *http.Request) {
-	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require",
-		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName)
+	timeout := 300 // seconds
+	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require CommandTimeout=%d",
+		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
 	hayRows, err := sierra.HayQuery(connString)
 	if err != nil {
 		log.Printf("ERROR getting data from Sierra: %s", err)
