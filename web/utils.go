@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -32,6 +33,12 @@ func qsParam(name string, req *http.Request) string {
 		return params[name][0]
 	}
 	return ""
+}
+
+func qsParamInt(name string, req *http.Request) int {
+	str := qsParam(name, req)
+	num, _ := strconv.Atoi(str)
+	return num
 }
 
 func toJSON(data interface{}, pretty bool) (string, error) {

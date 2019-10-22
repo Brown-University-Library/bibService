@@ -10,8 +10,7 @@ import (
 func homePage(resp http.ResponseWriter, req *http.Request) {
 	log.Printf("Home: %v", req.URL)
 
-	html := `<h1>bibService</h1>
-	<p>Service for BIB record utilities</p>
+	html := `<h1>Sierra utilities</h1>
 
 	<h2>BIB Record</h2>
 	<ul>
@@ -31,6 +30,11 @@ func homePage(resp http.ResponseWriter, req *http.Request) {
 	<h2>MARC</h2>
 	<ul>
 		<li> <a href="/bibutils/marc/?bib=b8060910">MARC data for a BIB Record</a>
+	</ul>
+
+	<h2>Pull Slips</h2>
+	<ul>
+		<li> <a href="/bibutils/pullSlips?id=171">Pull Slips (for Sierra List 171)</a>
 	</ul>
 
 	<p>Troubleshooting: <a href="/status">/status</a></p>

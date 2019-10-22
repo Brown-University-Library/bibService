@@ -44,7 +44,7 @@ func StartWebServer(settingsFile string) {
 	http.HandleFunc("/bibutils/marc/", marcController)
 
 	// Misc
-	http.HandleFunc("/bibutils/hayQuery.json", hayQueryJSON)
+	http.HandleFunc("/bibutils/pullSlips", pullSlips)
 	http.HandleFunc("/status", status)
 	http.HandleFunc("/", homePage)
 	log.Printf("Listening for requests at: http://%s", settings.ServerAddress)
@@ -58,11 +58,18 @@ func status(resp http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(resp, "OK")
 }
 
-func hayQueryJSON(resp http.ResponseWriter, req *http.Request) {
+func pullSlips(resp http.ResponseWriter, req *http.Request) {
+	listID := qsParamInt("id", req)
+	if listID == 0 {
+		err := errors.New("No id parameter was received")
+		renderJSON(resp, nil, err, "hayQueryJSON")
+		return
+	}
+
 	timeout := 300 // seconds
 	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require connect_timeout=%d",
 		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
-	hayRows, err := sierra.HayQuery(connString)
+	rows, err := sierra.PullSlipsForList(connString, listID)
 	if err != nil {
 		log.Printf("ERROR getting data from Sierra: %s", err)
 		resp.WriteHeader(http.StatusInternalServerError)
@@ -71,7 +78,7 @@ func hayQueryJSON(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(hayRows)
+	bytes, err := json.Marshal(rows)
 	json := string(bytes)
 	resp.Header().Add("Content-Type", "application/json")
 	fmt.Fprint(resp, json)

@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 
 	_ "github.com/lib/pq"
 )
 
-type HayRow struct {
+type PullSlipRow struct {
 	DisplayOrder   int
 	OrderNum       string
 	CallNumber     string
@@ -29,7 +31,7 @@ type HayRow struct {
 	BndWidth       bool
 }
 
-func (row HayRow) String() string {
+func (row PullSlipRow) String() string {
 	s := fmt.Sprintf("%s, %s, %s", row.BibRecordNum, row.ItemRecordNum, row.Title)
 	return s
 }
@@ -41,12 +43,12 @@ func stringValue(s sql.NullString) string {
 	return ""
 }
 
-func HayQuery(connString string) ([]HayRow, error) {
+func PullSlipsForList(connString string, listID int) ([]PullSlipRow, error) {
 	log.Printf("Connecting to DB: %s", connString)
 	// https://godoc.org/github.com/lib/pq
 	db, err := sql.Open("postgres", connString)
 	if err != nil {
-		return []HayRow{}, err
+		return []PullSlipRow{}, err
 	}
 	defer db.Close()
 
@@ -128,13 +130,13 @@ func HayQuery(connString string) ([]HayRow, error) {
 	LEFT JOIN sierra_view.bool_set as bo ON (bo.record_metadata_id=i.record_id)
 	LEFT JOIN sierra_view.record_metadata as ri ON (ri.id = i.record_id)
 	LEFT JOIN sierra_view.record_metadata as rb ON (rb.id = l.bib_record_id) AND (rb.campus_code = '')
-	WHERE bo.bool_info_id=171;
+	WHERE bo.bool_info_id={listID};
 
 	CREATE TEMP TABLE temp_dupe AS
 	SELECT count(l.bib_record_id)>1 as BNDWITH, bo.display_order
 	FROM sierra_view.bib_record_item_record_link as l
 	JOIN sierra_view.bool_set as bo ON (bo.record_metadata_id=l.item_record_id)
-	WHERE bo.bool_info_id=171
+	WHERE bo.bool_info_id={listID}
 	GROUP BY l.item_record_id, bo.display_order;
 
 	SELECT t.*, du.BNDWITH
@@ -142,21 +144,21 @@ func HayQuery(connString string) ([]HayRow, error) {
 	JOIN temp_dupe as du ON (du.display_order = t.display_order)
 	ORDER BY t.display_order;`
 
+	sqlSelect = strings.ReplaceAll(sqlSelect, "{listID}", strconv.Itoa(listID))
 	log.Printf("Running query: \r\n%s\r\n", sqlSelect)
 
-	db.
 	rows, err := db.Query(sqlSelect)
 	if err != nil {
-		return []HayRow{}, err
+		return []PullSlipRow{}, err
 	}
 	defer rows.Close()
 
-	values := []HayRow{}
+	values := []PullSlipRow{}
 	log.Printf("Fetching rows...")
 	for rows.Next() {
-		row, err := scanHayRow(rows)
+		row, err := scanPullSlipRow(rows)
 		if err != nil {
-			return []HayRow{}, err
+			return []PullSlipRow{}, err
 		}
 		values = append(values, row)
 
@@ -169,7 +171,7 @@ func HayQuery(connString string) ([]HayRow, error) {
 	return values, nil
 }
 
-func scanHayRow(rows *sql.Rows) (HayRow, error) {
+func scanPullSlipRow(rows *sql.Rows) (PullSlipRow, error) {
 	var displayOrder, copyNum int
 	var bndWidth bool
 	var orderNum, callNumber, volume, barCode, code2, itemStatusCode,
@@ -182,10 +184,10 @@ func scanHayRow(rows *sql.Rows) (HayRow, error) {
 		&localNotes, &bndWidth)
 
 	if err != nil {
-		return HayRow{}, err
+		return PullSlipRow{}, err
 	}
 
-	row := HayRow{}
+	row := PullSlipRow{}
 	row.DisplayOrder = displayOrder
 	row.OrderNum = stringValue(orderNum)
 	row.CallNumber = stringValue(callNumber)

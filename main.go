@@ -2,9 +2,7 @@ package main
 
 import (
 	"bibService/josiah"
-	"bibService/sierra"
 	"bibService/web"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -32,20 +30,6 @@ func smokeTest(settingsFile string) {
 		log.Fatal(err)
 	}
 	log.Printf("%#v", settings)
-
-	timeout := 300 // seconds
-	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require connect_timeout=%d",
-		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
-	fmt.Printf("%s", connString)
-	hayRows, err := sierra.HayQuery(connString)
-	if err != nil {
-		log.Printf("ERROR getting data from Sierra: %s", err)
-		return
-	}
-
-	bytes, err := json.Marshal(hayRows)
-	json := string(bytes)
-	fmt.Printf("%s", json)
 }
 
 func displayHelp(msg string) {
