@@ -43,6 +43,9 @@ func StartWebServer(settingsFile string) {
 	// MARC operations
 	http.HandleFunc("/bibutils/marc/", marcController)
 
+	// Collection Dashboard
+	http.HandleFunc("/collection/details", collectionDetails)
+
 	// Misc
 	http.HandleFunc("/bibutils/pullSlips", pullSlips)
 	http.HandleFunc("/status", status)
@@ -62,7 +65,7 @@ func pullSlips(resp http.ResponseWriter, req *http.Request) {
 	listID := qsParamInt("id", req)
 	if listID == 0 {
 		err := errors.New("No id parameter was received")
-		renderJSON(resp, nil, err, "hayQueryJSON")
+		renderJSON(resp, nil, err, "pullSlips")
 		return
 	}
 
@@ -70,6 +73,26 @@ func pullSlips(resp http.ResponseWriter, req *http.Request) {
 	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require connect_timeout=%d",
 		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
 	rows, err := sierra.PullSlipsForList(connString, listID)
+	if err != nil {
+		log.Printf("ERROR getting data from Sierra: %s", err)
+		resp.WriteHeader(http.StatusInternalServerError)
+		resp.Header().Add("Content-Type", "application/json")
+		fmt.Fprint(resp, "[]")
+		return
+	}
+
+	bytes, err := json.Marshal(rows)
+	json := string(bytes)
+	resp.Header().Add("Content-Type", "application/json")
+	fmt.Fprint(resp, json)
+}
+
+func collectionDetails(resp http.ResponseWriter, req *http.Request) {
+	subject := qsParam("subject", req)
+	timeout := 300 // seconds
+	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require connect_timeout=%d",
+		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
+	rows, err := sierra.CollectionItemsForSubject(connString, subject)
 	if err != nil {
 		log.Printf("ERROR getting data from Sierra: %s", err)
 		resp.WriteHeader(http.StatusInternalServerError)

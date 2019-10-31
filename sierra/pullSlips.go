@@ -36,13 +36,6 @@ func (row PullSlipRow) String() string {
 	return s
 }
 
-func stringValue(s sql.NullString) string {
-	if s.Valid {
-		return s.String
-	}
-	return ""
-}
-
 func PullSlipsForList(connString string, listID int) ([]PullSlipRow, error) {
 	log.Printf("Connecting to DB: %s", connString)
 	// https://godoc.org/github.com/lib/pq

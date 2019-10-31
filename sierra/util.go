@@ -1,6 +1,7 @@
 package sierra
 
 import (
+	"database/sql"
 	"encoding/json"
 	"strconv"
 	"strings"
@@ -102,4 +103,25 @@ func stringToArray(str string) []string {
 		array = append(array, string(c))
 	}
 	return array
+}
+
+func stringValue(s sql.NullString) string {
+	if s.Valid {
+		return s.String
+	}
+	return ""
+}
+
+func intLongValue(v sql.NullInt64) int64 {
+	if v.Valid {
+		return v.Int64
+	}
+	return 0
+}
+
+func intValue(v sql.NullInt32) int {
+	if v.Valid {
+		return int(v.Int32)
+	}
+	return 0
 }
