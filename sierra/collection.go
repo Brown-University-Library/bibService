@@ -20,6 +20,7 @@ type CollectionItemRow struct {
 	LocationCode   string
 	CallnumberRaw  string
 	CallnumberNorm string
+	Publisher      string
 }
 
 func (row CollectionItemRow) String() string {
@@ -51,14 +52,21 @@ func CollectionItemsForList(connString string, listID int) ([]CollectionItemRow,
 	sqlSelect := `
 		SELECT bib.record_num, bib.title, bibprop.publish_year,
 			i.record_num as item_record_num, i.barcode, i.location_code,
-			iprop.call_number, iprop.call_number_norm
+			iprop.call_number, iprop.call_number_norm,
+			(
+				SELECT v.field_content
+				FROM sierra_view.varfield as v
+				WHERE v.record_id = bib.id AND v.marc_tag='260'
+				ORDER BY v.occ_num
+				LIMIT 1
+			) as publisher
 		FROM sierra_view.bool_set AS list
 		INNER JOIN sierra_view.bib_view AS bib ON (bib.id = list.record_metadata_id)
 		INNER JOIN sierra_view.bib_record_item_record_link AS lk ON (bib.id = lk.bib_record_id)
 		INNER JOIN sierra_view.item_view AS i ON (i.id = lk.item_record_id)
 		INNER JOIN sierra_view.bib_record_property AS bibprop ON (bib.id = bibprop.bib_record_id)
 		INNER JOIN sierra_view.item_record_property AS iprop ON (i.id = iprop.item_record_id)
-		WHERE list.bool_info_id = {listID}`
+		WHERE list.bool_info_id = {listID};`
 
 	sqlSelect = strings.ReplaceAll(sqlSelect, "{listID}", strconv.Itoa(listID))
 	log.Printf("Running query: \r\n%s\r\n", sqlSelect)
@@ -89,9 +97,10 @@ func CollectionItemsForList(connString string, listID int) ([]CollectionItemRow,
 
 func scanCollectionItemRow(rows *sql.Rows) (CollectionItemRow, error) {
 	var recordNum, itemRecordNum, pubYear sql.NullInt64
-	var title, barcode, location, callNum, callNumNorm sql.NullString
+	var title, barcode, location, callNum, callNumNorm, publisher sql.NullString
 
-	err := rows.Scan(&recordNum, &title, &pubYear, &itemRecordNum, &barcode, &location, &callNum, &callNumNorm)
+	err := rows.Scan(&recordNum, &title, &pubYear, &itemRecordNum,
+		&barcode, &location, &callNum, &callNumNorm, &publisher)
 	if err != nil {
 		return CollectionItemRow{}, err
 	}
@@ -105,5 +114,6 @@ func scanCollectionItemRow(rows *sql.Rows) (CollectionItemRow, error) {
 	row.LocationCode = stringValue(location)
 	row.CallnumberRaw = stringValue(callNum)
 	row.CallnumberNorm = stringValue(callNumNorm)
+	row.Publisher = stringValue(publisher)
 	return row, nil
 }
