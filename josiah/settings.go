@@ -9,19 +9,22 @@ import (
 // information about how to connect to Sierra's API, the Sierra database,
 // or our Solr server.
 type Settings struct {
-	ServerAddress  string `json:"serverAddress"`
-	SessionFile    string `json:"sessionFile"`
-	SierraURL      string `json:"sierraUrl"`
-	KeySecret      string `json:"keySecret"`
-	Verbose        bool   `json:"verbose"`
-	SolrURL        string `json:"solrUrl"`
-	RootURL        string `json:"rootUrl"`
-	CachedDataPath string `json:"cachedDataPath"`
-	DbUser         string `json:"dbUser"`
-	DbPassword     string `json:"dbPassword"`
-	DbHost         string `json:"dbHost"`
-	DbPort         int    `json:"dbPort"`
-	DbName         string `json:"dbName"`
+	ServerAddress    string `json:"serverAddress"`
+	SessionFile      string `json:"sessionFile"`
+	SierraURL        string `json:"sierraUrl"`
+	KeySecret        string `json:"keySecret"`
+	Verbose          bool   `json:"verbose"`
+	SolrURL          string `json:"solrUrl"`
+	RootURL          string `json:"rootUrl"`
+	CachedDataPath   string `json:"cachedDataPath"`
+	DbUser           string `json:"dbUser"`           // Sierra Postgres DB
+	DbPassword       string `json:"dbPassword"`       // Sierra Postgres DB
+	DbHost           string `json:"dbHost"`           // Sierra Postgres DB
+	DbPort           int    `json:"dbPort"`           // Sierra Postgres DB
+	DbName           string `json:"dbName"`           // Sierra Postgres DB
+	JosiahDbUser     string `json:"josiahDbUser"`     // Josiah MySQL DB
+	JosiahDbPassword string `json:"josiahDbPassword"` // Josiah MySQL DB
+	JosiahDbName     string `json:"josiahDbName"`     // Josiah MySQL DB
 }
 
 // LoadSettings fetches settings information from a JSON file.

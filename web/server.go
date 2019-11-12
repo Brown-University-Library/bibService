@@ -45,6 +45,7 @@ func StartWebServer(settingsFile string) {
 
 	// Collection Dashboard
 	http.HandleFunc("/collection/details", collectionDetails)
+	http.HandleFunc("/collection/import", collectionImport)
 
 	// Misc
 	http.HandleFunc("/bibutils/pullSlips", pullSlips)
@@ -87,6 +88,29 @@ func pullSlips(resp http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(resp, json)
 }
 
+// Downloads into Josiah's database the data for a collection
+func collectionImport(resp http.ResponseWriter, req *http.Request) {
+	subject := qsParam("subject", req)
+	timeout := 300 // seconds
+
+	sierraConnString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require connect_timeout=%d",
+		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
+	josiahConnString := fmt.Sprintf("%s:%s@/%s?parseTime=true", settings.JosiahDbUser, settings.JosiahDbPassword, settings.JosiahDbName)
+	e := josiah.NewEcosystem(sierraConnString, josiahConnString)
+	err := e.DownloadCollection(subject)
+	if err != nil {
+		log.Printf("ERROR downloading collection %s: %s", subject, err)
+		resp.WriteHeader(http.StatusInternalServerError)
+		resp.Header().Add("Content-Type", "application/json")
+		fmt.Fprint(resp, "[]")
+		return
+	}
+
+	resp.Header().Add("Content-Type", "application/json")
+	fmt.Fprint(resp, "[]")
+}
+
+// Returns the data for a collection
 func collectionDetails(resp http.ResponseWriter, req *http.Request) {
 	subject := qsParam("subject", req)
 	timeout := 300 // seconds

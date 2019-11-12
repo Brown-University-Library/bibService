@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func toIntTry(str string) (int, bool) {
@@ -112,9 +113,9 @@ func stringValue(s sql.NullString) string {
 	return ""
 }
 
-func intLongValue(v sql.NullInt64) int64 {
+func intLongValue(v sql.NullInt64) int {
 	if v.Valid {
-		return v.Int64
+		return int(v.Int64)
 	}
 	return 0
 }
@@ -124,4 +125,18 @@ func intValue(v sql.NullInt32) int {
 		return int(v.Int32)
 	}
 	return 0
+}
+
+func boolValue(v sql.NullBool) bool {
+	if v.Valid {
+		return v.Bool
+	}
+	return false
+}
+
+func timeValue(v sql.NullTime) time.Time {
+	if v.Valid {
+		return v.Time
+	}
+	return time.Time{}
 }

@@ -13,6 +13,8 @@ The main source code files are:
 To run the service you'll need a `settings.json` file with the configuration information to connect to Sierra. Take a look at the `settings.sample.json` for an example. Once you have a `settings.json` file created you just need to run:
 
 ```
+$ go get github.com/go-sql-driver/postgres
+$ go get github.com/go-sql-driver/mysql
 $ go build
 $ ./bibService settings.json
 ```
