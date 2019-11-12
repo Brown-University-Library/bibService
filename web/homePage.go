@@ -37,6 +37,11 @@ func homePage(resp http.ResponseWriter, req *http.Request) {
 		<li> <a href="/bibutils/pullSlips?id=171">Pull Slips (for Sierra List 171)</a>
 	</ul>
 
+	<h2>Collections</h2>
+	<ul>
+		<li> <a href="/collection/details?subject=econ">Collection data for ECON (for Sierra List 334)</a>
+	</ul>
+
 	<p>Troubleshooting: <a href="/status">/status</a></p>
 	`
 	if settings.RootURL != "" {

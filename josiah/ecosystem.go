@@ -24,6 +24,7 @@ func (e Ecosystem) DownloadCollection(subject string) error {
 		return err
 	}
 
+	log.Printf("Connecting to DB: %s", e.josiahConnString)
 	db, err := sql.Open("mysql", e.josiahConnString)
 	if err != nil {
 		return err

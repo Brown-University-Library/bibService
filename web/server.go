@@ -70,10 +70,7 @@ func pullSlips(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	timeout := 300 // seconds
-	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require connect_timeout=%d",
-		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
-	rows, err := sierra.PullSlipsForList(connString, listID)
+	rows, err := sierra.PullSlipsForList(sierraConnString(), listID)
 	if err != nil {
 		log.Printf("ERROR getting data from Sierra: %s", err)
 		resp.WriteHeader(http.StatusInternalServerError)
@@ -91,12 +88,8 @@ func pullSlips(resp http.ResponseWriter, req *http.Request) {
 // Downloads into Josiah's database the data for a collection
 func collectionImport(resp http.ResponseWriter, req *http.Request) {
 	subject := qsParam("subject", req)
-	timeout := 300 // seconds
 
-	sierraConnString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require connect_timeout=%d",
-		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
-	josiahConnString := fmt.Sprintf("%s:%s@/%s?parseTime=true", settings.JosiahDbUser, settings.JosiahDbPassword, settings.JosiahDbName)
-	e := josiah.NewEcosystem(sierraConnString, josiahConnString)
+	e := josiah.NewEcosystem(sierraConnString(), josiahConnString())
 	err := e.DownloadCollection(subject)
 	if err != nil {
 		log.Printf("ERROR downloading collection %s: %s", subject, err)
@@ -113,10 +106,7 @@ func collectionImport(resp http.ResponseWriter, req *http.Request) {
 // Returns the data for a collection
 func collectionDetails(resp http.ResponseWriter, req *http.Request) {
 	subject := qsParam("subject", req)
-	timeout := 300 // seconds
-	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require connect_timeout=%d",
-		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
-	rows, err := sierra.CollectionItemsForSubject(connString, subject)
+	rows, err := sierra.CollectionItemsForSubject(sierraConnString(), subject)
 	if err != nil {
 		log.Printf("ERROR getting data from Sierra: %s", err)
 		resp.WriteHeader(http.StatusInternalServerError)
@@ -346,4 +336,19 @@ func renderJSON(resp http.ResponseWriter, data interface{}, errFetch error, info
 	}
 	resp.Header().Add("Content-Type", "application/json")
 	fmt.Fprint(resp, json)
+}
+
+func sierraConnString() string {
+	timeout := 300 // seconds
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=require connect_timeout=%d",
+		settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPassword, settings.DbName, timeout)
+}
+
+func josiahConnString() string {
+	protocolAddress := ""
+	if settings.JosiahDbHost != "" {
+		protocolAddress = fmt.Sprintf("tcp(%s)", settings.JosiahDbHost)
+	}
+	return fmt.Sprintf("%s:%s@%s/%s?parseTime=true",
+		settings.JosiahDbUser, settings.JosiahDbPassword, protocolAddress, settings.JosiahDbName)
 }

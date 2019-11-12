@@ -22,6 +22,7 @@ type Settings struct {
 	DbHost           string `json:"dbHost"`           // Sierra Postgres DB
 	DbPort           int    `json:"dbPort"`           // Sierra Postgres DB
 	DbName           string `json:"dbName"`           // Sierra Postgres DB
+	JosiahDbHost     string `json:"josiahDbHost"`     // Josiah MySQL DB
 	JosiahDbUser     string `json:"josiahDbUser"`     // Josiah MySQL DB
 	JosiahDbPassword string `json:"josiahDbPassword"` // Josiah MySQL DB
 	JosiahDbName     string `json:"josiahDbName"`     // Josiah MySQL DB
