@@ -77,7 +77,9 @@ func (e Ecosystem) saveBatch(db *sql.DB, batch []sierra.CollectionItemRow) error
 			item_status_code, last_checkin_gmt, checkout_total, renewal_total, last_year_to_date_checkout_total,
 			year_to_date_checkout_total, copy_num, checkout_statistic_group_code_num, use3_count, last_checkout_gmt,
 			internal_use_count, copy_use_count, old_location_code, is_suppressed, item_creation_date_gmt,
-			callnumber_raw, callnumber_norm, publisher, marc_tag, marc_value
+			callnumber_raw, callnumber_norm, publisher,
+			ord_record_num, fund_code, fund_code_num, fund_code_master,
+			marc_tag, marc_value
 		)
 		VALUES(
 			?, ?, ?, ?, ?,
@@ -87,7 +89,9 @@ func (e Ecosystem) saveBatch(db *sql.DB, batch []sierra.CollectionItemRow) error
 			?, ?, ?, ?, ?,
 			?, ?, ?, ?, ?,
 			?, ?, ?, ?, ?,
-			?, ?, ?, ?, ?
+			?, ?, ?,
+			?, ?, ?, ?,
+			?, ?
 		)
 	`
 	for _, item := range batch {
@@ -99,7 +103,9 @@ func (e Ecosystem) saveBatch(db *sql.DB, batch []sierra.CollectionItemRow) error
 			item.ItemStatusCode, item.LastCheckinGmt, item.CheckoutTotal, item.RenewalTotal, item.LastYearToDateCheckoutTotal,
 			item.YearToDateCheckoutTotal, item.CopyNum, item.CheckoutStatisticGroupCodeNum, item.Use3Count, item.LastCheckoutGmt,
 			item.InternalUseCount, item.CopyUseCount, item.OldLocationCode, item.IsSuppressed, item.ItemCreationDateGmt,
-			item.CallnumberRaw, item.CallnumberNorm, item.Publisher, item.MarcTag, item.MarcValue)
+			item.CallnumberRaw, item.CallnumberNorm, item.Publisher,
+			item.OrderRecordNum, item.FundCode, item.FundCodeNum, item.FundCodeMaster,
+			item.MarcTag, item.MarcValue)
 		if err != nil {
 			return err
 		}

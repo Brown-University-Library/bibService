@@ -56,6 +56,10 @@ type CollectionItemRow struct {
 	CallnumberRaw                 string
 	CallnumberNorm                string
 	Publisher                     string
+	OrderRecordNum                int
+	FundCode                      string
+	FundCodeNum                   int
+	FundCodeMaster                string
 	MarcTag                       string
 	MarcValue                     string
 }
@@ -112,11 +116,18 @@ func CollectionItemsForList(connString string, listID int) ([]CollectionItemRow,
 				WHERE v.record_id = bib.id AND v.marc_tag='260'
 				ORDER BY v.occ_num
 				LIMIT 1
-			) as publisher
+			) as publisher,
+			ord.record_num as ord_record_num,
+			cmf.fund_code,
+			fund.code_num  as fund_code_num,
+			fund.code as fund_code_master
 		FROM sierra_view.bool_set AS list
 		INNER JOIN sierra_view.bib_view AS bib ON (bib.id = list.record_metadata_id)
 		INNER JOIN sierra_view.bib_record_item_record_link AS lk ON (bib.id = lk.bib_record_id)
 		INNER JOIN sierra_view.item_view AS i ON (i.id = lk.item_record_id)
+		left outer join sierra_view.order_view as ord on bib.record_num = ord.record_num
+		left outer join sierra_view.order_record_cmf as cmf on ord.record_id = cmf.order_record_id
+		left outer join sierra_view.fund_master as fund on CAST(cmf.fund_code AS INTEGER) = fund.code_num
 		INNER JOIN sierra_view.bib_record_property AS bibprop ON (bib.id = bibprop.bib_record_id)
 		INNER JOIN sierra_view.item_record_property AS iprop ON (i.id = iprop.item_record_id)
 		WHERE list.bool_info_id = {listID}
@@ -188,6 +199,10 @@ func scanCollectionItemRow(rows *sql.Rows) (CollectionItemRow, error) {
 	var CallnumberRaw sql.NullString
 	var CallnumberNorm sql.NullString
 	var Publisher sql.NullString
+	var OrderRecordNum sql.NullInt64
+	var FundCode sql.NullString
+	var FundCodeNum sql.NullInt64
+	var FundCodeMaster sql.NullString
 	var MarcTag sql.NullString
 	var MarcValue sql.NullString
 
@@ -228,6 +243,10 @@ func scanCollectionItemRow(rows *sql.Rows) (CollectionItemRow, error) {
 		&CallnumberRaw,
 		&CallnumberNorm,
 		&Publisher,
+		&OrderRecordNum,
+		&FundCode,
+		&FundCodeNum,
+		&FundCodeMaster,
 		&MarcTag,
 		&MarcValue)
 	if err != nil {
@@ -273,6 +292,10 @@ func scanCollectionItemRow(rows *sql.Rows) (CollectionItemRow, error) {
 	row.CallnumberRaw = stringValue(CallnumberRaw)
 	row.CallnumberNorm = stringValue(CallnumberNorm)
 	row.Publisher = stringValue(Publisher)
+	row.OrderRecordNum = intLongValue(OrderRecordNum)
+	row.FundCode = stringValue(FundCode)
+	row.FundCodeNum = intLongValue(FundCodeNum)
+	row.FundCodeMaster = stringValue(FundCodeMaster)
 	row.MarcTag = stringValue(MarcTag)
 	row.MarcValue = stringValue(MarcValue)
 	return row, nil
