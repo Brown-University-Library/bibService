@@ -1,1 +1,1 @@
-go build && ./bibService settings.json 
+go build && ./bibService settings.json download

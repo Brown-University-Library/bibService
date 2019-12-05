@@ -21,7 +21,37 @@ func main() {
 		return
 	}
 
+	download := len(os.Args) == 3 && os.Args[2] == "download"
+	if download {
+		downloadMarc(settingsFile)
+		return
+	}
+
 	web.StartWebServer(settingsFile)
+}
+
+/*
+table of contents (sierra_export_0007.mrc)
+=907  \\$a.b10158698$b02-25-16$c05-09-94
+=998  \\$ar0001$b05-09-94$cm$da  $e-$feng$gmau$h4$i1
+=970  11$lCh. 1$tStatus Quaestionis$p1
+*/
+func downloadMarc(settingsFile string) {
+	settings, err := josiah.LoadSettings(settingsFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("%#v", settings)
+
+	d := josiah.NewDownloader(settings)
+	d.AddDefaultBatches()
+	toc := false
+	err = d.DownloadAll(toc)
+	if err != nil {
+		log.Printf("%#v", err)
+		return
+	}
+	log.Printf("OK")
 }
 
 func smokeTest(settingsFile string) {

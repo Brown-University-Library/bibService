@@ -44,6 +44,30 @@ func NewSierra(apiURL, keySecret, sessionFile string) Sierra {
 	return s
 }
 
+func (s Sierra) httpDelete(url, accessToken string) (string, error) {
+	s.log("HTTP DELETE", url)
+	req, err := http.NewRequest("DELETE", url, nil)
+	if accessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		s.log("HTTP ERROR", string(body))
+		return string(body), fmt.Errorf("Status code %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	return string(body), err
+}
+
 func (s Sierra) httpGet(url, accessToken string) (string, error) {
 	s.log("HTTP GET", url)
 	req, err := http.NewRequest("GET", url, nil)

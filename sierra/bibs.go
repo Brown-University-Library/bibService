@@ -134,10 +134,14 @@ func (s *Sierra) GetRaw(params map[string]string, fields string) (string, error)
 }
 
 // Marc fetches the MARC data for a given range of IDs.
-// idRange can be a single ID or a comma delimited list of IDs.
-// Becareful because it seems that Sierra's backend chokes when
-// the list is to long (e.g. it fails with 50 IDs)
-func (s *Sierra) Marc(idRange string) (string, error) {
+//
+// idRange can be a single ID (a), comma delimited list of IDs (a,b),
+// or a range ([a,b])
+//
+// When using a comma delimited list be careful because Sierra's backend
+// chokes when the list is to long (e.g. it fails with 50 IDs).
+// It works OK with large ranges, though.
+func (s *Sierra) Marc(idRange string, limit int, toc bool) (string, error) {
 	err := s.authenticate()
 	if err != nil {
 		return "", err
@@ -147,11 +151,17 @@ func (s *Sierra) Marc(idRange string) (string, error) {
 	// of contents information (MARC 970). The "b2mtab.toc" export table includes
 	// this data. By passing the suffix "toc" to the API we indicate Sierra to
 	// use the "b2mtab.toc" export table.
-	url := s.URL + "/bibs/marc?id=" + idRange + "&mapping=toc"
+	url := s.URL + "/bibs/marc?id=" + idRange
+	if toc {
+		url += "&mapping=toc"
+	}
+	if limit > 0 {
+		url += fmt.Sprintf("&limit=%d", limit)
+	}
 
 	body, err := s.httpGet(url, s.Authorization.AccessToken)
 	if err != nil {
-		return "", err
+		return body, err
 	}
 
 	var marcFile marcFileResp
@@ -163,6 +173,20 @@ func (s *Sierra) Marc(idRange string) (string, error) {
 	data, err := s.httpGet(marcFile.File, s.Authorization.AccessToken)
 	return data, err
 }
+
+// The Sierra API seems to have an endpoint to "Delete expired MARC files"
+// but in my testing it always returns "HTTP 403 Forbidden".
+//
+// func (s *Sierra) MarcDelete() (string, error) {
+// 	err := s.authenticate()
+// 	if err != nil {
+// 		return "", err
+// 	}
+//
+// 	url := s.URL + "/bibs/marc"
+// 	body, err := s.httpDelete(url, s.Authorization.AccessToken)
+// 	return body, err
+// }
 
 func (s *Sierra) Deleted(dateRange string) (string, error) {
 	err := s.authenticate()

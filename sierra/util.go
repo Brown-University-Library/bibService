@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+func ToInt(str string) int {
+	num, _ := strconv.ParseInt(str, 10, 64)
+	return int(num)
+}
+
 func toIntTry(str string) (int, bool) {
 	num, err := strconv.ParseInt(str, 10, 64)
 	return int(num), err == nil

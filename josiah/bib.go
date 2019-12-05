@@ -315,7 +315,9 @@ func (model BibModel) Marc(bib string) (string, error) {
 		return "", errors.New("No ID was detected on BIB")
 	}
 
-	return model.api.Marc(id)
+	limit := idRangeLimit(id)
+	toc := true
+	return model.api.Marc(id, limit, toc)
 }
 
 func (model BibModel) ItemsRaw(bib string) (string, error) {
@@ -366,10 +368,43 @@ func idsFromBib(bibs string) string {
 }
 
 func idFromBib(bib string) string {
-	if len(bib) < 2 || bib[0] != 'b' {
+	if len(bib) < 2 {
+		return ""
+	}
+
+	if isBibRange(bib) {
+		bibRange := bib[1 : len(bib)-1]
+		return "[" + idsFromBib(bibRange) + "]"
+	}
+
+	if bib[0] != 'b' {
 		return ""
 	}
 	return bib[1:len(bib)]
+}
+
+func isBibRange(bib string) bool {
+	if len(bib) < 2 {
+		return false
+	}
+
+	return bib[0] == '[' && bib[len(bib)-1] == ']'
+}
+
+// Calculate the number of items in a bib range.
+//
+// Notice that rangeStr must be in the form "[nnn,mmm]"
+// where nnn and mmm and the *numbers* of the bib records
+// without the "b"
+func idRangeLimit(rangeStr string) int {
+	if !isBibRange(rangeStr) {
+		return 0
+	}
+	tokens := strings.Split(rangeStr[1:len(rangeStr)-1], ",")
+	start := sierra.ToInt(tokens[0])
+	end := sierra.ToInt(tokens[1])
+	limit := (end - start) + 1
+	return limit
 }
 
 func dateRange(fromDate, toDate string) string {
