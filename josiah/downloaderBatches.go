@@ -2241,7 +2241,7 @@ func (d *Downloader) AddDefaultBatches() {
 	d.AddBatch("b5464000", "b5466000", "sierra_export_2232.mrc")
 	d.AddBatch("b5466000", "b5468000", "sierra_export_2233.mrc")
 	d.AddBatch("b5468000", "b5470000", "sierra_export_2234.mrc")
-	d.AddBatch("b5470000", "b5472000", "sierra_export_2235.mrc")
+	// d.AddBatch("b5470000", "b5472000", "sierra_export_2235.mrc")
 	d.AddBatch("b5472000", "b5474000", "sierra_export_2236.mrc")
 	d.AddBatch("b5474000", "b5476000", "sierra_export_2237.mrc")
 	d.AddBatch("b5476000", "b5478000", "sierra_export_2238.mrc")
