@@ -72,6 +72,11 @@ func (d Downloader) DownloadBatch(batch Batch, toc bool) error {
 			break
 		}
 
+		// TODO - handle this error
+		// 2019/12/06 08:28:33 HTTP GET: https://catalog.library.brown.edu/iii/sierra-api/v5/bibs/marc?id=[5470000,5472000]&limit=2001
+		// 2019/12/06 08:28:34 HTTP ERROR: {"code":135,"specificCode":0,"httpStatus":500,"name":"External Process Failed","description":"External Process Failed : bib2Marc process failed twice. Error1: External Process Failed : bib2Marc process failed : External Process Failed : bib2Marc process failed. No records exported, check parameters Error2: External Process Failed : bib2Marc process failed : External Process Failed : bib2Marc process failed. No records exported, check parameters"}
+		// 2019/12/06 08:28:34 &errors.errorString{s:"Status code 500"}
+
 		retry := strings.Contains(content, "Rate exceeded for endpoint")
 		if !retry {
 			return err
