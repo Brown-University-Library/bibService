@@ -30,12 +30,6 @@ func main() {
 	web.StartWebServer(settingsFile)
 }
 
-/*
-table of contents (sierra_export_0007.mrc)
-=907  \\$a.b10158698$b02-25-16$c05-09-94
-=998  \\$ar0001$b05-09-94$cm$da  $e-$feng$gmau$h4$i1
-=970  11$lCh. 1$tStatus Quaestionis$p1
-*/
 func downloadMarc(settingsFile string) {
 	settings, err := josiah.LoadSettings(settingsFile)
 	if err != nil {
