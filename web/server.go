@@ -173,7 +173,7 @@ func bibDeleted(resp http.ResponseWriter, req *http.Request) {
 	to := qsParam("to", req)
 	days, _ := strconv.Atoi(qsParam("days", req))
 	if days != 0 {
-		from, to = rangeFromDays(days)
+		from, to = RangeFromDays(days)
 	}
 	if from == "" || to == "" {
 		err := errors.New("No from/to parameters were received")
@@ -191,7 +191,7 @@ func bibSuppressed(resp http.ResponseWriter, req *http.Request) {
 	to := qsParam("to", req)
 	days, _ := strconv.Atoi(qsParam("days", req))
 	if days != 0 {
-		from, to = rangeFromDays(days)
+		from, to = RangeFromDays(days)
 	}
 	if from == "" || to == "" {
 		err := errors.New("No from/to parameters were received")
@@ -250,7 +250,7 @@ func solrDelete(resp http.ResponseWriter, req *http.Request) {
 	to := qsParam("to", req)
 	days, _ := strconv.Atoi(qsParam("days", req))
 	if days != 0 {
-		from, to = rangeFromDays(days)
+		from, to = RangeFromDays(days)
 	}
 	log.Printf("Deleting from Solr (%s - %s)", from, to)
 	model := josiah.NewBibModel(settings)

@@ -18,7 +18,7 @@ func prettyJSON(jsonBytes []byte) string {
 	return string(buffer.Bytes())
 }
 
-func rangeFromDays(days int) (string, string) {
+func RangeFromDays(days int) (string, string) {
 	dayDuration := 24 * time.Hour
 	toDate := time.Now()
 	fromDate := toDate.Add(time.Duration(-days) * dayDuration)
