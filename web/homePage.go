@@ -39,7 +39,8 @@ func homePage(resp http.ResponseWriter, req *http.Request) {
 
 	<h2>Collections</h2>
 	<ul>
-		<li> <a href="/collection/details?subject=econ">Collection data for ECON (for Sierra List 334)</a>
+		<li> <a href="/collection/details?id=334">Download collection data (for Sierra List 334)</a>
+		<li> <a href="/collection/import?id=334">Import collection data into Josiah (for Sierra List 334)</a>
 	</ul>
 
 	<p>Troubleshooting: <a href="/status">/status</a></p>

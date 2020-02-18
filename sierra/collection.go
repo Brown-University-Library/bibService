@@ -2,7 +2,6 @@ package sierra
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -69,22 +68,25 @@ func (row CollectionItemRow) String() string {
 	return s
 }
 
-func SierraListForSubject(subject string) int {
-	if subject == "econ" {
-		return 334
+// Returns the name of a Sierra List
+func CollectionName(connString string, listID int) (string, error) {
+	log.Printf("Connecting to DB: %s", connString)
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		return "", err
 	}
-	return 0
+	defer db.Close()
+	sqlSelect := "SELECT name FROM sierra_view.bool_info WHERE id = {listID}"
+	sqlSelect = strings.ReplaceAll(sqlSelect, "{listID}", strconv.Itoa(listID))
+	log.Printf("Running query: \r\n%s\r\n", sqlSelect)
+
+	row := db.QueryRow(sqlSelect)
+	var name string
+	err = row.Scan(&name)
+	return name, err
 }
 
-func CollectionItemsForSubject(connString string, subject string) ([]CollectionItemRow, error) {
-	listID := SierraListForSubject(subject)
-	if listID == 0 {
-		msg := fmt.Sprintf("Invalid subject (%s)", subject)
-		return []CollectionItemRow{}, errors.New(msg)
-	}
-	return CollectionItemsForList(connString, listID)
-}
-
+// Returns the items for a Sierra List
 func CollectionItemsForList(connString string, listID int) ([]CollectionItemRow, error) {
 	log.Printf("Connecting to DB: %s", connString)
 	// https://godoc.org/github.com/lib/pq

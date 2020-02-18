@@ -86,13 +86,19 @@ func pullSlips(resp http.ResponseWriter, req *http.Request) {
 }
 
 // Downloads into Josiah's database the data for a collection
+// (defined as a Sierra List)
 func collectionImport(resp http.ResponseWriter, req *http.Request) {
-	subject := qsParam("subject", req)
+	listID := qsParamInt("id", req)
+	if listID == 0 {
+		err := errors.New("No id parameter was received")
+		renderJSON(resp, nil, err, "collectionImport")
+		return
+	}
 
 	e := josiah.NewEcosystem(sierraConnString(), josiahConnString())
-	err := e.DownloadCollection(subject)
+	err := e.DownloadCollection(listID)
 	if err != nil {
-		log.Printf("ERROR downloading collection %s: %s", subject, err)
+		log.Printf("ERROR downloading collection %d: %s", listID, err)
 		resp.WriteHeader(http.StatusInternalServerError)
 		resp.Header().Add("Content-Type", "application/json")
 		fmt.Fprint(resp, "[]")
@@ -103,10 +109,16 @@ func collectionImport(resp http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(resp, "[]")
 }
 
-// Returns the data for a collection
+// Returns the data for a collection (defined as a Sierra List)
 func collectionDetails(resp http.ResponseWriter, req *http.Request) {
-	subject := qsParam("subject", req)
-	rows, err := sierra.CollectionItemsForSubject(sierraConnString(), subject)
+	listID := qsParamInt("id", req)
+	if listID == 0 {
+		err := errors.New("No id parameter was received")
+		renderJSON(resp, nil, err, "collectionDetails")
+		return
+	}
+
+	rows, err := sierra.CollectionItemsForList(sierraConnString(), listID)
 	if err != nil {
 		log.Printf("ERROR getting data from Sierra: %s", err)
 		resp.WriteHeader(http.StatusInternalServerError)

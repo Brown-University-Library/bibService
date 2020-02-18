@@ -3,7 +3,10 @@ package josiah
 import (
 	"bibService/sierra"
 	"database/sql"
+	"fmt"
 	"log"
+	"strconv"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -13,13 +16,31 @@ type Ecosystem struct {
 	josiahConnString string
 }
 
+type SummaryRow struct {
+	Name  string
+	Count int
+}
+
 func NewEcosystem(s, j string) Ecosystem {
 	return Ecosystem{sierraConnString: s, josiahConnString: j}
 }
 
-func (e Ecosystem) DownloadCollection(subject string) error {
+func NewSummaryRowFromSql(name sql.NullString, count sql.NullInt64) SummaryRow {
+	row := SummaryRow{}
+	if name.Valid {
+		row.Name = name.String
+	}
+
+	if count.Valid {
+		row.Count = int(count.Int64)
+	}
+
+	return row
+}
+
+func (e Ecosystem) DownloadCollection(listID int) error {
 	// Get data from Sierra's database
-	items, err := sierra.CollectionItemsForSubject(e.sierraConnString, subject)
+	items, err := sierra.CollectionItemsForList(e.sierraConnString, listID)
 	if err != nil {
 		return err
 	}
@@ -32,9 +53,14 @@ func (e Ecosystem) DownloadCollection(subject string) error {
 	defer db.Close()
 
 	// Delete previous information
-	listID := sierra.SierraListForSubject(subject)
 	log.Printf("Deleting previous saved data in Josiah for this list %d\r\n", listID)
 	sqlDelete := `DELETE FROM eco_details WHERE sierra_list = ?`
+	_, err = db.Exec(sqlDelete, listID)
+	if err != nil {
+		return err
+	}
+
+	sqlDelete = `DELETE FROM eco_summaries WHERE sierra_list = ?`
 	_, err = db.Exec(sqlDelete, listID)
 	if err != nil {
 		return err
@@ -54,6 +80,13 @@ func (e Ecosystem) DownloadCollection(subject string) error {
 		}
 	}
 	err = e.saveBatch(db, batch)
+	if err != nil {
+		return err
+	}
+
+	// Calculate and save summary record for this list
+	log.Printf("Saving summary in Josiah for list %d\r\n", listID)
+	err = e.saveSummary(db, listID)
 	if err != nil {
 		return err
 	}
@@ -112,4 +145,171 @@ func (e Ecosystem) saveBatch(db *sql.DB, batch []sierra.CollectionItemRow) error
 	}
 
 	return nil
+}
+
+func (e Ecosystem) saveSummary(db *sql.DB, listID int) error {
+	listName, err := sierra.CollectionName(e.sierraConnString, listID)
+	if err != nil {
+		return err
+	}
+
+	bibCount, itemCount, err := e.getBibCounts(db, listID)
+	if err != nil {
+		return err
+	}
+
+	// Calculate summary by location
+	sqlSelect := `SELECT location_code AS code, count(*) AS count
+		FROM eco_details
+		WHERE sierra_list = {listID}
+		GROUP BY location_code
+		ORDER BY 2 DESC`
+	locationCounts, err := e.getSummaryCounts(db, sqlSelect, listID)
+	if err != nil {
+		return err
+	}
+
+	// Calculate summary by call number
+	sqlSelect = `SELECT substring_index(callnumber_norm,' ', 1) AS code, count(*) AS count
+		FROM eco_details
+    	WHERE sierra_list = {listID}
+    	GROUP BY substring_index(callnumber_norm,' ', 1)
+    	ORDER BY 2 DESC`
+	callNoCounts, err := e.getSummaryCounts(db, sqlSelect, listID)
+	if err != nil {
+		return err
+	}
+
+	// Calculate summary by checkout counts
+	sqlSelect = `SELECT checkout_total, count(checkout_total)
+		FROM eco_details
+		WHERE sierra_list = {listID}
+		GROUP BY checkout_total
+		ORDER BY 1 DESC`
+	checkoutCounts, err := e.getSummaryCounts(db, sqlSelect, listID)
+	if err != nil {
+		return err
+	}
+
+	// Calculate summary by fund codes
+	fundCounts, err := e.getSummaryFundCodes(db, listID)
+	if err != nil {
+		return err
+	}
+
+	// Save them
+	sqlInsert := `
+		INSERT INTO eco_summaries(
+			sierra_list, list_name, bib_count, item_count, updated_date_gmt,
+			locations_str, callnumbers_str, checkouts_str, fundcodes_str
+		) VALUES (
+			?, ?, ?, ?, ?,
+			?, ?, ?, ?
+		)`
+
+	log.Printf("Updating summary record for list %d", listID)
+	_, err = db.Exec(sqlInsert,
+		listID, listName, bibCount, itemCount, DbUtcNow(),
+		ToJSON(locationCounts),
+		ToJSON(callNoCounts),
+		ToJSON(checkoutCounts),
+		ToJSON(fundCounts))
+	if err != nil {
+		return err
+	}
+
+	// Calculate summary by subjects separate.
+	//
+	// Notice that we only get the first N subjects (this is so that
+	// we don't go over the limit for TEXT fields in MySQL)
+	sqlSelect = `SELECT substring_index(marc_value, '|', 2) AS code, count(id) AS count
+		FROM eco_details
+		WHERE sierra_list = {listID}
+		GROUP BY substring_index(marc_value, '|', 2)
+		ORDER BY 2 DESC
+		LIMIT 100`
+	subjectCounts, err := e.getSummaryCounts(db, sqlSelect, listID)
+	if err != nil {
+		return err
+	}
+
+	sqlUpdate := "UPDATE eco_summaries SET subjects_str = ? WHERE sierra_list = ?"
+	log.Printf("Updating subjects_str for list %d", listID)
+	_, err = db.Exec(sqlUpdate, ToJSON(subjectCounts), listID)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (e Ecosystem) getBibCounts(db *sql.DB, listID int) (int, int, error) {
+	sqlSelect := `SELECT count(distinct bib_record_num), count(distinct item_record_num)
+		FROM eco_details
+		WHERE sierra_list = {listID}`
+	sqlSelect = strings.ReplaceAll(sqlSelect, "{listID}", strconv.Itoa(listID))
+	log.Printf("Running query: \r\n%s\r\n", sqlSelect)
+
+	row := db.QueryRow(sqlSelect)
+	var bibCount, itemCount int
+	err := row.Scan(&bibCount, &itemCount)
+	return bibCount, itemCount, err
+}
+
+func (e Ecosystem) getSummaryCounts(db *sql.DB, sqlSelect string, listID int) ([]SummaryRow, error) {
+	sqlSelect = strings.ReplaceAll(sqlSelect, "{listID}", strconv.Itoa(listID))
+	log.Printf("Running query: \r\n%s\r\n", sqlSelect)
+
+	rows, err := db.Query(sqlSelect)
+	if err != nil {
+		return []SummaryRow{}, err
+	}
+	defer rows.Close()
+
+	log.Printf("Fetching rows...")
+	values := []SummaryRow{}
+	var name sql.NullString
+	var count sql.NullInt64
+	for rows.Next() {
+		err := rows.Scan(&name, &count)
+		if err != nil {
+			return []SummaryRow{}, err
+		}
+		row := NewSummaryRowFromSql(name, count)
+		values = append(values, row)
+	}
+	return values, nil
+}
+
+func (e Ecosystem) getSummaryFundCodes(db *sql.DB, listID int) ([]SummaryRow, error) {
+	// Notice that we select 3 fields here
+	// (and we combined them into two below)
+	sqlSelect := `SELECT fund_code, fund_code_master, count(fund_code)
+		FROM eco_details
+		WHERE sierra_list = {listID}
+		GROUP BY fund_code, fund_code_master
+		ORDER BY 3 DESC, 1 ASC`
+	sqlSelect = strings.ReplaceAll(sqlSelect, "{listID}", strconv.Itoa(listID))
+	log.Printf("Running query: \r\n%s\r\n", sqlSelect)
+
+	rows, err := db.Query(sqlSelect)
+	if err != nil {
+		return []SummaryRow{}, err
+	}
+	defer rows.Close()
+
+	log.Printf("Fetching rows...")
+	values := []SummaryRow{}
+	var code, master sql.NullString
+	var count sql.NullInt64
+	for rows.Next() {
+		err := rows.Scan(&code, &master, &count)
+		if err != nil {
+			return []SummaryRow{}, err
+		}
+		row := NewSummaryRowFromSql(code, count)
+		row.Name = fmt.Sprintf("%s|%s", code.String, master.String)
+		values = append(values, row)
+	}
+	return values, nil
 }
