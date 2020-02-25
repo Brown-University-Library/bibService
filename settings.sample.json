@@ -10,5 +10,11 @@
   "dbPassword": "db-password",
   "dbHost": "the-iii-hostname",
   "dbPort": 1032,
-  "dbName": "the-db-name"
+  "dbName": "the-db-name",
+  "JosiahDbHost": "127.0.0.1",
+  "JosiahDbUser": "username",
+  "JosiahDbPassword": "password",
+  "JosiahDbName": "db-name",
+  "bbApiKey": "api-key-goes-here",
+  "bbDocID": "doc-id-goes-here"
 }

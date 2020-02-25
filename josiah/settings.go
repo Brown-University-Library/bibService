@@ -26,6 +26,8 @@ type Settings struct {
 	JosiahDbUser     string `json:"josiahDbUser"`     // Josiah MySQL DB
 	JosiahDbPassword string `json:"josiahDbPassword"` // Josiah MySQL DB
 	JosiahDbName     string `json:"josiahDbName"`     // Josiah MySQL DB
+	BestBetsAPIKey   string `json:"bbApiKey"`         // Google API key to access the BestBets document
+	BestBetsDocID    string `json:"bbDocID"`          // ID of the Google Sheet with the BestBets data
 }
 
 // LoadSettings fetches settings information from a JSON file.

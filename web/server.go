@@ -48,6 +48,7 @@ func StartWebServer(settingsFile string) {
 	http.HandleFunc("/collection/import", collectionImport)
 
 	// Misc
+	http.HandleFunc("/bestbets/download", bbDownload)
 	http.HandleFunc("/bibutils/pullSlips", pullSlips)
 	http.HandleFunc("/status", status)
 	http.HandleFunc("/", homePage)
@@ -81,6 +82,18 @@ func pullSlips(resp http.ResponseWriter, req *http.Request) {
 
 	bytes, err := json.Marshal(rows)
 	json := string(bytes)
+	resp.Header().Add("Content-Type", "application/json")
+	fmt.Fprint(resp, json)
+}
+
+// Downloads the data from the BestBets Google Sheet
+func bbDownload(resp http.ResponseWriter, req *http.Request) {
+	bb := josiah.NewBestBets(settings.BestBetsAPIKey, settings.BestBetsDocID)
+	json, err := bb.Download("A2:E1000")
+	if err != nil {
+		log.Printf("ERROR getting BestBets data: %s", err)
+		return
+	}
 	resp.Header().Add("Content-Type", "application/json")
 	fmt.Fprint(resp, json)
 }
