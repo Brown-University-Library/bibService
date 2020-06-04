@@ -1,1 +1,2 @@
-go build && ./bibService settings.json
+cd ./cmd/web
+go build -o bibService && ./bibService settings.json

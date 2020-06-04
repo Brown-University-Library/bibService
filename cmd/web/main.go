@@ -1,8 +1,7 @@
 package main
 
 import (
-	"bibService/josiah"
-	"bibService/web"
+	"bibService/pkg/josiah"
 	"fmt"
 	"log"
 	"os"
@@ -33,7 +32,7 @@ func main() {
 		return
 	}
 
-	web.StartWebServer(settingsFile)
+	StartWebServer(settingsFile)
 }
 
 func deleteBib(settingsFile string) {
@@ -44,7 +43,7 @@ func deleteBib(settingsFile string) {
 	log.Printf("%#v", settings)
 
 	model := josiah.NewBibModel(settings)
-	from, to := web.RangeFromDays(10)
+	from, to := RangeFromDays(10)
 	err = model.Delete(from, to)
 	if err != nil {
 		log.Printf("%#v", err)

@@ -1,7 +1,7 @@
 package sierra
 
 import (
-	"bibService/marc"
+	"bibService/pkg/marc"
 	"testing"
 )
 

@@ -1,7 +1,7 @@
 package josiah
 
 import (
-	"bibService/sierra"
+	"bibService/pkg/sierra"
 	"encoding/json"
 	"errors"
 	"fmt"

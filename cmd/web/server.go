@@ -1,8 +1,8 @@
-package web
+package main
 
 import (
-	"bibService/josiah"
-	"bibService/sierra"
+	"bibService/pkg/josiah"
+	"bibService/pkg/sierra"
 	"encoding/json"
 	"errors"
 	"fmt"
