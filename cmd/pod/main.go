@@ -21,14 +21,14 @@ func main() {
 		return
 	}
 
-	prefix := tokens[1]
+	prefix := tokens[0]
 
 	solrURL := ""
 	if len(os.Args) > 2 {
 		solrURL = os.Args[2]
 	}
 
-	err := ImportFile(filename, prefix)
+	err := ImportFile(filename, prefix, solrURL)
 	if err != nil {
 		log.Fatal(err)
 		log.Printf(solrURL)

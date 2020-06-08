@@ -10,9 +10,10 @@ import (
 	"strings"
 
 	"github.com/hectorcorrea/marcli/pkg/marc"
+	"github.com/hectorcorrea/solr"
 )
 
-func ImportFile(filename string, idPrefix string) error {
+func ImportFile(filename string, idPrefix string, solrUrl string) error {
 	file, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -20,8 +21,13 @@ func ImportFile(filename string, idPrefix string) error {
 	defer file.Close()
 
 	i := 0
+	stdOut := (solrUrl == "")
+	solrData := ""
 	marc := marc.NewMarcFile(file)
-	fmt.Printf("[\n")
+	if stdOut {
+		fmt.Printf("[\n")
+	}
+
 	for marc.Scan() {
 		r, err := marc.Record()
 		if err == io.EOF {
@@ -41,13 +47,33 @@ func ImportFile(filename string, idPrefix string) error {
 			return err
 		}
 		json := string(bytes)
-		if i > 0 {
-			fmt.Printf(",\n")
+
+		if stdOut {
+			if i > 0 {
+				fmt.Printf(",\n")
+			}
+			fmt.Printf("%s", json)
+		} else {
+			if i > 0 {
+				solrData += ","
+			}
+			solrData += json
 		}
-		fmt.Printf("%s", json)
+
 		i++
 	}
-	fmt.Printf("\n]\n")
+
+	if stdOut {
+		fmt.Printf("\n]\n")
+	} else {
+		// TODO: post in batches
+		solrCore := solr.New(solrUrl, false)
+		err := solrCore.PostString("[" + solrData + "]")
+		if err != nil {
+			return err
+		}
+	}
+
 	return marc.Err()
 }
 
