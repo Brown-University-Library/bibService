@@ -25,8 +25,6 @@ func StartWebServer(settingsFile string) {
 	log.Printf("%#v", settings)
 
 	// Solr
-	http.HandleFunc("/bibutils/solr/doc/", solrDoc)
-	http.HandleFunc("/bibutils/solr/docFromFile/", solrDocFromFile)
 	http.HandleFunc("/bibutils/solr/delete/", solrDelete)
 
 	// Bib and Item level operation
@@ -227,43 +225,6 @@ func bibSuppressed(resp http.ResponseWriter, req *http.Request) {
 	model := josiah.NewBibModel(settings)
 	body, err := model.GetBibsSuppressed(from, to)
 	renderJSON(resp, body, err, "bibSuppressed")
-}
-
-func solrDoc(resp http.ResponseWriter, req *http.Request) {
-	bib := qsParam("bib", req)
-	if bib == "" {
-		err := errors.New("No bib parameter was received")
-		renderJSON(resp, nil, err, "bibController")
-		return
-	}
-	log.Printf("Fetching SolrDoc for %s", bib)
-	model := josiah.NewBibModel(settings)
-	bibs, err := model.GetBibs(bib)
-	if err != nil {
-		renderJSON(resp, nil, err, "bibController")
-		return
-	}
-	if len(bibs.Entries) > 0 {
-		doc := josiah.NewSolrDoc(bibs.Entries[0])
-		renderJSON(resp, doc, nil, "solrDoc")
-	} else {
-		renderJSON(resp, "", errors.New("no bibs returned"), "solrDoc")
-	}
-}
-
-func solrDocFromFile(resp http.ResponseWriter, req *http.Request) {
-	bib := qsParam("bib", req)
-	if bib == "" {
-		err := errors.New("No bib parameter was received")
-		renderJSON(resp, nil, err, "solrDocFromFile")
-		return
-	}
-	log.Printf("Generating SolrDoc from file for BIB: %s", bib)
-	model := josiah.NewBibModel(settings)
-	path := settings.CachedDataPath
-	fileName := path + bib + ".json"
-	doc, err := model.SolrDocFromFile(fileName)
-	renderJSON(resp, doc, err, "solrDocFromFile")
 }
 
 func solrDelete(resp http.ResponseWriter, req *http.Request) {

@@ -1,9 +1,6 @@
-package josiah
+package marcimport
 
-import (
-	"bibService/pkg/sierra"
-)
-
+// SolrDoc represents a Solr document with bibliographic data
 type SolrDoc struct {
 	Id                           []string `json:"id"`
 	UpdatedDt                    []string `json:"updated_dt"`
@@ -47,70 +44,5 @@ type SolrDoc struct {
 	MarcDisplay                  []string `json:"marc_display"`
 	BookplateCodeFacet           []string `json:"bookplate_code_facet"`
 	BookplateCodeSS              []string `json:"bookplate_code_ss"`
-}
-
-func NewSolrDoc(bib sierra.Bib) SolrDoc {
-	doc := SolrDoc{}
-	doc.Id = []string{bib.Bib()}
-	doc.UpdatedDt = []string{bib.UpdatedDate() + "T00:00:00Z"}
-	doc.IsbnT = bib.Isbn()
-	doc.IssnT = bib.Issn()
-	doc.OclcT = bib.OclcNum()
-
-	online := bib.IsOnline()
-	doc.Online = []bool{online}
-	if online {
-		doc.AccessFacet = []string{"Online"}
-	} else {
-		doc.AccessFacet = []string{"At the library"}
-	}
-
-	doc.Format = []string{bib.Format()}
-	doc.LanguageFacet = bib.Languages()
-
-	if year, ok := bib.PublicationYear(); ok {
-		doc.PublicationYear = []int{year}
-	}
-
-	doc.TitleT = bib.TitleT()
-	doc.TitleDisplay = []string{bib.TitleDisplay()}
-	doc.TitleVernDisplay = []string{bib.TitleVernacularDisplay()}
-	doc.TitleSeriesT = bib.TitleSeries()
-
-	doc.TitleSort = []string{bib.SortableTitle()}
-	doc.UniformTitlesDisplay = []string{bib.UniformTitlesDisplay(false)}
-	doc.NewUniformTitleAuthorDisplay = []string{bib.UniformTitlesDisplay(true)}
-	doc.UniformRelatedWorksDisplay = []string{bib.UniformRelatedWorks()}
-
-	doc.AuthorDisplay = []string{bib.AuthorDisplay()}
-	doc.AuthorVernDisplay = []string{bib.AuthorVernacularDisplay()}
-	doc.AuthorFacet = bib.AuthorFacet()
-	doc.AuthorAddlDisplay = bib.AuthorsAddlDisplay()
-	doc.AuthorT = bib.AuthorsT()
-	doc.AuthorAddlT = bib.AuthorsAddlT()
-
-	doc.PublishedDisplay = bib.PublishedDisplay()
-	doc.PublishedVernDisplay = []string{bib.PublishedVernacularDisplay()}
-	doc.PhysicalDisplay = bib.PhysicalDisplay()
-	doc.AbstractDisplay = []string{bib.AbstractDisplay()}
-	doc.BuildingFacet = bib.BuildingFacets()
-	doc.LocationCodeT = bib.LocationCodes()
-
-	doc.TopicFacet = bib.TopicFacet()
-	doc.SubjectsT = bib.Subjects()
-	doc.CallNumbers = bib.CallNumbers()
-	doc.RegionFacet = bib.RegionFacet()
-
-	doc.UrlFullTextDisplay = bib.UrlDisplay("856u")
-	doc.UrlSupplDisplay = bib.UrlDisplay("856z")
-
-	doc.BookplateCodeFacet = bib.BookplateCodes()
-	doc.BookplateCodeSS = doc.BookplateCodeFacet
-
-	doc.TableOfContents = bib.TableOfContents()
-	doc.TableOfContents970 = bib.TableOfContents970()
-	doc.Text = bib.Text()
-	doc.MarcDisplay = bib.MarcDisplay()
-
-	return doc
+	SourceInstitution            string   `json:"source_institution_s"`
 }

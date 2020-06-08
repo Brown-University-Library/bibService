@@ -2,10 +2,8 @@ package josiah
 
 import (
 	"bibService/pkg/sierra"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"strconv"
 	"strings"
@@ -255,24 +253,6 @@ func (model BibModel) bibsDeletedPaginated(fromDate, toDate string, page int) (s
 		params["deletedDate"] = dateRange(fromDate, toDate)
 	}
 	return model.api.GetBibs(params, false)
-}
-
-func (model BibModel) SolrDocFromFile(fileName string) (SolrDoc, error) {
-	body, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return SolrDoc{}, err
-	}
-
-	var bibs sierra.Bibs
-	err = json.Unmarshal([]byte(body), &bibs)
-	if err != nil {
-		return SolrDoc{}, err
-	}
-
-	if bibs.Total == 0 {
-		return SolrDoc{}, err
-	}
-	return NewSolrDoc(bibs.Entries[0]), nil
 }
 
 func (model BibModel) bibsUpdatedPaginated(fromDate, toDate string, page int, includeItems bool) (sierra.Bibs, error) {
