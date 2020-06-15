@@ -26,8 +26,10 @@ func (row bbRow) Terms() []string {
 	terms := []string{}
 	for _, token := range strings.Split(row.Queries, ";") {
 		term := strings.Trim(token, " ")
-		term = strings.ToLower(term)
-		terms = append(terms, term)
+		if term != "" {
+			term = strings.ToLower(term)
+			terms = append(terms, term)
+		}
 	}
 	return terms
 }
