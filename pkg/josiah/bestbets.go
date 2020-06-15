@@ -2,6 +2,9 @@ package josiah
 
 import (
 	"context"
+	"strings"
+
+	"github.com/hectorcorrea/solr"
 
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
@@ -15,12 +18,26 @@ type bbRow struct {
 	Description string `json:"description"`
 }
 
-func (t *bbTable) AddRow(name, db, queries, url, description string) {
+func (row bbRow) ID() string {
+	return Slugify(row.Name)
+}
+
+func (row bbRow) Terms() []string {
+	terms := []string{}
+	for _, token := range strings.Split(row.Queries, ";") {
+		term := strings.Trim(token, " ")
+		term = strings.ToLower(term)
+		terms = append(terms, term)
+	}
+	return terms
+}
+
+func (t *BestBetsTable) AddRow(name, db, queries, url, description string) {
 	row := bbRow{Name: name, Database: db, Queries: queries, URL: url, Description: description}
 	t.Rows = append(t.Rows, row)
 }
 
-type bbTable struct {
+type BestBetsTable struct {
 	Rows []bbRow `json:"rows"`
 }
 
@@ -48,13 +65,13 @@ func NewBestBets(apiKey, docID string) BestBets {
 // 		https://cloud.google.com/docs/authentication?_ga=2.72342995.-1974404554.1582571299
 //		https://github.com/googleapis/google-api-go-client/blob/master/sheets/v4/sheets-gen.go
 // 		https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/get?apix_params=%7B%22spreadsheetId%22%3A%221YACxwpx4HJUZnZwvqYBuAws_zY4sk1JaGSgju3IDhnY%22%2C%22range%22%3A%22A1%3AB2%22%7D
-func (bb BestBets) Download(rangeStr string) (string, error) {
+func (bb BestBets) Download(rangeStr string) (BestBetsTable, error) {
 
 	// Connect to the Google Sheets service
 	ctx := context.Background()
 	sheetsService, err := sheets.NewService(ctx, option.WithAPIKey(bb.APIKey))
 	if err != nil {
-		return "", err
+		return BestBetsTable{}, err
 	}
 
 	// Fetch the data for the BestBet Google sheet
@@ -65,11 +82,11 @@ func (bb BestBets) Download(rangeStr string) (string, error) {
 	sheet := sheetsService.Spreadsheets.Values.Get(bb.DocumentID, rangeStr)
 	data, err := sheet.Context(ctx).Do()
 	if err != nil {
-		return "", err
+		return BestBetsTable{}, err
 	}
 
 	// Copy the sheet data to our own struct
-	table := bbTable{}
+	table := BestBetsTable{}
 	for _, row := range data.Values {
 		var name, db, queries, url, description string
 		if len(row) > 0 {
@@ -90,5 +107,29 @@ func (bb BestBets) Download(rangeStr string) (string, error) {
 		table.AddRow(name, db, queries, url, description)
 	}
 
-	return ToJSON(table), nil
+	return table, nil
+}
+
+func (bb BestBets) UpdateSolr(data BestBetsTable, solrURL string, deleteAll bool) error {
+	solrCore := solr.New(solrURL, false)
+
+	if deleteAll {
+		err := solrCore.DeleteAll()
+		if err != nil {
+			return err
+		}
+	}
+
+	docs := []solr.Document{}
+	for _, row := range data.Rows {
+		doc := solr.NewDocument()
+		doc.Data["id"] = row.ID()
+		doc.Data["name_display"] = row.Name
+		doc.Data["url_display"] = row.URL
+		doc.Data["description_display"] = row.Description
+		doc.Data["term"] = row.Terms()
+		docs = append(docs, doc)
+	}
+	err := solrCore.PostDocs(docs)
+	return err
 }

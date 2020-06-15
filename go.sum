@@ -90,6 +90,8 @@ github.com/hectorcorrea/solr v0.0.0-20200329192901-e993a11fc979 h1:nPux9wxVswctw
 github.com/hectorcorrea/solr v0.0.0-20200329192901-e993a11fc979/go.mod h1:7CtKTmcrRHjGkgYBgGUXKM1+KZpxspZKko4ovHgBxJs=
 github.com/hectorcorrea/solr v0.0.0-20200608180526-bc336205a701 h1:NymSFRbMTQd2DcRahshnqUQiktWxKWGMog/RuUkcsYo=
 github.com/hectorcorrea/solr v0.0.0-20200608180526-bc336205a701/go.mod h1:7CtKTmcrRHjGkgYBgGUXKM1+KZpxspZKko4ovHgBxJs=
+github.com/hectorcorrea/solr v0.0.0-20200615191214-da739e503d51 h1:H/CI4mhwkqHlS/4O24tV7A1UBgWp/Av7dot1w1dqNj8=
+github.com/hectorcorrea/solr v0.0.0-20200615191214-da739e503d51/go.mod h1:7CtKTmcrRHjGkgYBgGUXKM1+KZpxspZKko4ovHgBxJs=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/jcmturner/aescts/v2 v2.0.0 h1:9YKLH6ey7H4eDBXW8khjYslgyqG2xZikXP0EQFKrle8=
 github.com/jcmturner/aescts/v2 v2.0.0/go.mod h1:AiaICIRyfYg35RUkr8yESTqvSy7csK90qZ5xfvvsoNs=

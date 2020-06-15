@@ -45,8 +45,11 @@ func StartWebServer(settingsFile string) {
 	http.HandleFunc("/collection/details", collectionDetails)
 	http.HandleFunc("/collection/import", collectionImport)
 
-	// Misc
+	// BestBets
 	http.HandleFunc("/bestbets/download", bbDownload)
+	http.HandleFunc("/bestbets/update", bbUpdate)
+
+	// Misc
 	http.HandleFunc("/bibutils/pullSlips", pullSlips)
 	http.HandleFunc("/status", status)
 	http.HandleFunc("/", homePage)
@@ -87,11 +90,36 @@ func pullSlips(resp http.ResponseWriter, req *http.Request) {
 // Downloads the data from the BestBets Google Sheet
 func bbDownload(resp http.ResponseWriter, req *http.Request) {
 	bb := josiah.NewBestBets(settings.BestBetsAPIKey, settings.BestBetsDocID)
-	json, err := bb.Download("A2:E1000")
+	table, err := bb.Download("A2:E1000")
 	if err != nil {
 		log.Printf("ERROR getting BestBets data: %s", err)
 		return
 	}
+	log.Printf("Downloaded BestBets data from Google Sheet")
+	json := josiah.ToJSON(table)
+	resp.Header().Add("Content-Type", "application/json")
+	fmt.Fprint(resp, json)
+}
+
+// Downloads the data from the BestBets Google Sheet
+func bbUpdate(resp http.ResponseWriter, req *http.Request) {
+	bb := josiah.NewBestBets(settings.BestBetsAPIKey, settings.BestBetsDocID)
+	table, err := bb.Download("A2:E1000")
+	if err != nil {
+		log.Printf("ERROR getting BestBets data: %s", err)
+		return
+	}
+	deleteAll := len(table.Rows) >= 100
+	if !deleteAll {
+		log.Printf("WARN: Skipped delete all because row count is too low (%d)", len(table.Rows))
+	}
+	err = bb.UpdateSolr(table, settings.BestBetsSolrURL, deleteAll)
+	if err != nil {
+		log.Printf("ERROR updating BestBets in Solr: %s", err)
+		return
+	}
+	log.Printf("Updated BestBets data in Solr")
+	json := "{ \"status\": \"OK\" }"
 	resp.Header().Add("Content-Type", "application/json")
 	fmt.Fprint(resp, json)
 }
